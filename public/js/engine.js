@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const scanStatusMsg = document.getElementById('scannerStatusMsg');
   const scanScoreVal = document.getElementById('scanScoreVal');
   const scanTtfbVal = document.getElementById('scanTtfbVal');
+  const scanSslVal = document.getElementById('scanSslVal');
   const scanFindingsContainer = document.getElementById('scannerFindingsContainer');
 
   if (runScanBtn && scanInput) {
@@ -32,14 +33,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (scanProgressBar) scanProgressBar.style.width = '25%';
       if (scanStatusMsg) scanStatusMsg.textContent = 'Dispatching real network probe & SSL handshake...';
 
-      window.track('scan_start', { target: rawTarget.replace(/https?:\/\//, '').split('/')[0] });
+      if (window.track) {
+        window.track('scan_start', { target: rawTarget.replace(/https?:\/\//, '').split('/')[0] });
+      }
 
       try {
         if (scanProgressBar) scanProgressBar.style.width = '55%';
         if (scanStatusMsg) scanStatusMsg.textContent = 'Inspecting HTML headers, Schema entity, & tracking pixels...';
 
-        const auditUrl = `/api/audit?url=${encodeURIComponent(rawTarget)}`;
-        const resp = await fetch(auditUrl);
+        let turnstileToken = '';
+        if (window.turnstile && document.getElementById('scannerTurnstile')) {
+          try {
+            turnstileToken = window.turnstile.getResponse(document.getElementById('scannerTurnstile')) || '';
+          } catch (e) {}
+        }
+
+        const resp = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: rawTarget, turnstileToken })
+        });
         const data = await resp.json();
 
         if (scanProgressBar) scanProgressBar.style.width = '100%';
@@ -55,6 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           if (scanTtfbVal) {
             scanTtfbVal.textContent = `${data.measured_latency_ms}ms`;
+          }
+          if (scanSslVal) {
+            if (data.has_ssl === true) {
+              scanSslVal.textContent = 'VALID';
+              scanSslVal.style.color = 'var(--c-success)';
+            } else if (data.has_ssl === false) {
+              scanSslVal.textContent = 'FAILED';
+              scanSslVal.style.color = 'var(--c-vermilion)';
+            } else {
+              scanSslVal.textContent = '—';
+              scanSslVal.style.color = 'var(--c-text-muted)';
+            }
           }
 
           // Populate findings list safely
@@ -97,7 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
             formWebsite.value = data.url;
           }
 
-          window.track('scan_complete', { score: data.score });
+          if (window.track) {
+            window.track('scan_complete', { score: data.score });
+          }
 
         } else {
           // Honest failure state - NO fabricated numbers!
@@ -110,25 +137,53 @@ document.addEventListener('DOMContentLoaded', () => {
             scanScoreVal.style.color = 'var(--c-text-muted)';
           }
           if (scanTtfbVal) {
-            scanTtfbVal.textContent = 'Timeout';
+            scanTtfbVal.textContent = '—';
+          }
+          if (scanSslVal) {
+            scanSslVal.textContent = data.has_ssl === false ? 'FAILED' : '—';
+            scanSslVal.style.color = data.has_ssl === false ? 'var(--c-vermilion)' : 'var(--c-text-muted)';
           }
           if (scanFindingsContainer) {
             scanFindingsContainer.innerHTML = '';
             const li = document.createElement('li');
             li.className = 'scanner-finding-item critical';
-            li.innerHTML = `<div><strong>${errorMsg}</strong><div style="font-size: 0.78rem; color: var(--c-text-muted); margin-top: 2px;">Target may block external crawlers or has strict firewall policies. Request a manual audit below.</div></div>`;
+
+            const div = document.createElement('div');
+            const strong = document.createElement('strong');
+            strong.textContent = errorMsg;
+
+            const hint = document.createElement('div');
+            hint.style.fontSize = '0.78rem';
+            hint.style.color = 'var(--c-text-muted)';
+            hint.style.marginTop = '2px';
+            hint.textContent = 'Target may block external crawlers or has strict firewall policies. Request a manual audit below.';
+
+            div.appendChild(strong);
+            div.appendChild(hint);
+            li.appendChild(div);
             scanFindingsContainer.appendChild(li);
           }
-          window.track('scan_error', { error: data.error || 'failed' });
+          if (window.track) {
+            window.track('scan_error', { error: data.error || 'failed' });
+          }
         }
 
       } catch (err) {
         if (scanStatusMsg) scanStatusMsg.textContent = 'Network error connecting to diagnostic service.';
         if (scanScoreVal) scanScoreVal.textContent = 'N/A';
-        window.track('scan_error', { error: 'network_exception' });
+        if (scanTtfbVal) scanTtfbVal.textContent = '—';
+        if (scanSslVal) scanSslVal.textContent = '—';
+        if (window.track) {
+          window.track('scan_error', { error: 'network_exception' });
+        }
       } finally {
         runScanBtn.disabled = false;
         runScanBtn.textContent = 'RE-SCAN';
+        if (window.turnstile && document.getElementById('scannerTurnstile')) {
+          try {
+            window.turnstile.reset(document.getElementById('scannerTurnstile'));
+          } catch (e) {}
+        }
         setTimeout(() => {
           if (scanProgressTrack) scanProgressTrack.style.display = 'none';
         }, 1200);

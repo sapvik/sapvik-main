@@ -1,7 +1,8 @@
 /**
  * SAPVIK Main Interactive Script
  * Production Architecture & Verified Lead Pipelines
- * Rules: Real lead dispatch, accessible interactions, zero fake state
+ * Safe DOM rendering, zero raw innerHTML, accessible mobile navigation with inert & focus trap,
+ * Google Consent Mode v2 banner, and resilient WhatsApp fallback.
  */
 
 // 1. Central Config Layer
@@ -48,7 +49,9 @@ window.track = function(event, params = {}) {
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ==========================================================================
   // A. Header scroll elevation
+  // ==========================================================================
   const siteHeader = document.querySelector('.site-header');
   if (siteHeader) {
     const handleScroll = () => {
@@ -62,18 +65,36 @@ document.addEventListener('DOMContentLoaded', () => {
     handleScroll();
   }
 
-  // B. Accessible Mobile Drawer Navigation
+  // ==========================================================================
+  // B. Accessible Mobile Drawer Navigation with inert & focus trap
+  // ==========================================================================
   const mobileToggle = document.getElementById('mobileMenuToggle');
   const mobileDrawer = document.getElementById('mobileNavDrawer');
+  const mainContent = document.getElementById('mainContent');
   const mobileLinks = document.querySelectorAll('.mobile-nav-link');
 
   if (mobileToggle && mobileDrawer) {
     const toggleDrawer = (open) => {
       mobileDrawer.classList.toggle('open', open);
-      mobileToggle.textContent = open ? 'CLOSE ✕' : 'MENU ☰';
+      mobileToggle.classList.toggle('active', open);
       mobileToggle.setAttribute('aria-expanded', String(open));
       mobileDrawer.setAttribute('aria-hidden', String(!open));
       document.body.style.overflow = open ? 'hidden' : '';
+
+      if (mainContent) {
+        if (open) {
+          mainContent.setAttribute('inert', '');
+        } else {
+          mainContent.removeAttribute('inert');
+        }
+      }
+
+      if (open) {
+        const firstFocusable = mobileDrawer.querySelector('a, button, [tabindex="0"]');
+        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 80);
+      } else {
+        mobileToggle.focus();
+      }
     };
 
     mobileToggle.addEventListener('click', () => {
@@ -87,16 +108,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Close on Escape key
+    // Close on Escape key & Focus Trap inside drawer
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && mobileDrawer.classList.contains('open')) {
+      if (!mobileDrawer.classList.contains('open')) return;
+
+      if (e.key === 'Escape') {
         toggleDrawer(false);
-        mobileToggle.focus();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const focusables = Array.from(mobileDrawer.querySelectorAll('a, button, [tabindex="0"]'));
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     });
   }
 
+  // ==========================================================================
   // C. Active Nav Link Tracking on Scroll
+  // ==========================================================================
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
 
@@ -121,7 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
     sections.forEach(sec => navObserver.observe(sec));
   }
 
+  // ==========================================================================
   // D. Accessible FAQ Accordion
+  // ==========================================================================
   const faqRows = document.querySelectorAll('.faq-row, .faq-item');
   faqRows.forEach((row, idx) => {
     const trigger = row.querySelector('.faq-trigger, .faq-question-btn');
@@ -131,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       trigger.addEventListener('click', () => {
         const isOpen = row.classList.contains('open');
-        faqRows.forEach((other, oIdx) => {
+        faqRows.forEach((other) => {
           other.classList.remove('open');
           const otherTrigger = other.querySelector('.faq-trigger, .faq-question-btn');
           const otherInd = other.querySelector('.faq-indicator, .faq-icon');
@@ -150,7 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==========================================================================
   // E. Toast Notification System (Safe DOM / No raw injection)
+  // ==========================================================================
   function showToast(message, type = 'success') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -184,7 +229,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
-  // F. Real Contact & Discovery Audit Form Pipeline
+  // ==========================================================================
+  // F. Google Consent Mode v2 Banner Integration
+  // ==========================================================================
+  const consentBanner = document.getElementById('consentBanner');
+  const btnConsentAccept = document.getElementById('btnConsentAccept');
+  const btnConsentReject = document.getElementById('btnConsentReject');
+
+  const savedConsent = localStorage.getItem('sapvik_consent');
+  if (savedConsent === 'granted') {
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', {
+        'analytics_storage': 'granted',
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted'
+      });
+    }
+  } else if (savedConsent === 'denied') {
+    // Explicitly denied previously, keep banner hidden
+  } else {
+    // Not decided yet, show privacy choice banner
+    if (consentBanner) {
+      consentBanner.style.display = 'block';
+    }
+  }
+
+  if (btnConsentAccept) {
+    btnConsentAccept.addEventListener('click', () => {
+      localStorage.setItem('sapvik_consent', 'granted');
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          'analytics_storage': 'granted',
+          'ad_storage': 'granted',
+          'ad_user_data': 'granted',
+          'ad_personalization': 'granted'
+        });
+      }
+      if (consentBanner) consentBanner.style.display = 'none';
+      window.track('consent_update', { choice: 'granted' });
+    });
+  }
+
+  if (btnConsentReject) {
+    btnConsentReject.addEventListener('click', () => {
+      localStorage.setItem('sapvik_consent', 'denied');
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          'analytics_storage': 'denied',
+          'ad_storage': 'denied',
+          'ad_user_data': 'denied',
+          'ad_personalization': 'denied'
+        });
+      }
+      if (consentBanner) consentBanner.style.display = 'none';
+      window.track('consent_update', { choice: 'denied' });
+    });
+  }
+
+  // ==========================================================================
+  // G. Real Contact & Discovery Audit Form Pipeline (Safe DOM / Zero XSS)
+  // ==========================================================================
   const auditForm = document.getElementById('auditForm');
   if (auditForm) {
     const submitBtn = auditForm.querySelector('button[type="submit"]');
@@ -200,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const service = document.getElementById('formService')?.value || 'all';
       const details = (document.getElementById('formDetails')?.value || '').trim();
       const consent = document.getElementById('formConsent')?.checked;
+      const marketingConsent = Boolean(document.getElementById('formMarketingConsent')?.checked);
       const hp = document.getElementById('formHp')?.value || '';
 
       // Inline validation
@@ -237,6 +343,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storedAudit) auditData = JSON.parse(storedAudit);
       } catch (err) {}
 
+      // Collect Turnstile token if present
+      let turnstileToken = '';
+      if (window.turnstile && document.getElementById('contactTurnstile')) {
+        try {
+          turnstileToken = window.turnstile.getResponse(document.getElementById('contactTurnstile')) || '';
+        } catch (err) {}
+      }
+
       const payload = {
         name,
         phone,
@@ -245,7 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
         website,
         service,
         details,
+        consent: true,
+        marketing_consent: marketingConsent,
         website_url_hp: hp,
+        turnstileToken,
         utm: attribution,
         audit: auditData
       };
@@ -274,21 +391,37 @@ document.addEventListener('DOMContentLoaded', () => {
             source: auditData ? 'audit_tool' : 'contact_form'
           });
 
-          // Show in-form success panel
-          let statusPanel = document.getElementById('formStatusPanel');
+          // Show in-form success panel safely via DOM methods
+          const statusPanel = document.getElementById('formStatusPanel');
           if (statusPanel) {
+            statusPanel.innerHTML = '';
             statusPanel.className = 'form-status-panel success';
-            statusPanel.innerHTML = `
-              <h4 style="font-family: var(--font-display); font-size: 1.2rem; color: var(--c-success); margin-bottom: 0.5rem;">
-                ✓ Discovery Request Logged [Ref: ${result.lead_id}]
-              </h4>
-              <p style="font-size: 0.9rem; color: var(--c-text-primary); margin-bottom: 0.75rem;">
-                Thank you, ${name}. Our lead strategist has received your inquiry for <strong>${business || website || 'your business'}</strong>.
-              </p>
-              <p style="font-size: 0.85rem; color: var(--c-text-muted);">
-                We evaluate your digital architecture and will reach out with actionable findings within 24 business hours.
-              </p>
-            `;
+
+            const h4 = document.createElement('h4');
+            h4.style.fontFamily = 'var(--font-display)';
+            h4.style.fontSize = '1.2rem';
+            h4.style.color = 'var(--c-success)';
+            h4.style.marginBottom = '0.5rem';
+            h4.textContent = `✓ Discovery Request Logged [Ref: ${result.lead_id}]`;
+
+            const p1 = document.createElement('p');
+            p1.style.fontSize = '0.9rem';
+            p1.style.color = 'var(--c-text-primary)';
+            p1.style.marginBottom = '0.75rem';
+            p1.appendChild(document.createTextNode(`Thank you, ${name}. Our lead strategist has received your inquiry for `));
+            const strongBrand = document.createElement('strong');
+            strongBrand.textContent = business || website || 'your business';
+            p1.appendChild(strongBrand);
+            p1.appendChild(document.createTextNode('.'));
+
+            const p2 = document.createElement('p');
+            p2.style.fontSize = '0.85rem';
+            p2.style.color = 'var(--c-text-muted)';
+            p2.textContent = 'We evaluate your digital architecture and will reach out with actionable findings within 24 business hours.';
+
+            statusPanel.appendChild(h4);
+            statusPanel.appendChild(p1);
+            statusPanel.appendChild(p2);
             auditForm.style.display = 'none';
           } else {
             showToast(`Audit request confirmed [Ref: ${result.lead_id}]. We will reach out within 24 hours.`, 'success');
@@ -298,49 +431,83 @@ document.addEventListener('DOMContentLoaded', () => {
           // Failure with WhatsApp fallback
           const errorMsg = result.message || 'Server error logging audit request.';
           showToast(errorMsg, 'error');
-          let statusPanel = document.getElementById('formStatusPanel');
+
+          const statusPanel = document.getElementById('formStatusPanel');
           if (statusPanel) {
+            statusPanel.innerHTML = '';
             statusPanel.className = 'form-status-panel error';
-            statusPanel.innerHTML = `
-              <p style="color: var(--c-vermilion); font-weight: 700; margin-bottom: 0.5rem;">
-                ⚠ Direct submission failed: ${errorMsg}
-              </p>
-              <p style="font-size: 0.88rem; margin-bottom: 1rem;">
-                Your form details were preserved. You can connect directly with our strategist on WhatsApp:
-              </p>
-              <a href="https://wa.me/${SAPVIK_CONFIG.whatsappNumber}?text=${encodeURIComponent('Hi, I attempted to submit an audit request for ' + name + ' (' + (business || 'Business') + '). Could you assist me directly?')}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-                Connect via WhatsApp Direct →
-              </a>
-            `;
+
+            const errHead = document.createElement('p');
+            errHead.style.color = 'var(--c-vermilion)';
+            errHead.style.fontWeight = '700';
+            errHead.style.marginBottom = '0.5rem';
+            errHead.textContent = `⚠ Submission notice: ${errorMsg}`;
+
+            const errDesc = document.createElement('p');
+            errDesc.style.fontSize = '0.88rem';
+            errDesc.style.marginBottom = '1rem';
+            errDesc.textContent = 'Your form details were preserved. You can connect directly with our strategist on WhatsApp:';
+
+            const waMsg = `Hi SAPVIK, I attempted to submit an audit request for ${name} (${business || 'Business'}). Could you assist me directly?`;
+            const waLink = document.createElement('a');
+            waLink.className = 'btn btn-primary btn-sm';
+            waLink.target = '_blank';
+            waLink.rel = 'noopener';
+            waLink.href = `https://wa.me/${SAPVIK_CONFIG.whatsappNumber}?text=${encodeURIComponent(waMsg)}`;
+            waLink.textContent = 'Connect via WhatsApp Direct →';
+
+            statusPanel.appendChild(errHead);
+            statusPanel.appendChild(errDesc);
+            statusPanel.appendChild(waLink);
           }
         }
       } catch (netErr) {
         showToast('Network error contacting server. Please connect via WhatsApp.', 'error');
-        let statusPanel = document.getElementById('formStatusPanel');
+        const statusPanel = document.getElementById('formStatusPanel');
         if (statusPanel) {
+          statusPanel.innerHTML = '';
           statusPanel.className = 'form-status-panel error';
-          statusPanel.innerHTML = `
-            <p style="color: var(--c-vermilion); font-weight: 700; margin-bottom: 0.5rem;">
-              ⚠ Network connectivity issue
-            </p>
-            <p style="font-size: 0.88rem; margin-bottom: 1rem;">
-              Please reach us directly on WhatsApp or phone:
-            </p>
-            <a href="https://wa.me/${SAPVIK_CONFIG.whatsappNumber}?text=${encodeURIComponent('Hi, I would like to schedule a growth audit for ' + name)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-              Connect via WhatsApp Direct →
-            </a>
-          `;
+
+          const errHead = document.createElement('p');
+          errHead.style.color = 'var(--c-vermilion)';
+          errHead.style.fontWeight = '700';
+          errHead.style.marginBottom = '0.5rem';
+          errHead.textContent = '⚠ Network connectivity issue';
+
+          const errDesc = document.createElement('p');
+          errDesc.style.fontSize = '0.88rem';
+          errDesc.style.marginBottom = '1rem';
+          errDesc.textContent = 'Please reach us directly on WhatsApp:';
+
+          const waMsg = `Hi SAPVIK, I would like to schedule a growth audit for ${name || 'my business'}.`;
+          const waLink = document.createElement('a');
+          waLink.className = 'btn btn-primary btn-sm';
+          waLink.target = '_blank';
+          waLink.rel = 'noopener';
+          waLink.href = `https://wa.me/${SAPVIK_CONFIG.whatsappNumber}?text=${encodeURIComponent(waMsg)}`;
+          waLink.textContent = 'Connect via WhatsApp Direct →';
+
+          statusPanel.appendChild(errHead);
+          statusPanel.appendChild(errDesc);
+          statusPanel.appendChild(waLink);
         }
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'SUBMIT AUDIT REQUEST →';
         }
+        if (window.turnstile && document.getElementById('contactTurnstile')) {
+          try {
+            window.turnstile.reset(document.getElementById('contactTurnstile'));
+          } catch (err) {}
+        }
       }
     });
   }
 
-  // G. WhatsApp Direct Handlers
+  // ==========================================================================
+  // H. WhatsApp Direct Handlers
+  // ==========================================================================
   const whatsappBtns = document.querySelectorAll('.whatsapp-connect-btn');
   whatsappBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {

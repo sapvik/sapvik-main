@@ -1,12 +1,14 @@
 /**
  * SAPVIK Growth Estimator & Budget Modeler
- * Spec-compliant, transparent assumptions, no arbitrary stacking
+ * Illustrative simulator loaded from /config/assumptions.json.
+ * Zero unverified claims, no double-toggle bugs, clean accessible inputs.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const budgetSlider = document.getElementById('calcBudgetSlider');
   const budgetValNum = document.getElementById('calcBudgetValue');
-  const serviceChips = document.querySelectorAll('.calc-chip');
+  const industrySelect = document.getElementById('calcIndustrySelect');
+  const checkboxes = document.querySelectorAll('.calc-checkbox');
   const claimBlueprintBtn = document.getElementById('claimBlueprintBtn');
 
   // Outputs
@@ -16,11 +18,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const outEfficiency = document.getElementById('calcOutEfficiency');
   const dispatchText = document.getElementById('blueprintDispatchText');
 
-  // Industry Benchmarks from config/assumptions.json
-  const INDUSTRY_MODELS = {
-    cpl_base: 520,   // Indian commercial median CPL for targeted Google/Meta lead gen
-    cpm_base: 180,   // Indian commercial median CPM
+  // Fallback assumptions in case network fetch fails
+  let assumptionsData = {
+    calculator_type: "illustrative_simulator",
+    industries: {
+      other: { name: "General Local Commercial", cpl_base: 600, cpm_base: 180, source: "placeholder_benchmark" },
+      healthcare: { name: "Clinics & Healthcare", cpl_base: 550, cpm_base: 180, source: "placeholder_benchmark" },
+      d2c: { name: "E-Commerce / D2C", cpl_base: 320, cpm_base: 140, source: "placeholder_benchmark" },
+      b2b: { name: "B2B & Professional Services", cpl_base: 1100, cpm_base: 240, source: "placeholder_benchmark" },
+      education: { name: "Education & Coaching", cpl_base: 480, cpm_base: 160, source: "placeholder_benchmark" }
+    }
   };
+
+  // Attempt to load assumptions from deployed static config
+  try {
+    const res = await fetch('/config/assumptions.json');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.industries) {
+        assumptionsData = json;
+      }
+    }
+  } catch (err) {
+    // Retain fallback defaults
+  }
 
   function formatIndianCurrency(amount) {
     return new Intl.NumberFormat('en-IN', {
@@ -31,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function formatCount(num) {
+    if (typeof num !== 'number') return num;
     if (num >= 100000) {
       return (num / 100000).toFixed(1) + ' Lakh';
     } else if (num >= 1000) {
@@ -41,16 +63,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function calculateOutputs() {
     const budget = budgetSlider ? parseInt(budgetSlider.value, 10) : 50000;
-    
-    // Read active services
+    const selectedIndustryKey = industrySelect ? industrySelect.value : 'other';
+    const industryModel = (assumptionsData.industries && assumptionsData.industries[selectedIndustryKey])
+      ? assumptionsData.industries[selectedIndustryKey]
+      : assumptionsData.industries.other;
+
+    // Read active services from checkbox states
     const activeServices = [];
-    serviceChips.forEach(chip => {
-      const checkbox = chip.querySelector('input[type="checkbox"]');
-      if (checkbox && checkbox.checked) {
-        activeServices.push(checkbox.value);
-        chip.classList.add('active');
+    checkboxes.forEach(cb => {
+      const chip = cb.closest('.calc-chip');
+      if (cb.checked) {
+        activeServices.push(cb.value);
+        if (chip) chip.classList.add('active');
       } else {
-        chip.classList.remove('active');
+        if (chip) chip.classList.remove('active');
       }
     });
 
@@ -74,86 +100,98 @@ document.addEventListener('DOMContentLoaded', () => {
     const hasWebsites = activeServices.includes('websites');
     const hasGMB = activeServices.includes('gmb');
 
-    // 1. Paid Promotions Model (Direct acquisition)
-    let estImpressions = 0;
-    let minInquiries = 0;
-    let maxInquiries = 0;
+    // Model Calculations
+    let impressionsDisplay = '—';
+    let inquiriesDisplay = '—';
+    let efficiencyDisplay = 'Organic Scope';
 
     if (hasPromotions) {
-      // Scale with mild diminishing returns as spend increases
-      const spendScale = Math.pow(budget / 50000, 0.88);
-      const baseLeads = (50000 / INDUSTRY_MODELS.cpl_base) * spendScale;
-      
-      // If conversion-optimized website is also deployed, conversion rate improves by ~20-30%
-      const webMultiplier = hasWebsites ? 1.25 : 1.0;
-      
-      minInquiries = Math.round(baseLeads * 0.85 * webMultiplier);
-      maxInquiries = Math.round(baseLeads * 1.15 * webMultiplier);
-      estImpressions = Math.round((budget / INDUSTRY_MODELS.cpm_base) * 1000);
-    } else if (hasWebsites) {
-      // Website without paid ads relies on existing organic traffic
-      minInquiries = 15;
-      maxInquiries = 30;
-      estImpressions = 5000;
+      // Direct acquisition model based on industry median CPL/CPM
+      const cpl = industryModel.cpl_base || 600;
+      const cpm = industryModel.cpm_base || 180;
+
+      // Realistic budget scaling curve
+      const spendScale = Math.pow(budget / 50000, 0.90);
+      const baseInquiries = (50000 / cpl) * spendScale;
+
+      const minInq = Math.max(5, Math.round(baseInquiries * 0.85));
+      const maxInq = Math.max(minInq + 2, Math.round(baseInquiries * 1.15));
+      const totalImpressions = Math.round((budget / cpm) * 1000);
+
+      impressionsDisplay = `${formatCount(totalImpressions)}+`;
+      inquiriesDisplay = `${minInq} – ${maxInq}`;
+      efficiencyDisplay = hasWebsites ? 'Optimized Funnel' : 'Standard Ad Traffic';
     } else {
-      minInquiries = 10;
-      maxInquiries = 25;
-      estImpressions = 2500;
+      impressionsDisplay = '— (Organic)';
+      inquiriesDisplay = hasWebsites ? 'Organic Baseline' : 'Direct Referrals';
+      efficiencyDisplay = 'Organic Setup';
     }
 
-    // 2. GMB Local Search Lift Model
-    let localLiftStr = 'N/A';
+    // Local 3-Pack Indicator
+    let localLiftStr = 'Not Selected';
     if (hasGMB) {
-      localLiftStr = hasPromotions ? '+180% – +260%' : '+120% – +180%';
-    } else {
-      localLiftStr = 'Not Selected';
+      localLiftStr = hasPromotions ? 'Multi-Channel Push' : 'Local 3-Pack Target';
     }
 
-    // 3. Update DOM
-    if (outImpressions) outImpressions.textContent = estImpressions > 0 ? `${formatCount(estImpressions)}+` : '—';
-    if (outInquiries) outInquiries.textContent = minInquiries > 0 ? `${minInquiries} – ${maxInquiries}` : '—';
+    // Update DOM
+    if (outImpressions) outImpressions.textContent = impressionsDisplay;
+    if (outInquiries) outInquiries.textContent = inquiriesDisplay;
     if (outLocalLift) outLocalLift.textContent = localLiftStr;
-    if (outEfficiency) {
-      outEfficiency.textContent = hasPromotions ? (hasWebsites ? 'Optimized' : 'Standard') : 'Organic Only';
-    }
+    if (outEfficiency) outEfficiency.textContent = efficiencyDisplay;
 
-    // 4. Update Blueprint Summary Dispatch
+    // Update Blueprint Dispatch Note
     if (dispatchText) {
-      const selectedNames = activeServices.map(s => {
-        const labels = {
-          websites: 'Websites Development',
-          gmb: 'GMB Management',
-          media: 'Media Management',
-          promotions: 'Digital Promotions',
-          apps: 'Application Development',
-          branding: 'Branding'
-        };
-        return labels[s] || s;
-      }).join(', ');
+      const labels = {
+        websites: 'Websites Development',
+        gmb: 'GMB Management',
+        media: 'Media Management',
+        promotions: 'Digital Promotions (Ads)',
+        apps: 'Application Development',
+        branding: 'Branding'
+      };
+      const selectedNames = activeServices.map(s => labels[s] || s).join(', ');
 
-      dispatchText.innerHTML = `
-        <strong>Configured Scope:</strong> ${selectedNames}<br>
-        <strong>Allocated Monthly Ad Budget:</strong> ${formatIndianCurrency(budget)}<br>
-        <em>Estimates derived from Indian industry CPL benchmarks. Specific outcomes depend on category competition and sales qualification.</em>
-      `;
+      dispatchText.innerHTML = '';
+      
+      const scopeP = document.createElement('div');
+      scopeP.style.marginBottom = '0.35rem';
+      scopeP.innerHTML = `<strong>Configured Scope:</strong> ${selectedNames}`;
+
+      const budgetP = document.createElement('div');
+      budgetP.style.marginBottom = '0.35rem';
+      budgetP.innerHTML = hasPromotions 
+        ? `<strong>Allocated Monthly Ad Budget:</strong> ${formatIndianCurrency(budget)} (${industryModel.name})`
+        : `<strong>Execution Model:</strong> Non-ad organic baseline (Media budget slider applies when Digital Promotions is active)`;
+
+      const noteP = document.createElement('div');
+      noteP.style.fontSize = '0.8rem';
+      noteP.style.color = 'var(--c-text-muted)';
+      noteP.style.fontStyle = 'italic';
+      noteP.textContent = 'Illustrative simulator based on benchmark placeholders in assumptions.json. Actual returns depend on market category, unit economics, conversion efficiency, and operational close rate.';
+
+      dispatchText.appendChild(scopeP);
+      dispatchText.appendChild(budgetP);
+      dispatchText.appendChild(noteP);
     }
   }
 
-  // Event Listeners
+  // Bind change listeners to checkboxes (fixes the label click double-toggle bug)
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      calculateOutputs();
+      if (window.track) {
+        window.track('calc_interact', { budget: budgetSlider ? budgetSlider.value : 0 });
+      }
+    });
+  });
+
   if (budgetSlider) {
     budgetSlider.addEventListener('input', calculateOutputs);
   }
 
-  serviceChips.forEach(chip => {
-    chip.addEventListener('click', (e) => {
-      const checkbox = chip.querySelector('input[type="checkbox"]');
-      if (checkbox && e.target !== checkbox) {
-        checkbox.checked = !checkbox.checked;
-      }
-      calculateOutputs();
-      window.track('calc_interact', { budget: budgetSlider ? budgetSlider.value : 0 });
-    });
-  });
+  if (industrySelect) {
+    industrySelect.addEventListener('change', calculateOutputs);
+  }
 
   // Claim Blueprint Button Hand-off
   if (claimBlueprintBtn) {
@@ -161,28 +199,27 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       
       const activeServices = [];
-      serviceChips.forEach(chip => {
-        const checkbox = chip.querySelector('input[type="checkbox"]');
-        if (checkbox && checkbox.checked) activeServices.push(checkbox.value);
+      checkboxes.forEach(cb => {
+        if (cb.checked) activeServices.push(cb.value);
       });
 
       const budget = budgetSlider ? parseInt(budgetSlider.value, 10) : 50000;
+      const industryName = industrySelect ? industrySelect.options[industrySelect.selectedIndex].text : 'General';
 
-      // Pre-select service in form if 1 service, else 'all'
       const formService = document.getElementById('formService');
       if (formService) {
         formService.value = activeServices.length === 1 ? activeServices[0] : 'all';
       }
 
-      // Pre-populate details
       const formDetails = document.getElementById('formDetails');
       if (formDetails) {
-        formDetails.value = `[Claimed Blueprint Configuration]\nServices: ${activeServices.join(', ')}\nTarget Ad Budget: ${formatIndianCurrency(budget)} / mo\nPlease reach out with timeline and deliverables.`;
+        formDetails.value = `[Claimed Blueprint Configuration]\nCategory: ${industryName}\nServices: ${activeServices.join(', ')}\nTarget Ad Budget: ${formatIndianCurrency(budget)} / mo\nPlease reach out with technical proposal and deliverables.`;
       }
 
-      window.track('calc_claim', { services: activeServices.join(','), budget });
+      if (window.track) {
+        window.track('calc_claim', { services: activeServices.join(','), budget });
+      }
 
-      // Smooth scroll to contact
       const contactSection = document.getElementById('contact');
       if (contactSection) {
         contactSection.scrollIntoView({ behavior: 'smooth' });
@@ -192,6 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial Calculation Run on DOM ready
+  // Initial Calculation Run
   calculateOutputs();
 });
