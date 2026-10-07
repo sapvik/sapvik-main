@@ -1,0 +1,42 @@
+:root {
+  /* Brand Color Hierarchy (Strict 60/25/10/5 Rule) */
+  --c-bg: #F4F5F6;              /* Warm Paper foundation (60%) */
+  --c-surface: #FFFFFF;         /* Crisp White Card Surface */
+  --c-surface-subdued: #EAECEF; /* Inset Data Surfaces */
+  --c-surface-dark: #12161C;    /* Deep Brand Graphite */
+  
+  /* Text & Contrast (25% Structural Hierarchy) */
+  --c-text-primary: #12161C;   /* Deep Graphite (WCAG AAA on paper) */
+  --c-text-secondary: #303A46; /* Mid Slate (WCAG AAA on paper) */
+  --c-text-muted: #4A5668;     /* Brand Steel (4.8:1 contrast on white) */
+  --c-text-dim: #718096;
+  --c-text-inverse: #FFFFFF;
+
+  /* Structural Hairlines (10% Cadence) */
+  --c-border: #DDE2E7;
+  --c-border-subtle: #E8ECEF;
+  --c-border-strong: #BDC6D0;
+  --border-hairline: 1px solid var(--c-border);
+  --border-bracket: 2px solid var(--c-text-primary);
+
+  /* Focal Accent (5% Maximum - Kept Small & Intentional) */
+  --c-vermilion: #C93A22;      /* WCAG AA Compliant Vermilion (4.65:1 on white) */
+  --c-vermilion-soft: rgba(201, 58, 34, 0.08);
+  --c-vermilion-glow: rgba(201, 58, 34, 0.16);
+  --c-vermilion-hover: #B2301A;
+  --c-success: #15803D;
+  --c-success-soft: rgba(21, 128, 61, 0.08);
+  --c-warning: #B45309;
+
+  /* Typography */
+  --font-display: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Geometry & Layout */
+  --max-w-page: 1240px;
+  --header-h: 72px;
+  --bracket-size: 10px;
+  --shadow-subtle: 0 1px 3px rgba(18, 22, 28, 0.04), 0 4px 12px rgba(18, 22, 28, 0.03);
+  --shadow-elevated: 0 10px 25px -4px rgba(18, 22, 28, 0.07), 0 4px 10px -2px rgba(18, 22, 28, 0.03);
+}

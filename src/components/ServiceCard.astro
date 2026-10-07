@@ -1,0 +1,152 @@
+---
+import type { ServiceItem } from '../config/services';
+
+interface Props {
+  service: ServiceItem;
+}
+
+const { service } = Astro.props;
+---
+
+<article class="service-card framed-card">
+  <div class="card-kicker">
+    <span class="mono-label">{service.code}</span>
+  </div>
+
+  <h3 class="card-title">
+    <a href={`/services/${service.slug}`} class="card-title-link">
+      {service.name}
+    </a>
+  </h3>
+
+  <p class="card-headline">{service.headline}</p>
+  <p class="card-desc">{service.description}</p>
+
+  <div class="card-deliverables">
+    <span class="deliverables-head">Key Deliverables</span>
+    <ul class="deliverables-list">
+      {service.deliverables.map((item) => (
+        <li>{item}</li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="card-footer">
+    <span class="focus-label">Metric Focus:</span>
+    <span class="focus-val">{service.metricsFocus}</span>
+  </div>
+
+  <a href={`/services/${service.slug}`} class="card-cta">
+    Explore Capability &rarr;
+  </a>
+</article>
+
+<style>
+  .service-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .card-kicker {
+    margin-bottom: 0.5rem;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-title-link:hover {
+    color: var(--c-vermilion);
+  }
+
+  .card-headline {
+    font-weight: 600;
+    color: var(--c-text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .card-desc {
+    font-size: 0.88rem;
+    color: var(--c-text-muted);
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-deliverables {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--c-border);
+    margin-bottom: 1.25rem;
+  }
+
+  .deliverables-head {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .deliverables-list {
+    list-style: none;
+    font-size: 0.82rem;
+    color: var(--c-text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .deliverables-list li::before {
+    content: "– ";
+    color: var(--c-vermilion);
+    font-weight: bold;
+  }
+
+  .card-footer {
+    font-size: 0.78rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--c-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .focus-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+  }
+
+  .focus-val {
+    color: var(--c-text-primary);
+    font-weight: 600;
+  }
+
+  .card-cta {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--c-vermilion);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .card-cta:hover {
+    color: var(--c-vermilion-hover);
+  }
+</style>

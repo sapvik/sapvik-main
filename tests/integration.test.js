@@ -6,9 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, '..', 'public');
+const distDir = path.join(__dirname, '..', 'dist');
 
-test('Integration: Static files and critical assets exist in public/ directory', () => {
+test('Integration: Static files and critical assets exist in dist/ directory', () => {
+  assert.ok(fs.existsSync(distDir), 'dist/ directory must exist after build.');
+
   const criticalFiles = [
     'index.html',
     'privacy.html',
@@ -17,26 +19,33 @@ test('Integration: Static files and critical assets exist in public/ directory',
     'sitemap.xml',
     'robots.txt',
     '_headers',
-    'css/styles.css',
-    'css/fonts.css',
-    'js/main.js',
-    'js/engine.js',
-    'js/calculator.js',
     'config/assumptions.json',
     'config/claims.json',
     'config/site-config.json',
-    'assets/og-image.png'
+    'assets/og-image.png',
+    'services/websites-development.html',
+    'services/gmb-management.html',
+    'services/media-management.html',
+    'services/digital-promotions.html',
+    'services/application-development.html',
+    'services/branding.html'
   ];
 
   for (const file of criticalFiles) {
-    const fullPath = path.join(publicDir, file);
-    assert.ok(fs.existsSync(fullPath), `Critical file "${file}" must exist in public/ for Cloudflare Pages deployment.`);
+    const fullPath = path.join(distDir, file);
+    assert.ok(fs.existsSync(fullPath), `Critical file "${file}" must exist in dist/ for Cloudflare Pages deployment.`);
     const stats = fs.statSync(fullPath);
     assert.ok(stats.size > 0, `File "${file}" must not be empty.`);
   }
+
+  // Verify compiled assets in _astro/
+  const astroDir = path.join(distDir, '_astro');
+  assert.ok(fs.existsSync(astroDir), '_astro asset directory must exist');
+  const astroFiles = fs.readdirSync(astroDir);
+  assert.ok(astroFiles.length > 0, '_astro directory must contain compiled client scripts/styles');
 });
 
-test('Integration: Zero placeholder numbers (9876543210) across public files', () => {
+test('Integration: Zero placeholder numbers (9876543210) across dist files', () => {
   function scan(dir) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -49,24 +58,24 @@ test('Integration: Zero placeholder numbers (9876543210) across public files', (
       }
     }
   }
-  scan(publicDir);
+  scan(distDir);
 });
 
-test('Integration: assumptions.json strictly marks every industry source as placeholder_benchmark', () => {
-  const assumptionsPath = path.join(publicDir, 'config', 'assumptions.json');
+test('Integration: assumptions.json strictly marks every industry source as placeholder', () => {
+  const assumptionsPath = path.join(distDir, 'config', 'assumptions.json');
   const assumptions = JSON.parse(fs.readFileSync(assumptionsPath, 'utf8'));
 
   assert.equal(assumptions.calculator_type, 'illustrative_simulator');
   for (const [key, ind] of Object.entries(assumptions.industries || {})) {
-    assert.equal(ind.source, 'placeholder_benchmark', `Industry "${key}" source must be "placeholder_benchmark".`);
+    assert.equal(ind.source, 'placeholder', `Industry "${key}" source must be "placeholder".`);
   }
 });
 
 test('Integration: terms.html contains legal anchors for operational claims', () => {
-  const termsPath = path.join(publicDir, 'terms.html');
+  const termsPath = path.join(distDir, 'terms.html');
   const termsHtml = fs.readFileSync(termsPath, 'utf8');
 
-  assert.ok(termsHtml.includes('id="asset-ownership"'), 'terms.html must contain #asset-ownership');
-  assert.ok(termsHtml.includes('id="ad-billing"'), 'terms.html must contain #ad-billing');
-  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'terms.html must contain #onboarding-sla');
+  assert.ok(termsHtml.includes('id="asset-ownership"'), 'dist/terms.html must contain #asset-ownership');
+  assert.ok(termsHtml.includes('id="ad-billing"'), 'dist/terms.html must contain #ad-billing');
+  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'dist/terms.html must contain #onboarding-sla');
 });

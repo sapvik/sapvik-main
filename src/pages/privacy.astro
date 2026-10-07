@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config/site';
+---
+
+<Base
+  title="Privacy Policy | SAPVIK"
+  description="Privacy Notice and data handling standards for SAPVIK visitors, clients, and partners."
+>
+  <div class="legal-page section">
+    <div class="container legal-container">
+      <div class="legal-head">
+        <span class="mono-label">Privacy Notice</span>
+        <h1 class="legal-title">Data Protection & Privacy Policy</h1>
+        <p class="mono-label" style="color: var(--c-text-muted);">Last Updated: October 2026</p>
+      </div>
+
+      <div class="legal-body framed-card">
+        <section class="legal-sec">
+          <h2>1. Collection of Contact Information</h2>
+          <p>
+            When you submit an audit discovery request or contact form on {SITE.brand.name}, we collect your name, phone number, business email, and optional business details. This information is utilized solely to evaluate your business requirements and provide our growth review.
+          </p>
+        </section>
+
+        <section class="legal-sec">
+          <h2>2. Security & Lead Transmission</h2>
+          <p>
+            Submitted inquiry data is transmitted over encrypted TLS channels and processed server-side at the edge. We do not sell, rent, or trade your contact information to third-party marketing brokers.
+          </p>
+        </section>
+
+        <section class="legal-sec">
+          <h2>3. Cookies & Anonymous Analytics</h2>
+          <p>
+            We implement Google Consent Mode v2. Non-essential analytics and advertising storage cookies remain disabled by default until explicit visitor consent is granted. You can review or update your consent preferences at any time.
+          </p>
+        </section>
+
+        <section class="legal-sec">
+          <h2>4. Data Subject Rights & Contact</h2>
+          <p>
+            Under applicable Indian data protection standards, you have the right to request access to, correction of, or deletion of your submitted personal details. To exercise these rights, email us at <a href={`mailto:${SITE.brand.email}`}>{SITE.brand.email}</a>.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .legal-container {
+    max-width: 840px;
+  }
+  .legal-head {
+    margin-bottom: 2rem;
+  }
+  .legal-title {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .legal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+  .legal-sec h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .legal-sec p {
+    color: var(--c-text-secondary);
+  }
+  .legal-sec a {
+    color: var(--c-vermilion);
+    text-decoration: underline;
+  }
+</style>

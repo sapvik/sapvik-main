@@ -1,0 +1,105 @@
+---
+const FAQS = [
+  {
+    q: "What is your turnaround SLA for discovery inquiries and audits?",
+    a: "We review and respond to discovery submissions within 24 business hours. Our operational team examines your current website response times, local profile health, and commercial objectives before our introductory review."
+  },
+  {
+    q: "Who owns the advertising accounts and created digital assets?",
+    a: "The client retains 100% direct administrative ownership of all Google Ads accounts, Meta Business Managers, domain registrations, code repositories, and creative collateral. We operate strictly as authorized managers; we never hostage client infrastructure."
+  },
+  {
+    q: "How is ad spend billed and managed?",
+    a: "Third-party ad spend is billed directly from Google Ads or Meta to your corporate card. We do not intermediate media payments or add undisclosed percentage markups on top of ad network billing."
+  },
+  {
+    q: "How are campaign results and inquiry metrics verified?",
+    a: "Every lead generation campaign is wired to verifiable conversion actions (completed discovery forms, verified phone calls, direct WhatsApp conversations). We do not substitute vanity impressions or click counts for verified business inquiries."
+  },
+  {
+    q: "Why do organic services not generate direct ad reach numbers in the simulator?",
+    a: "Web development, Google Business optimization, and branding build vital conversion infrastructure and trust. However, buying guaranteed daily customer impressions requires an active media spend in Digital Promotions. We separate organic baseline work from media buying."
+  }
+];
+---
+
+<section class="section faq-section" id="faq">
+  <div class="container">
+    <div class="section-head centered">
+      <span class="mono-label">Operational FAQ</span>
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-sub">
+        Clear answers regarding ownership, operational turnaround, reporting transparency, and engagement policies.
+      </p>
+    </div>
+
+    <div class="faq-list">
+      {FAQS.map((item, idx) => (
+        <details class="faq-item framed-card" id={`faq-${idx}`}>
+          <summary class="faq-summary">
+            <span class="faq-question">{item.q}</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </summary>
+          <div class="faq-content">
+            <p>{item.a}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq-list {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .faq-item {
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .faq-summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--c-text-primary);
+  }
+
+  .faq-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-question {
+    padding-right: 1rem;
+  }
+
+  .faq-icon {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    color: var(--c-vermilion);
+    transition: transform 0.2s ease;
+  }
+
+  .faq-item[open] .faq-icon {
+    transform: rotate(45deg);
+  }
+
+  .faq-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    font-size: 0.92rem;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    border-top: 1px dashed var(--c-border-subtle);
+    padding-top: 1rem;
+  }
+</style>

@@ -1,0 +1,195 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SERVICES, type ServiceItem } from '../../config/services';
+
+export function getStaticPaths() {
+  return SERVICES.map((service) => ({
+    params: { slug: service.slug },
+    props: { service }
+  }));
+}
+
+interface Props {
+  service: ServiceItem;
+}
+
+const { service } = Astro.props;
+const otherServices = SERVICES.filter(s => s.id !== service.id);
+---
+
+<Base
+  title={`${service.name} | SAPVIK Digital Growth`}
+  description={service.headline}
+>
+  <article class="service-detail-page">
+    <div class="container">
+      <div class="service-hero framed-card">
+        <div class="service-kicker">
+          <span class="mono-label">{service.code} &bull; Capability Overview</span>
+        </div>
+        <h1 class="service-title">{service.name}</h1>
+        <p class="service-lead">{service.headline}</p>
+        <p class="service-body">{service.description}</p>
+
+        <div class="service-hero-actions">
+          <a href="/#contact" class="btn btn-primary">
+            Request Strategy Review for {service.name} &rarr;
+          </a>
+          <a href="/#services" class="btn btn-secondary">
+            &larr; View All Capabilities
+          </a>
+        </div>
+      </div>
+
+      <div class="service-details-grid">
+        <div class="details-main framed-card">
+          <h2 class="section-title">Core Deliverables & Scope</h2>
+          <ul class="deliverables-checklist">
+            {service.deliverables.map((item) => (
+              <li>
+                <span class="check-icon" aria-hidden="true">✓</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="details-sidebar framed-card">
+          <h3 class="sidebar-head">Operational Metric Focus</h3>
+          <p class="sidebar-text">
+            Performance on this engagement is evaluated primarily through:
+          </p>
+          <div class="metric-highlight">
+            <strong>{service.metricsFocus}</strong>
+          </div>
+
+          <h3 class="sidebar-head" style="margin-top: 2rem;">Related Capabilities</h3>
+          <ul class="related-list">
+            {otherServices.slice(0, 3).map((other) => (
+              <li>
+                <a href={`/services/${other.slug}`} class="related-link">
+                  {other.name} &rarr;
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .service-detail-page {
+    padding-top: clamp(2rem, 4vw, 3.5rem);
+    padding-bottom: clamp(4rem, 7vw, 6rem);
+  }
+
+  .service-hero {
+    margin-bottom: 2.5rem;
+  }
+
+  .service-kicker {
+    margin-bottom: 0.5rem;
+  }
+
+  .service-title {
+    margin-bottom: 0.75rem;
+    font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+  }
+
+  .service-lead {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--c-text-primary);
+    line-height: 1.45;
+    margin-bottom: 1rem;
+    max-width: 780px;
+  }
+
+  .service-body {
+    font-size: 1.05rem;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 720px;
+  }
+
+  .service-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .service-details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  @media (min-width: 800px) {
+    .service-details-grid {
+      grid-template-columns: 1.8fr 1fr;
+    }
+  }
+
+  .deliverables-checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .deliverables-checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 1.05rem;
+    color: var(--c-text-secondary);
+    line-height: 1.5;
+  }
+
+  .check-icon {
+    color: var(--c-success);
+    font-weight: 800;
+    font-size: 1.2rem;
+  }
+
+  .sidebar-head {
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-text {
+    font-size: 0.9rem;
+    color: var(--c-text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .metric-highlight {
+    background: var(--c-surface-subdued);
+    border-left: 3px solid var(--c-vermilion);
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    color: var(--c-text-primary);
+  }
+
+  .related-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .related-link {
+    font-size: 0.92rem;
+    color: var(--c-text-primary);
+    font-weight: 600;
+  }
+
+  .related-link:hover {
+    color: var(--c-vermilion);
+  }
+</style>

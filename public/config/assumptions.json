@@ -1,5 +1,5 @@
 {
-  "notice": "Illustrative simulator models based on benchmark placeholders. Actual commercial returns depend on market category, unit economics, conversion efficiency, and operational close rate.",
+  "notice": "Illustrative planning simulator based on industry benchmark placeholders. Real commercial returns vary by market dynamics, creative quality, operational close rate, and transaction ticket size.",
   "calculator_type": "illustrative_simulator",
   "industries": {
     "healthcare": {
@@ -10,7 +10,7 @@
       "cpm_base": 180,
       "typical_close_rate": 0.35,
       "typical_ticket": 3500,
-      "source": "placeholder_benchmark"
+      "source": "placeholder"
     },
     "d2c": {
       "name": "E-Commerce / D2C",
@@ -20,37 +20,37 @@
       "cpm_base": 140,
       "typical_close_rate": 0.03,
       "typical_ticket": 1800,
-      "source": "placeholder_benchmark"
+      "source": "placeholder"
     },
     "b2b": {
       "name": "B2B & Professional Services",
-      "cpl_low": 600,
+      "cpl_low": 700,
       "cpl_base": 1100,
       "cpl_high": 1800,
       "cpm_base": 240,
-      "typical_close_rate": 0.20,
-      "typical_ticket": 25000,
-      "source": "placeholder_benchmark"
+      "typical_close_rate": 0.15,
+      "typical_ticket": 45000,
+      "source": "placeholder"
     },
     "education": {
       "name": "Education & Coaching",
-      "cpl_low": 280,
+      "cpl_low": 300,
       "cpl_base": 480,
       "cpl_high": 750,
       "cpm_base": 160,
-      "typical_close_rate": 0.15,
-      "typical_ticket": 12000,
-      "source": "placeholder_benchmark"
+      "typical_close_rate": 0.12,
+      "typical_ticket": 15000,
+      "source": "placeholder"
     },
-    "other": {
-      "name": "General Local Commercial",
-      "cpl_low": 300,
+    "local": {
+      "name": "Local Commercial & Services",
+      "cpl_low": 380,
       "cpl_base": 600,
-      "cpl_high": 950,
+      "cpl_high": 900,
       "cpm_base": 180,
       "typical_close_rate": 0.25,
-      "typical_ticket": 5000,
-      "source": "placeholder_benchmark"
+      "typical_ticket": 8000,
+      "source": "placeholder"
     }
   }
 }

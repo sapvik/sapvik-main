@@ -1,0 +1,72 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config/site';
+---
+
+<Base
+  title="Cookie Policy | SAPVIK"
+  description="Cookie and Consent Mode v2 notice for SAPVIK visitors."
+>
+  <div class="legal-page section">
+    <div class="container legal-container">
+      <div class="legal-head">
+        <span class="mono-label">Cookie Notice</span>
+        <h1 class="legal-title">Cookie & Tracking Standards</h1>
+        <p class="mono-label" style="color: var(--c-text-muted);">Last Updated: October 2026</p>
+      </div>
+
+      <div class="legal-body framed-card">
+        <section class="legal-sec">
+          <h2>1. What Are Cookies?</h2>
+          <p>
+            Cookies are small text records stored on your client browser to preserve session preferences, secure private preview sessions, and measure website performance.
+          </p>
+        </section>
+
+        <section class="legal-sec">
+          <h2>2. Essential vs. Optional Cookies</h2>
+          <p>
+            <strong>Essential Cookies:</strong> Used for session authorization (e.g. edge password preview verification) and security verification (Cloudflare Turnstile bot deterrence). These cookies are required for site security and cannot be disabled.
+          </p>
+          <p style="margin-top: 0.5rem;">
+            <strong>Optional Analytics Cookies:</strong> Used by Google Analytics / GTM to measure anonymous traffic patterns and error states. In compliance with Google Consent Mode v2, these are denied by default until explicitly accepted via our consent banner.
+          </p>
+        </section>
+
+        <section class="legal-sec">
+          <h2>3. Managing Your Choice</h2>
+          <p>
+            You can clear your browser storage or cookies at any time. When you clear your cookies, our consent banner will reappear on your next visit, allowing you to choose again.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .legal-container {
+    max-width: 840px;
+  }
+  .legal-head {
+    margin-bottom: 2rem;
+  }
+  .legal-title {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .legal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+  .legal-sec h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .legal-sec p {
+    color: var(--c-text-secondary);
+  }
+</style>

@@ -1,0 +1,188 @@
+---
+import { SITE } from '../config/site';
+import { SERVICES } from '../config/services';
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <!-- Brand Col -->
+    <div class="footer-col brand-col">
+      <div class="footer-brand">
+        <svg width="28" height="28" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+          <path d="M40 160L100 40L160 160L100 130L40 160Z" fill="var(--c-vermilion)"/>
+        </svg>
+        <span class="footer-brand-title">{SITE.brand.name}</span>
+      </div>
+      <p class="footer-tagline">{SITE.brand.tagline}</p>
+      <div class="footer-sla-badge">
+        <span class="mono-label">Turnaround SLA</span>
+        <p>{SITE.brand.slaStatement}</p>
+      </div>
+    </div>
+
+    <!-- Services Col -->
+    <div class="footer-col">
+      <h3 class="footer-heading">Capabilities</h3>
+      <ul class="footer-list">
+        {SERVICES.map(service => (
+          <li>
+            <a href={`/services/${service.slug}`} class="footer-link">
+              {service.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Communication & Direct Col -->
+    <div class="footer-col">
+      <h3 class="footer-heading">Direct Inquiries</h3>
+      <ul class="footer-list">
+        <li>
+          <a href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`} class="footer-link">
+            {SITE.brand.phoneDisplay}
+          </a>
+        </li>
+        <li>
+          <a href={`mailto:${SITE.brand.email}`} class="footer-link">
+            {SITE.brand.email}
+          </a>
+        </li>
+        <li>
+          <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} class="footer-link" target="_blank" rel="noopener">
+            WhatsApp Direct Chat &rarr;
+          </a>
+        </li>
+      </ul>
+
+      <h3 class="footer-heading" style="margin-top: 1.5rem;">Legal & Privacy</h3>
+      <ul class="footer-list">
+        <li><a href="/privacy" class="footer-link">Privacy Policy</a></li>
+        <li><a href="/terms" class="footer-link">Terms of Service</a></li>
+        <li><a href="/cookies" class="footer-link">Cookie Notice</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-legal-row">
+      <p>&copy; {new Date().getFullYear()} {SITE.brand.name}. All rights reserved.</p>
+      <p class="footer-disclaimer">
+        All growth models are illustrative. Digital marketing campaigns are structured with transparent client asset ownership and documented SLAs.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--c-surface-dark);
+    color: #CBD5E1;
+    padding-top: clamp(3.5rem, 6vw, 5rem);
+    padding-bottom: 2rem;
+    border-top: 1px solid #232A34;
+    margin-top: auto;
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-inner {
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 3rem;
+    }
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .footer-brand-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    color: #FFFFFF;
+  }
+
+  .footer-tagline {
+    font-size: 0.95rem;
+    color: #94A3B8;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    max-width: 320px;
+  }
+
+  .footer-sla-badge {
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 2px solid var(--c-vermilion);
+    padding: 0.75rem 1rem;
+    max-width: 320px;
+  }
+
+  .footer-sla-badge p {
+    font-size: 0.82rem;
+    color: #E2E8F0;
+    margin-top: 0.25rem;
+  }
+
+  .footer-heading {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    margin-bottom: 1rem;
+  }
+
+  .footer-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .footer-link {
+    font-size: 0.9rem;
+    color: #94A3B8;
+    transition: color 0.15s ease;
+  }
+
+  .footer-link:hover {
+    color: #FFFFFF;
+  }
+
+  .footer-bottom {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .footer-legal-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+    color: #64748B;
+  }
+
+  @media (min-width: 768px) {
+    .footer-legal-row {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .footer-disclaimer {
+    max-width: 640px;
+  }
+</style>

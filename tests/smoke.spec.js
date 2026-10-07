@@ -66,6 +66,11 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
 
+    // Scroll simulator into view and ensure React island is hydrated
+    const simulator = page.locator('#simulator');
+    await simulator.scrollIntoViewIfNeeded();
+    await expect(page.locator('#simulator[data-hydrated="true"]')).toBeVisible();
+
     const promotionsChip = page.locator('label.calc-chip:has(input[value="promotions"])');
     const promotionsCheckbox = promotionsChip.locator('input[type="checkbox"]');
 

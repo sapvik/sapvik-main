@@ -6,6 +6,8 @@ __pycache__/
 
 # Build outputs
 dist/
+.astro/
+scratch/
 
 # Agent Skills & Internal Workspaces (Exclude from deployment)
 .agents/

@@ -1,0 +1,130 @@
+---
+import Base from '../layouts/Base.astro';
+import { SERVICES } from '../config/services';
+import ServiceCard from '../components/ServiceCard.astro';
+import Process from '../components/Process.astro';
+import Faq from '../components/Faq.astro';
+import Scanner from '../components/islands/Scanner.tsx';
+import Heatmap from '../components/islands/Heatmap.tsx';
+import Calculator from '../components/islands/Calculator.tsx';
+import ContactForm from '../components/islands/ContactForm.tsx';
+---
+
+<Base
+  title="SAPVIK | Precision Digital Growth & Acquisition Partner"
+  description="We build fast, conversion-engineered digital platforms and manage paid acquisition campaigns for growing commercial enterprises in India."
+>
+  <!-- Hero Section: One clear sentence plus live Scanner -->
+  <section class="hero-section" id="home">
+    <div class="container">
+      <div class="hero-content">
+        <span class="mono-label">Digital Growth Infrastructure</span>
+        <h1 class="hero-title">
+          We build fast, conversion-focused web platforms and manage targeted acquisition campaigns for growing businesses.
+        </h1>
+        <p class="hero-sub">
+          Engineering disciplined digital architecture across sub-second websites, localized Google Business visibility, and transparent paid advertising.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary">Start Discovery Review &rarr;</a>
+          <a href="#services" class="btn btn-secondary">Explore 6 Capabilities</a>
+        </div>
+      </div>
+
+      <!-- Real-Time Scanner Island (client:load) -->
+      <Scanner client:load />
+    </div>
+  </section>
+
+  <!-- Services Capabilities Section -->
+  <section class="section services-section" id="services">
+    <div class="container">
+      <div class="section-head centered">
+        <span class="mono-label">Execution Stack</span>
+        <h2 class="section-title">Six Integrated Growth Capabilities</h2>
+        <p class="section-sub">
+          Modular digital capabilities designed to operate as a unified customer acquisition pipeline.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        {SERVICES.map((service) => (
+          <ServiceCard service={service} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Local Visibility Density Heatmap Section -->
+  <section class="section heatmap-section">
+    <div class="container">
+      <Heatmap client:visible />
+    </div>
+  </section>
+
+  <!-- Growth Simulator Section -->
+  <section class="section simulator-section">
+    <div class="container">
+      <Calculator client:visible />
+    </div>
+  </section>
+
+  <!-- Delivery Process Section -->
+  <Process />
+
+  <!-- Operational FAQ Section -->
+  <Faq />
+
+  <!-- Contact Discovery Form Section -->
+  <section class="section contact-section" id="contact-section">
+    <div class="container">
+      <ContactForm client:load />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero-section {
+    padding-top: clamp(2.5rem, 5vw, 4.5rem);
+    padding-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .hero-content {
+    max-width: 860px;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-title {
+    margin-top: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: clamp(2.2rem, 5.2vw, 3.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  .hero-sub {
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: var(--c-text-muted);
+    line-height: 1.55;
+    margin-bottom: 1.75rem;
+    max-width: 720px;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .services-section {
+    background: #FFFFFF;
+    border-top: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .heatmap-section, .simulator-section {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+</style>

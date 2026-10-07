@@ -1,49 +1,49 @@
 {
-  "notice": "All marketing statements and operational commitments must be backed by documented evidence before marking verified: true.",
+  "notice": "All marketing statements, commitments, and metrics must be backed by documented evidence before marking verified: true. Unverified claims (verified: false) must never render on public pages.",
   "claims": [
     {
-      "id": "sla_response",
+      "id": "claim_sla_response",
       "statement": "<24h",
-      "claim_text": "24 business hours discovery turnaround",
+      "claim_text": "24 business hours response turnaround on discovery inquiries",
       "type": "operational_sla",
       "verified": true,
-      "evidence": "https://sapvik.com/terms.html#onboarding-sla",
+      "evidence": "Terms of Service Section on operational turnaround SLA",
       "last_updated": "2026-10-07"
     },
     {
-      "id": "pillars_count",
-      "statement": "6 Pillars",
+      "id": "claim_service_count",
+      "statement": "6 Services",
       "claim_text": "Six integrated execution capabilities",
       "type": "service_catalog",
       "verified": true,
-      "evidence": "https://sapvik.com/#services",
+      "evidence": "Documented in services configuration catalog",
       "last_updated": "2026-10-07"
     },
     {
-      "id": "asset_ownership",
-      "statement": "100%",
-      "claim_text": "Complete administrative client asset ownership",
+      "id": "claim_direct_asset_control",
+      "statement": "Direct Ownership",
+      "claim_text": "Clients retain direct administrative ownership of advertising accounts and digital assets",
       "type": "commercial_policy",
       "verified": true,
-      "evidence": "https://sapvik.com/terms.html#asset-ownership",
+      "evidence": "Terms of Service Section on intellectual property and account ownership",
       "last_updated": "2026-10-07"
     },
     {
-      "id": "zero_markup",
+      "id": "claim_unverified_lcp_guarantee",
+      "statement": "<1.0s LCP",
+      "claim_text": "Sub-second LCP guaranteed on all devices",
+      "type": "performance_metric",
+      "verified": false,
+      "evidence": "TODO_PENDING_CLIENT_CONFIRMATION",
+      "last_updated": "2026-10-07"
+    },
+    {
+      "id": "claim_unverified_zero_markup",
       "statement": "0% Markup",
-      "claim_text": "Zero agency markup on client ad spend",
+      "claim_text": "Zero markup on third-party ad spend",
       "type": "commercial_policy",
-      "verified": true,
-      "evidence": "https://sapvik.com/terms.html#ad-billing",
-      "last_updated": "2026-10-07"
-    },
-    {
-      "id": "unit_model",
-      "statement": "Unit Model",
-      "claim_text": "Transparent unit economics formula",
-      "type": "operational_transparency",
-      "verified": true,
-      "evidence": "https://sapvik.com/config/assumptions.json",
+      "verified": false,
+      "evidence": "TODO_PENDING_CLIENT_CONFIRMATION",
       "last_updated": "2026-10-07"
     }
   ]

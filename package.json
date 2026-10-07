@@ -4,9 +4,12 @@
   "type": "module",
   "description": "SAPVIK Official Website - Precision Digital Growth Partner",
   "scripts": {
-    "dev": "npx wrangler pages dev public --port 8081",
+    "dev:astro": "astro dev --port 4321",
+    "build": "astro build",
+    "preview": "astro preview",
+    "dev": "npx wrangler pages dev dist --port 8082",
     "dev:python": "python server.py",
-    "test": "node --test tests/*.test.js",
+    "test": "node --experimental-strip-types --test tests/*.test.js && node scripts/verify-claims.js",
     "test:smoke": "npx playwright test"
   },
   "keywords": [
@@ -19,6 +22,15 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.0.1",
+    "astro": "^7.3.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

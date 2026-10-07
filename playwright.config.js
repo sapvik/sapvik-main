@@ -5,7 +5,7 @@ export default defineConfig({
   testMatch: /.*\.spec\.js/,
   timeout: 15000,
   webServer: {
-    command: 'npx wrangler pages dev public --port 8082',
+    command: 'npx wrangler pages dev dist --port 8082',
     port: 8082,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
