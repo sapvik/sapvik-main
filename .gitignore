@@ -4,13 +4,15 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Agent Skills & Internal Workspaces (Exclude from production deployment)
+# Build outputs
+dist/
+
+# Agent Skills & Internal Workspaces (Exclude from deployment)
 .agents/
 skills-lock.json
 
 # Local Environment & Secrets
-.env
-.env.local
+.env*
 .dev.vars
 *.log
 leads.jsonl
