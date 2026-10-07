@@ -176,4 +176,105 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await expect(banner).toBeVisible();
   });
 
+  test('Mobile Navigation Drawer: Opens, traps focus, and closes with Escape key', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/');
+
+    const hamburger = page.locator('#hamburgerBtn');
+    const drawer = page.locator('#mobileDrawer');
+    const mainContent = page.locator('#main-content');
+
+    // Initial state: drawer hidden, not expanded
+    await expect(hamburger).toHaveAttribute('aria-expanded', 'false');
+    await expect(drawer).toBeHidden();
+
+    // Click hamburger: drawer opens, expanded=true, main content receives inert
+    await hamburger.click();
+    await expect(drawer).toBeVisible();
+    await expect(hamburger).toHaveAttribute('aria-expanded', 'true');
+    await expect(mainContent).toHaveAttribute('inert', '');
+
+    // Press Escape: drawer closes, expanded=false, inert removed
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(hamburger).toHaveAttribute('aria-expanded', 'false');
+    await expect(mainContent).not.toHaveAttribute('inert');
+  });
+
+  test('Contact Pipeline: Renders direct WhatsApp fallback when server delivery fails', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+
+    // Mock /api/contact endpoint failure
+    await page.route('**/api/contact', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ok: false,
+          error: 'delivery_offline',
+          whatsapp_fallback: true,
+          message: 'Delivery service is currently offline. Your data has been preserved.'
+        })
+      });
+    });
+
+    // Fill mandatory fields
+    await page.fill('#formName', 'Priya Patel');
+    await page.fill('#formPhone', '+91 98200 12345');
+    await page.fill('#formEmail', 'priya@business.in');
+    await page.check('#formConsent');
+
+    // Submit
+    await page.click('#auditForm button[type="submit"]');
+
+    // Verify fallback action and WhatsApp direct link
+    const fallbackContainer = page.locator('.whatsapp-fallback-action');
+    await expect(fallbackContainer).toBeVisible();
+    const waLink = fallbackContainer.locator('a[href*="wa.me"]');
+    await expect(waLink).toBeVisible();
+    await expect(waLink).toHaveAttribute('href', /wa\.me\/918800592147/);
+  });
+
+  test('Website Scanner: Empty state renders dashes and failed probe renders honest error panel', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+
+    const scanner = page.locator('#scanner');
+    await scanner.scrollIntoViewIfNeeded();
+
+    // Verify initial readout cards show "—"
+    const responseTimeReadout = scanner.locator('.readout-card:has-text("Response Time") .readout-value');
+    await expect(responseTimeReadout).toHaveText('—');
+
+    const sslReadout = scanner.locator('.readout-card:has-text("TLS / SSL Status") .readout-value');
+    await expect(sslReadout).toHaveText('—');
+
+    // Mock /api/audit to return honest unreachable host error
+    await page.route('**/api/audit', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: 'unreachable_host',
+          message: 'Target host is unreachable or domain does not exist.'
+        })
+      });
+    });
+
+    // Submit invalid target domain
+    await page.fill('.scanner-input', 'https://nonexistent-sample-probe-999.invalid');
+    await page.click('.scanner-btn');
+
+    // Verify error panel displays
+    const errPanel = scanner.locator('.scanner-error-panel');
+    await expect(errPanel).toBeVisible();
+    await expect(errPanel).toContainText('Target host is unreachable');
+
+    // Fallback CTA is visible
+    const manualCta = errPanel.locator('a[href="#contact"]');
+    await expect(manualCta).toBeVisible();
+  });
+
 });
