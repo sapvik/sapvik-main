@@ -18,3 +18,8 @@ leads.jsonl
 # OS generated
 .DS_Store
 Thumbs.db
+
+# Cloudflare & Testing temporary files
+.wrangler/
+test-results/
+playwright-report/
