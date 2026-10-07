@@ -17,10 +17,10 @@
   <meta property="og:url" content="https://sapvik.com/">
   <meta property="og:title" content="SAPVIK | Precision Digital Growth Partner">
   <meta property="og:description" content="More calls, leads, and revenue from your website, Google, and ads. Performance digital marketing engineered for ambitious businesses.">
-  <meta property="og:image" content="https://sapvik.com/assets/logo.png">
+  <meta property="og:image" content="https://sapvik.com/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SAPVIK Logo - Build. Be Seen. Grow.">
+  <meta property="og:image:alt" content="SAPVIK - Precision Digital Growth Partner">
   <meta property="og:site_name" content="SAPVIK">
   <meta property="og:locale" content="en_IN">
 
@@ -29,14 +29,40 @@
   <meta name="twitter:url" content="https://sapvik.com/">
   <meta name="twitter:title" content="SAPVIK | Precision Digital Growth Partner">
   <meta name="twitter:description" content="High-performance websites, Google Business Profile dominance, and targeted acquisition campaigns.">
-  <meta name="twitter:image" content="https://sapvik.com/assets/logo.png">
+  <meta name="twitter:image" content="https://sapvik.com/assets/og-image.png">
 
   <!-- Theme & Mobile Optimization -->
   <meta name="theme-color" content="#F4F5F6">
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=3">
 
-  <!-- Stylesheet -->
+  <!-- Self-Hosted Web Fonts & Core Styles -->
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Cloudflare Turnstile Script -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <!-- Google Consent Mode v2 (Default Denied - Privacy First) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'analytics_storage': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'wait_for_update': 500
+    });
+  </script>
+
+  <!-- Google Tag Manager Container Initializer -->
+  <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-SAPVIK');
+  </script>
 
   <!-- Structured Data: Organization & ProfessionalService (JSON-LD) -->
   <script type="application/ld+json">
@@ -186,7 +212,12 @@
       <!-- Header CTAs -->
       <div style="display: flex; align-items: center; gap: 1rem;">
         <a href="#contact" class="btn btn-primary btn-sm">Audit Request →</a>
-        <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNavDrawer">MENU ☰</button>
+        <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNavDrawer">
+          <span class="hamburger-box" aria-hidden="true">
+            <span class="hamburger-inner"></span>
+          </span>
+          <span class="mobile-toggle-label">MENU</span>
+        </button>
       </div>
     </div>
   </header>
@@ -211,7 +242,7 @@
   <main id="mainContent">
 
     <!-- ==========================================================================
-         HERO SECTION: VALUE PROPOSITION + FORENSIC AUDIT FRONT-AND-CENTER
+         HERO SECTION: VALUE PROPOSITION + LIVE DIAGNOSTIC CONSOLE
          ========================================================================== -->
     <section class="hero-section" id="home" aria-label="Introduction">
       <div class="container">
@@ -259,23 +290,26 @@
             </div>
           </div>
 
-          <!-- Hero Right: Live Forensic Audit Console -->
+          <!-- Hero Right: Live Technical Diagnostic Console -->
           <div class="hero-visual">
             <div class="frame-box hero-audit-deck">
               <div class="audit-deck-header">
                 <div class="mono-label" style="color: var(--c-vermilion); margin-bottom: 0.35rem;">Live Technical Diagnostic</div>
                 <h3 class="audit-deck-title">Test Your Website Health in Real Time</h3>
                 <p class="audit-deck-subtitle">
-                  Enter your domain to evaluate server response latency, SSL certificate health, structured schema, and ad attribution pixels.
+                  Enter your domain to evaluate server response time, SSL certificate health, structured schema, and ad attribution pixels.
                 </p>
               </div>
 
               <!-- Input Area -->
               <div class="scanner-input-group">
                 <label for="scannerUrlInput" class="visually-hidden" style="position: absolute; width: 1px; height: 1px; overflow: hidden;">Target Website URL</label>
-                <input type="text" id="scannerUrlInput" class="scanner-input" placeholder="e.g. kailashclinic.in" value="google.com">
+                <input type="text" id="scannerUrlInput" class="scanner-input" placeholder="e.g. kailashclinic.in" value="">
                 <button type="button" id="runScanBtn" class="btn btn-primary btn-sm">RUN SCAN</button>
               </div>
+
+              <!-- Turnstile Bot Challenge -->
+              <div class="cf-turnstile" id="scannerTurnstile" data-sitekey="0x4AAAAAAAxPlaceholder" data-theme="light" style="margin-top: 0.75rem;"></div>
 
               <!-- Progress Bar -->
               <div class="scanner-progress-track" id="scannerProgressTrack">
@@ -290,37 +324,31 @@
               <!-- Metrics Readout -->
               <div class="scanner-results-deck">
                 <div class="scanner-metric-cell">
-                  <div class="scanner-metric-val" id="scanScoreVal">78/100</div>
+                  <div class="scanner-metric-val" id="scanScoreVal">—</div>
                   <div class="scanner-metric-lbl">HEALTH SCORE</div>
                 </div>
                 <div class="scanner-metric-cell">
-                  <div class="scanner-metric-val" id="scanTtfbVal">410ms</div>
-                  <div class="scanner-metric-lbl">MEASURED TTFB</div>
+                  <div class="scanner-metric-val" id="scanTtfbVal">—</div>
+                  <div class="scanner-metric-lbl">RESPONSE TIME</div>
                 </div>
                 <div class="scanner-metric-cell">
-                  <div class="scanner-metric-val" style="color: var(--c-success);">VALID</div>
-                  <div class="scanner-metric-lbl">SSL SECURITY</div>
+                  <div class="scanner-metric-val" id="scanSslVal">—</div>
+                  <div class="scanner-metric-lbl">SSL STATUS</div>
                 </div>
               </div>
 
               <!-- Findings List -->
               <ul class="scanner-findings-list" id="scannerFindingsContainer">
-                <li class="scanner-finding-item good">
+                <li class="scanner-finding-item info">
                   <div>
-                    <div style="font-weight: 700;">Fast Edge Server Response</div>
-                    <div style="font-size: 0.78rem; color: var(--c-text-muted);">Initial byte response within recommended thresholds.</div>
-                  </div>
-                </li>
-                <li class="scanner-finding-item critical">
-                  <div>
-                    <div style="font-weight: 700;">Meta Conversion Pixel Missing</div>
-                    <div style="font-size: 0.78rem; color: var(--c-text-muted);">Social ad acquisition tracking is unverified in root HTML.</div>
+                    <div style="font-weight: 700;">Live Diagnostic Standby</div>
+                    <div style="font-size: 0.78rem; color: var(--c-text-muted);">Enter any live website domain above to inspect response latency, SSL certificate health, Schema entities, and attribution scripts.</div>
                   </div>
                 </li>
               </ul>
 
               <div style="margin-top: 1.25rem; font-size: 0.78rem; color: var(--c-text-muted); text-align: right;">
-                <a href="#contact" style="color: var(--c-vermilion); font-weight: 600;">Request full 28-point architectural audit report →</a>
+                <a href="#contact" style="color: var(--c-vermilion); font-weight: 600;">Request comprehensive discovery audit report →</a>
               </div>
             </div>
           </div>
@@ -610,10 +638,10 @@
     <section class="section-pad" id="calculator" aria-label="Growth Simulator and ROI Calculator">
       <div class="container">
         <div class="section-head">
-          <span class="mono-label">Budget Modeler</span>
-          <h2 class="section-title">Growth Simulator & Monthly Inquiries</h2>
+          <span class="mono-label">Illustrative Modeler</span>
+          <h2 class="section-title">Illustrative Growth Simulator</h2>
           <p class="section-desc">
-            Model projected monthly reach and inquiries based on your target marketing budget and service configuration.
+            Explore directional monthly impressions and inquiries based on benchmark models and your target service configuration.
           </p>
         </div>
 
@@ -622,6 +650,17 @@
           <!-- Controls Left -->
           <div class="calc-controls">
             
+            <div style="margin-bottom: 1.25rem;">
+              <label for="calcIndustrySelect" class="form-label">Commercial Category</label>
+              <select id="calcIndustrySelect" class="form-control" style="background: var(--c-surface);">
+                <option value="other" selected>General Local Commercial (Median CPL ₹600)</option>
+                <option value="healthcare">Clinics & Healthcare (Median CPL ₹550)</option>
+                <option value="d2c">E-Commerce / D2C (Median CPL ₹320)</option>
+                <option value="b2b">B2B & Professional Services (Median CPL ₹1,100)</option>
+                <option value="education">Education & Coaching (Median CPL ₹480)</option>
+              </select>
+            </div>
+
             <div class="calc-label-heading">Select Required Services</div>
             <div class="calc-chips-container">
               <label class="calc-chip active">
@@ -672,16 +711,16 @@
             <div>
               <div class="mono-label" style="margin-bottom: 0.5rem; color: var(--c-vermilion);">PROJECTED MONTHLY OUTPUT</div>
               <h3 style="font-family: var(--font-display); font-size: 1.45rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 1.5rem;">
-                Estimated Acquisition Impact
+                Illustrative Simulator Output
               </h3>
 
               <div class="telemetry-grid">
                 <div class="telemetry-cell">
                   <div class="telemetry-val" id="calcOutImpressions">277.8k+</div>
-                  <div class="telemetry-lbl">ESTIMATED REACH</div>
+                  <div class="telemetry-lbl">ESTIMATED IMPRESSIONS</div>
                 </div>
                 <div class="telemetry-cell highlight">
-                  <div class="telemetry-val" id="calcOutInquiries" style="color: var(--c-vermilion);">82 – 110</div>
+                  <div class="telemetry-val" id="calcOutInquiries" style="color: var(--c-vermilion);">71 – 95</div>
                   <div class="telemetry-lbl">ESTIMATED INQUIRIES</div>
                 </div>
                 <div class="telemetry-cell">
@@ -697,7 +736,7 @@
               <div class="blueprint-dispatch" id="blueprintDispatchText">
                 <strong>Configured Scope:</strong> Websites Development, GMB Management, Digital Promotions<br>
                 <strong>Allocated Monthly Ad Budget:</strong> ₹50,000<br>
-                <em>Estimates derived from Indian industry CPL benchmarks. Specific outcomes depend on category competition and sales qualification.</em>
+                <em>Illustrative simulator based on benchmark placeholders in assumptions.json. Actual returns depend on market category, unit economics, conversion efficiency, and operational close rate.</em>
               </div>
             </div>
 
@@ -769,9 +808,9 @@
       <div class="container">
         <div class="section-head">
           <span class="mono-label">Accountability</span>
-          <h2 class="section-title">Built on Clarity and Measurable Impact</h2>
+          <h2 class="section-title">Built on Clarity and Measurable Standards</h2>
           <p class="section-desc">
-            Growth marketing without ambiguous jargon. Every strategy is backed by verifiable numbers.
+            Growth marketing without ambiguous jargon or unverifiable claims. Every operational commitment is documented, auditable, and backed by contractual SLA.
           </p>
         </div>
 
@@ -794,24 +833,24 @@
 
           <div class="proof-grid">
             <div class="proof-sheet">
-              <div class="proof-client-tag">Healthcare & Clinic Case</div>
-              <div class="proof-metric-big">+310%</div>
-              <p class="proof-desc">Growth in verified local appointment calls following local GMB 3-pack expansion and page speed overhaul.</p>
+              <div class="proof-client-tag">Operational SLA</div>
+              <div class="proof-metric-big">&lt;24h</div>
+              <p class="proof-desc">Technical discovery turnaround. Rapid diagnostic response on incoming architecture reviews. <a href="terms.html#onboarding-sla" class="proof-evidence-link">Terms § Onboarding SLA →</a></p>
             </div>
             <div class="proof-sheet">
-              <div class="proof-client-tag">E-Commerce / D2C Case</div>
-              <div class="proof-metric-big">4.2x</div>
-              <p class="proof-desc">Return on ad spend achieved on Meta and Google shopping campaigns with server-side CAPI attribution.</p>
+              <div class="proof-client-tag">Commercial Policy</div>
+              <div class="proof-metric-big">100%</div>
+              <p class="proof-desc">Complete administrative client asset ownership. You hold DNS, analytics, and creative code directly. <a href="terms.html#asset-ownership" class="proof-evidence-link">Terms § Asset Ownership →</a></p>
             </div>
             <div class="proof-sheet">
-              <div class="proof-client-tag">Professional Services Case</div>
-              <div class="proof-metric-big">#1 Rank</div>
-              <p class="proof-desc">Dominant position 1 ranking across primary commercial keywords and local Google map pack queries.</p>
+              <div class="proof-client-tag">Billing Transparency</div>
+              <div class="proof-metric-big">0% Markup</div>
+              <p class="proof-desc">Zero agency markup on client ad spend. Direct billing through your own Google and Meta accounts. <a href="terms.html#ad-billing" class="proof-evidence-link">Terms § Ad Billing →</a></p>
             </div>
             <div class="proof-sheet">
-              <div class="proof-client-tag">Custom Web App Case</div>
-              <div class="proof-metric-big">14 hrs / wk</div>
-              <p class="proof-desc">Administrative time saved by replacing manual spreadsheets with an automated client booking portal.</p>
+              <div class="proof-client-tag">Simulator Integrity</div>
+              <div class="proof-metric-big">Unit Model</div>
+              <p class="proof-desc">Open benchmark formula. Transparent assumptions grounded in published industry medians. <a href="config/assumptions.json" target="_blank" class="proof-evidence-link">View Assumptions →</a></p>
             </div>
           </div>
 
@@ -1002,11 +1041,21 @@
               </div>
 
               <div class="form-consent-row">
-                <input type="checkbox" id="formConsent" class="form-consent-checkbox" required checked>
+                <input type="checkbox" id="formConsent" class="form-consent-checkbox" required>
                 <label for="formConsent">
-                  I agree to receive a digital growth audit and consultation. Handled under our <a href="privacy.html" target="_blank" style="color: var(--c-vermilion); text-decoration: underline;">Privacy Policy</a>.
+                  I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="privacy.html" target="_blank" style="color: var(--c-vermilion); text-decoration: underline;">Privacy Policy</a>. *
                 </label>
               </div>
+
+              <div class="form-consent-row" style="margin-top: -0.5rem; margin-bottom: 1.25rem;">
+                <input type="checkbox" id="formMarketingConsent" class="form-consent-checkbox">
+                <label for="formMarketingConsent" style="font-size: 0.8rem; color: var(--c-text-muted);">
+                  (Optional) Send me occasional growth engineering guides and benchmark updates.
+                </label>
+              </div>
+
+              <!-- Turnstile Bot Challenge Container -->
+              <div class="cf-turnstile" id="contactTurnstile" data-sitekey="0x4AAAAAAAxPlaceholder" data-theme="light" style="margin-bottom: 1.25rem;"></div>
 
               <button type="submit" class="btn btn-vermilion btn-lg btn-full">
                 <span>Submit Audit Request</span>
@@ -1109,6 +1158,22 @@
     <a href="#contact" class="dock-btn dock-btn-audit">
       <span>Claim Free Audit</span>
     </a>
+  </aside>
+
+  <!-- Cookie & Analytics Consent Banner (Google Consent Mode v2) -->
+  <aside id="consentBanner" class="consent-banner" aria-label="Privacy and Cookie Consent" style="display: none;">
+    <div class="container consent-inner">
+      <div class="consent-copy">
+        <strong style="color: var(--c-text-primary); font-family: var(--font-display);">Privacy & Analytics Preferences</strong>
+        <p style="font-size: 0.85rem; color: var(--c-text-secondary); margin-top: 0.25rem; line-height: 1.5;">
+          We use strictly necessary storage for site security and optional analytics to measure diagnostic performance. No data broker sales. View our <a href="cookies.html" style="color: var(--c-vermilion); text-decoration: underline;">Cookie Disclosure</a> and <a href="privacy.html" style="color: var(--c-vermilion); text-decoration: underline;">Privacy Policy</a>.
+        </p>
+      </div>
+      <div class="consent-actions">
+        <button type="button" id="btnConsentReject" class="btn btn-secondary btn-sm">Necessary Only</button>
+        <button type="button" id="btnConsentAccept" class="btn btn-vermilion btn-sm">Accept Analytics</button>
+      </div>
+    </div>
   </aside>
 
   <!-- Interactive JavaScript Bundles -->

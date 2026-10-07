@@ -1,0 +1,50 @@
+{
+  "notice": "All marketing statements and operational commitments must be backed by documented evidence before marking verified: true.",
+  "claims": [
+    {
+      "id": "sla_response",
+      "statement": "<24h",
+      "claim_text": "24 business hours discovery turnaround",
+      "type": "operational_sla",
+      "verified": true,
+      "evidence": "https://sapvik.com/terms.html#onboarding-sla",
+      "last_updated": "2026-10-07"
+    },
+    {
+      "id": "pillars_count",
+      "statement": "6 Pillars",
+      "claim_text": "Six integrated execution capabilities",
+      "type": "service_catalog",
+      "verified": true,
+      "evidence": "https://sapvik.com/#services",
+      "last_updated": "2026-10-07"
+    },
+    {
+      "id": "asset_ownership",
+      "statement": "100%",
+      "claim_text": "Complete administrative client asset ownership",
+      "type": "commercial_policy",
+      "verified": true,
+      "evidence": "https://sapvik.com/terms.html#asset-ownership",
+      "last_updated": "2026-10-07"
+    },
+    {
+      "id": "zero_markup",
+      "statement": "0% Markup",
+      "claim_text": "Zero agency markup on client ad spend",
+      "type": "commercial_policy",
+      "verified": true,
+      "evidence": "https://sapvik.com/terms.html#ad-billing",
+      "last_updated": "2026-10-07"
+    },
+    {
+      "id": "unit_model",
+      "statement": "Unit Model",
+      "claim_text": "Transparent unit economics formula",
+      "type": "operational_transparency",
+      "verified": true,
+      "evidence": "https://sapvik.com/config/assumptions.json",
+      "last_updated": "2026-10-07"
+    }
+  ]
+}

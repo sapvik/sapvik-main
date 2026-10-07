@@ -1,0 +1,56 @@
+{
+  "notice": "Illustrative simulator models based on benchmark placeholders. Actual commercial returns depend on market category, unit economics, conversion efficiency, and operational close rate.",
+  "calculator_type": "illustrative_simulator",
+  "industries": {
+    "healthcare": {
+      "name": "Clinics & Healthcare",
+      "cpl_low": 350,
+      "cpl_base": 550,
+      "cpl_high": 850,
+      "cpm_base": 180,
+      "typical_close_rate": 0.35,
+      "typical_ticket": 3500,
+      "source": "placeholder_benchmark"
+    },
+    "d2c": {
+      "name": "E-Commerce / D2C",
+      "cpl_low": 180,
+      "cpl_base": 320,
+      "cpl_high": 500,
+      "cpm_base": 140,
+      "typical_close_rate": 0.03,
+      "typical_ticket": 1800,
+      "source": "placeholder_benchmark"
+    },
+    "b2b": {
+      "name": "B2B & Professional Services",
+      "cpl_low": 600,
+      "cpl_base": 1100,
+      "cpl_high": 1800,
+      "cpm_base": 240,
+      "typical_close_rate": 0.20,
+      "typical_ticket": 25000,
+      "source": "placeholder_benchmark"
+    },
+    "education": {
+      "name": "Education & Coaching",
+      "cpl_low": 280,
+      "cpl_base": 480,
+      "cpl_high": 750,
+      "cpm_base": 160,
+      "typical_close_rate": 0.15,
+      "typical_ticket": 12000,
+      "source": "placeholder_benchmark"
+    },
+    "other": {
+      "name": "General Local Commercial",
+      "cpl_low": 300,
+      "cpl_base": 600,
+      "cpl_high": 950,
+      "cpm_base": 180,
+      "typical_close_rate": 0.25,
+      "typical_ticket": 5000,
+      "source": "placeholder_benchmark"
+    }
+  }
+}

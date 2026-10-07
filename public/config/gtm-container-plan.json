@@ -1,0 +1,76 @@
+{
+  "exportFormatVersion": 2,
+  "description": "GTM Container Plan for SAPVIK: Maps dataLayer custom events to Google Analytics 4 tags with Consent Mode v2 triggers",
+  "containerVersion": {
+    "tag": [
+      {
+        "name": "GA4 - Google tag (Configuration)",
+        "type": "googtag",
+        "parameter": [
+          { "key": "tagId", "value": "{{GA4 Measurement ID}}" },
+          { "key": "consentSettings", "value": { "analytics_storage": "needed", "ad_storage": "needed" } }
+        ],
+        "firingTriggerId": ["Initialization - All Pages"]
+      },
+      {
+        "name": "GA4 Event - Generate Lead",
+        "type": "gaawe",
+        "parameter": [
+          { "key": "eventName", "value": "generate_lead" },
+          { "key": "eventParameters", "value": [
+            { "name": "service", "value": "{{dlv - service}}" },
+            { "name": "lead_id", "value": "{{dlv - lead_id}}" },
+            { "name": "source", "value": "{{dlv - source}}" }
+          ]}
+        ],
+        "firingTriggerId": ["Custom Event - generate_lead"]
+      },
+      {
+        "name": "GA4 Event - Scan Start",
+        "type": "gaawe",
+        "parameter": [
+          { "key": "eventName", "value": "scan_start" },
+          { "key": "eventParameters", "value": [{ "name": "target_domain", "value": "{{dlv - target}}" }] }
+        ],
+        "firingTriggerId": ["Custom Event - scan_start"]
+      },
+      {
+        "name": "GA4 Event - Scan Complete",
+        "type": "gaawe",
+        "parameter": [
+          { "key": "eventName", "value": "scan_complete" },
+          { "key": "eventParameters", "value": [{ "name": "score", "value": "{{dlv - score}}" }] }
+        ],
+        "firingTriggerId": ["Custom Event - scan_complete"]
+      },
+      {
+        "name": "GA4 Event - Calculator Claim",
+        "type": "gaawe",
+        "parameter": [
+          { "key": "eventName", "value": "calc_claim" },
+          { "key": "eventParameters", "value": [
+            { "name": "services", "value": "{{dlv - services}}" },
+            { "name": "budget", "value": "{{dlv - budget}}" }
+          ]}
+        ],
+        "firingTriggerId": ["Custom Event - calc_claim"]
+      },
+      {
+        "name": "GA4 Event - WhatsApp Click",
+        "type": "gaawe",
+        "parameter": [
+          { "key": "eventName", "value": "click_whatsapp" },
+          { "key": "eventParameters", "value": [{ "name": "location", "value": "{{dlv - location}}" }] }
+        ],
+        "firingTriggerId": ["Custom Event - click_whatsapp"]
+      }
+    ],
+    "trigger": [
+      { "name": "Custom Event - generate_lead", "type": "customEvent", "customEventFilter": [{ "type": "equals", "arg0": "_event", "arg1": "generate_lead" }] },
+      { "name": "Custom Event - scan_start", "type": "customEvent", "customEventFilter": [{ "type": "equals", "arg0": "_event", "arg1": "scan_start" }] },
+      { "name": "Custom Event - scan_complete", "type": "customEvent", "customEventFilter": [{ "type": "equals", "arg0": "_event", "arg1": "scan_complete" }] },
+      { "name": "Custom Event - calc_claim", "type": "customEvent", "customEventFilter": [{ "type": "equals", "arg0": "_event", "arg1": "calc_claim" }] },
+      { "name": "Custom Event - click_whatsapp", "type": "customEvent", "customEventFilter": [{ "type": "equals", "arg0": "_event", "arg1": "click_whatsapp" }] }
+    ]
+  }
+}
