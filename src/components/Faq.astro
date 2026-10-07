@@ -103,3 +103,18 @@ const FAQS = [
     padding-top: 1rem;
   }
 </style>
+
+<script is:inline>
+  document.querySelectorAll('.faq-item').forEach((details, idx) => {
+    details.addEventListener('toggle', () => {
+      if (details.open) {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'faq_open',
+          question_id: `faq_${idx}`,
+          event_timestamp: Date.now()
+        });
+      }
+    });
+  });
+</script>

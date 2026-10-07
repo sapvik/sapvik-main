@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { trackEvent } from '../../lib/analytics';
 
 interface GridCell {
   x: number;
@@ -32,6 +33,14 @@ const INITIAL_GRID: GridCell[] = [
 export default function Heatmap() {
   const [selectedCell, setSelectedCell] = useState<GridCell>(INITIAL_GRID[5]); // Default center
 
+  const handleSelectCell = (cell: GridCell) => {
+    setSelectedCell(cell);
+    trackEvent('heatmap_toggle', {
+      rank: cell.rank,
+      node_id: `${cell.x}-${cell.y}`
+    });
+  };
+
   const getRankColor = (rank: number) => {
     if (rank <= 3) return '#15803D'; // Green (Local 3-Pack)
     if (rank <= 6) return '#B45309'; // Amber (First Page Mid)
@@ -60,11 +69,11 @@ export default function Heatmap() {
                 type="button"
                 className={`grid-node ${isSelected ? 'selected' : ''}`}
                 style={{ backgroundColor: bg }}
-                onClick={() => setSelectedCell(cell)}
+                onClick={() => handleSelectCell(cell)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setSelectedCell(cell);
+                    handleSelectCell(cell);
                   }
                 }}
                 aria-label={`Coordinate ${cell.x}, ${cell.y}: Rank #${cell.rank} - ${cell.label}`}

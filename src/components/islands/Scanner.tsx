@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { trackEvent } from '../../lib/analytics';
 
 interface Finding {
   id: string;
@@ -69,6 +70,10 @@ export default function Scanner() {
     setErrorMsg(null);
     setResult(null);
 
+    trackEvent('scan_start', {
+      target_scheme: targetUrl.startsWith('https') ? 'https' : 'http'
+    });
+
     try {
       const resp = await fetch('/api/audit', {
         method: 'POST',
@@ -84,8 +89,16 @@ export default function Scanner() {
       if (!resp.ok || !data.success) {
         setErrorMsg(data.message || 'Unable to complete site scan. Target server may be unreachable.');
         setResult(data);
+        trackEvent('scan_error', {
+          error_code: data.error || 'scan_failed'
+        });
       } else {
         setResult(data);
+        trackEvent('scan_complete', {
+          response_time_ms: data.response_time_ms || 0,
+          has_ssl: data.has_ssl ?? null,
+          findings_count: data.findings?.length || 0
+        });
         // Persist scan for contact form attribution
         try {
           sessionStorage.setItem('sapvik_latest_audit', JSON.stringify({
@@ -96,6 +109,9 @@ export default function Scanner() {
       }
     } catch {
       setErrorMsg('Network error connecting to scanner gateway.');
+      trackEvent('scan_error', {
+        error_code: 'network_error'
+      });
     } finally {
       setIsLoading(false);
       if (widgetIdRef.current && window.turnstile) {
@@ -107,7 +123,7 @@ export default function Scanner() {
   return (
     <div className="scanner-container framed-card" id="scanner">
       <div className="scanner-header">
-        <span class="mono-label">Real-Time Diagnostic Probe</span>
+        <span className="mono-label">Real-Time Diagnostic Probe</span>
         <h2 className="scanner-title">Live Website Speed & Architecture Scanner</h2>
         <p className="scanner-desc">
           Inspect your live web infrastructure: server response time, TLS security, Schema entities, and conversion tracking tags without bloated synthetic scoring.

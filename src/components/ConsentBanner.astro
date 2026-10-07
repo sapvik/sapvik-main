@@ -1,0 +1,125 @@
+---
+// Google Consent Mode v2 Banner Component
+---
+
+<aside id="consentBanner" class="consent-banner" aria-label="Privacy and cookies notice" style="display: none;">
+  <div class="container consent-inner">
+    <div class="consent-text">
+      <p>
+        We use anonymous performance measurements to refine site diagnostics.
+        In compliance with Google Consent Mode v2, analytics and advertising cookies remain disabled until you accept.
+        Review our <a href="/cookies" class="consent-link">Cookie Notice</a> or update your preferences.
+      </p>
+    </div>
+    <div class="consent-actions">
+      <button type="button" id="btnConsentReject" class="btn btn-secondary btn-sm">Decline</button>
+      <button type="button" id="btnConsentAccept" class="btn btn-primary btn-sm">Accept</button>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-modal);
+    background-color: var(--c-surface-elevated);
+    border-top: 1px solid var(--c-border);
+    padding: 1.25rem 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .consent-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .consent-text {
+    flex: 1 1 320px;
+  }
+
+  .consent-text p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--c-text-primary);
+    margin: 0;
+  }
+
+  .consent-link {
+    color: var(--c-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .consent-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  @media (max-width: 640px) {
+    .consent-inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .consent-actions {
+      justify-content: flex-end;
+    }
+  }
+</style>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('consentBanner');
+    const acceptBtn = document.getElementById('btnConsentAccept');
+    const rejectBtn = document.getElementById('btnConsentReject');
+
+    const updateGtagConsent = (granted) => {
+      if (typeof gtag === 'function') {
+        gtag('consent', 'update', {
+          'analytics_storage': granted ? 'granted' : 'denied',
+          'ad_storage': granted ? 'granted' : 'denied',
+          'ad_user_data': granted ? 'granted' : 'denied',
+          'ad_personalization': granted ? 'granted' : 'denied'
+        });
+      }
+    };
+
+    const saved = localStorage.getItem('sapvik_consent');
+    if (saved === 'granted') {
+      updateGtagConsent(true);
+    } else if (saved === 'denied') {
+      updateGtagConsent(false);
+    } else if (!saved && banner) {
+      banner.style.display = 'block';
+    }
+
+    if (acceptBtn) {
+      acceptBtn.addEventListener('click', () => {
+        localStorage.setItem('sapvik_consent', 'granted');
+        updateGtagConsent(true);
+        if (banner) banner.style.display = 'none';
+      });
+    }
+
+    if (rejectBtn) {
+      rejectBtn.addEventListener('click', () => {
+        localStorage.setItem('sapvik_consent', 'denied');
+        updateGtagConsent(false);
+        if (banner) banner.style.display = 'none';
+      });
+    }
+
+    // Allow user to re-open settings from privacy or cookies pages
+    window.addEventListener('open-consent-settings', () => {
+      if (banner) banner.style.display = 'block';
+    });
+  });
+</script>

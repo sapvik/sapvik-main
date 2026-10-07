@@ -133,6 +133,16 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     const statusPanel = page.locator('#formStatusPanel');
     await expect(statusPanel).toBeVisible();
     await expect(statusPanel).toContainText('LEAD-TEST-999');
+
+    // Verify generate_lead pushed to dataLayer without PII
+    const leadEvent = await page.evaluate(() => {
+      return (window.dataLayer || []).find((e) => e.event === 'generate_lead');
+    });
+    expect(leadEvent).toBeDefined();
+    expect(leadEvent.lead_id).toBe('LEAD-TEST-999');
+    expect(leadEvent.email).toBeUndefined();
+    expect(leadEvent.phone).toBeUndefined();
+    expect(leadEvent.name).toBeUndefined();
   });
 
   test('Cookie & Analytics Consent Banner: Grants consent upon accept', async ({ page }) => {
@@ -150,6 +160,20 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     // Verify localStorage persistence
     const savedConsent = await page.evaluate(() => localStorage.getItem('sapvik_consent'));
     expect(savedConsent).toBe('granted');
+  });
+
+  test('Cookie Preferences: Can re-open consent settings from cookie policy page', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    // Visit /cookies directly
+    await page.goto('/cookies');
+
+    const updateBtn = page.locator('#btnManagePreferences');
+    await expect(updateBtn).toBeVisible();
+    await updateBtn.click();
+
+    // Verify banner opens for user modification
+    const banner = page.locator('#consentBanner');
+    await expect(banner).toBeVisible();
   });
 
 });

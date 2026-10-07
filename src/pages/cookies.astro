@@ -36,12 +36,23 @@ import { SITE } from '../config/site';
         <section class="legal-sec">
           <h2>3. Managing Your Choice</h2>
           <p>
-            You can clear your browser storage or cookies at any time. When you clear your cookies, our consent banner will reappear on your next visit, allowing you to choose again.
+            You can modify your consent preferences at any time by clicking the button below, or by clearing your browser cookies.
           </p>
+          <div style="margin-top: 1rem;">
+            <button type="button" id="btnManagePreferences" class="btn btn-secondary btn-sm">
+              Update Cookie Preferences
+            </button>
+          </div>
         </section>
       </div>
     </div>
   </div>
+
+  <script is:inline>
+    document.getElementById('btnManagePreferences')?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('open-consent-settings'));
+    });
+  </script>
 </Base>
 
 <style>

@@ -39,17 +39,17 @@ import { SERVICES } from '../config/services';
       <h3 class="footer-heading">Direct Inquiries</h3>
       <ul class="footer-list">
         <li>
-          <a href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`} class="footer-link">
+          <a href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`} class="footer-link" data-track="call">
             {SITE.brand.phoneDisplay}
           </a>
         </li>
         <li>
-          <a href={`mailto:${SITE.brand.email}`} class="footer-link">
+          <a href={`mailto:${SITE.brand.email}`} class="footer-link" data-track="email">
             {SITE.brand.email}
           </a>
         </li>
         <li>
-          <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} class="footer-link" target="_blank" rel="noopener">
+          <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} class="footer-link" target="_blank" rel="noopener" data-track="whatsapp">
             WhatsApp Direct Chat &rarr;
           </a>
         </li>
@@ -186,3 +186,19 @@ import { SERVICES } from '../config/services';
     max-width: 640px;
   }
 </style>
+
+<script is:inline>
+  document.querySelectorAll('footer [data-track]').forEach(el => {
+    el.addEventListener('click', () => {
+      const type = el.getAttribute('data-track');
+      window.dataLayer = window.dataLayer || [];
+      if (type === 'whatsapp') {
+        window.dataLayer.push({ event: 'click_whatsapp', location: 'footer', event_timestamp: Date.now() });
+      } else if (type === 'call') {
+        window.dataLayer.push({ event: 'click_call', location: 'footer', event_timestamp: Date.now() });
+      } else if (type === 'email') {
+        window.dataLayer.push({ event: 'click_email', location: 'footer', event_timestamp: Date.now() });
+      }
+    });
+  });
+</script>

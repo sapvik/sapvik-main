@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useId } from 'react';
 import assumptionsData from '../../config/assumptions.json';
 import { computeProjections, type IndustryAssumption } from '../../lib/calculatorMath';
+import { trackEvent } from '../../lib/analytics';
 
 const assumptions = (assumptionsData.industries as Record<string, IndustryAssumption>) || {};
 
@@ -44,11 +45,15 @@ export default function Calculator() {
 
   const handleCheckboxChange = (serviceId: string, checked: boolean) => {
     setSelectedServices((prev) => {
-      if (checked) {
-        return prev.includes(serviceId) ? prev : [...prev, serviceId];
-      } else {
-        return prev.filter((id) => id !== serviceId);
-      }
+      const updated = checked
+        ? (prev.includes(serviceId) ? prev : [...prev, serviceId])
+        : prev.filter((id) => id !== serviceId);
+      return updated;
+    });
+    trackEvent('calc_interact', {
+      budget_tier: `${Math.round(budget / 1000)}k`,
+      service_toggled: serviceId,
+      is_checked: checked
     });
   };
 
@@ -208,6 +213,19 @@ export default function Calculator() {
               </p>
             </div>
           )}
+
+          <div className="calc-claim-action" style={{ marginTop: '1.25rem', marginBottom: '1rem' }}>
+            <a
+              href="#contact"
+              className="btn btn-primary btn-sm"
+              onClick={() => trackEvent('calc_claim', {
+                budget_tier: `${Math.round(budget / 1000)}k`,
+                industry_key: industryKey
+              })}
+            >
+              Apply Estimates to Review &rarr;
+            </a>
+          </div>
 
           <div className="model-footnote">
             <p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SERVICES } from '../../config/services';
 import { SITE } from '../../config/site';
+import { trackEvent } from '../../lib/analytics';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -24,6 +25,14 @@ export default function ContactForm() {
 
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const hasStartedRef = useRef(false);
+
+  const handleFormFocus = () => {
+    if (!hasStartedRef.current) {
+      hasStartedRef.current = true;
+      trackEvent('form_start', { form_id: 'contact_form' });
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.turnstile && turnstileContainerRef.current) {
@@ -59,7 +68,11 @@ export default function ContactForm() {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    const isValid = Object.keys(errors).length === 0;
+    if (!isValid) {
+      trackEvent('form_error', { form_id: 'contact_form', error_field: Object.keys(errors)[0] });
+    }
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,6 +123,11 @@ export default function ContactForm() {
 
       if (resp.ok && result.ok) {
         setSubmitSuccess(result.lead_id);
+        trackEvent('generate_lead', {
+          lead_id: result.lead_id,
+          service: formData.service,
+          source: 'contact_form'
+        });
       } else {
         // Delivery failed or offline fallback
         setErrorMessage(result.message || 'Notification transmission could not be completed.');
@@ -157,7 +175,7 @@ export default function ContactForm() {
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="contact-form" id="auditForm" noValidate>
+        <form onSubmit={handleSubmit} onFocus={handleFormFocus} className="contact-form" id="auditForm" noValidate>
           {errorMessage && (
             <div className="form-error-banner" role="alert">
               <p>⚠ {errorMessage}</p>
@@ -171,6 +189,7 @@ export default function ContactForm() {
                     target="_blank"
                     rel="noopener"
                     className="btn btn-primary btn-sm"
+                    onClick={() => trackEvent('click_whatsapp', { location: 'contact_fallback' })}
                   >
                     Connect via WhatsApp Direct &rarr;
                   </a>

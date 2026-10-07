@@ -65,10 +65,19 @@ To ensure lead alerts never land in spam:
 
 ## 6. Analytics, Tag Manager & Consent Mode v2
 - [ ] **Google Tag Manager**: Container ID `TODO_GTM_ID` linked.
-- [ ] **Google Analytics 4**: Measurement ID `TODO_GA4_ID` configured via GTM.
-- [ ] **Consent Mode v2**: Initialized with default `denied` for `ad_storage` and `analytics_storage`. Updates dynamically upon banner acceptance.
-- [ ] **DataLayer Events**: Verified firing of `generate_lead`, `scan_complete`, `calc_interact`, `faq_open`.
-- [ ] **Microsoft Clarity**: (Optional) Project ID `TODO_CLARITY_ID` added in GTM.
+  - To import pre-mapped container: Go to **GTM Admin > Import Container**, select `public/config/gtm-container-plan.json`.
+  - Overwrite or merge into workspace to automatically provision all 14 custom event tags and Consent Mode v2 triggers.
+- [ ] **Google Analytics 4**: Measurement ID `TODO_GA4_ID` configured via GTM `{{GA4 Measurement ID}}` variable.
+- [ ] **Consent Mode v2**: Initialized in `src/layouts/Base.astro` with default `denied` for `ad_storage`, `analytics_storage`, `ad_user_data`, and `ad_personalization`. Updates dynamically via `ConsentBanner.astro` upon user selection and persists to `localStorage.getItem('sapvik_consent')`.
+- [ ] **Zero PII in Analytics**: Verified by `tests/analytics.test.js`. Customer names, phones, emails, and inquiry details are scrubbed prior to any `dataLayer.push`.
+- [ ] **DataLayer Event Verification**:
+  - `generate_lead`: Triggered strictly upon confirmed delivery from `/api/contact`.
+  - `scan_start`, `scan_complete`, `scan_error`: Triggered during Scanner lifecycle.
+  - `calc_interact`, `calc_claim`: Triggered during Simulator interactions.
+  - `heatmap_toggle`: Triggered upon coordinate inspection.
+  - `faq_open`: Triggered on accordion open.
+  - `click_whatsapp`, `click_call`, `click_email`: Triggered on contact link clicks.
+- [ ] **Microsoft Clarity / PostHog**: (Optional) Deploy via GTM custom HTML tag with consent check `analytics_storage === 'granted'`.
 
 ---
 
