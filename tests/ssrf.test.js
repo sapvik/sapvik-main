@@ -32,16 +32,45 @@ test('SSRF: Blocks cloud metadata and CGNAT', () => {
   assert.equal(isPrivateIpv4('192.168.1.1'), true);
 });
 
-test('SSRF: validateTargetUrl blocks decimal, hex, and non-standard web ports', async () => {
-  const decCheck = await validateTargetUrl('http://2130706433', false);
-  assert.equal(decCheck.valid, false);
+test('SSRF: validateTargetUrl blocks all reserved IP variations without DNS check', async () => {
+  const targets = [
+    'http://127.0.0.1',
+    'http://[::1]',
+    'http://2130706433',
+    'http://0177.0.0.1',
+    'http://0x7f000001',
+    'http://172.16.0.1',
+    'http://172.31.255.254',
+    'http://169.254.169.254',
+    'http://100.64.0.1',
+    'http://localhost',
+    'http://server.internal'
+  ];
 
-  const hexCheck = await validateTargetUrl('http://0x7f000001', false);
-  assert.equal(hexCheck.valid, false);
+  for (const target of targets) {
+    const res = await validateTargetUrl(target, false);
+    assert.equal(res.valid, false, `Expected ${target} to be blocked`);
+  }
+});
 
+test('SSRF: validateTargetUrl blocks non-standard web ports and non-http protocols', async () => {
   const portCheck = await validateTargetUrl('https://example.com:8080', false);
   assert.equal(portCheck.valid, false);
 
-  const protoCheck = await validateTargetUrl('ftp://example.com', false);
-  assert.equal(protoCheck.valid, false);
+  const ftpCheck = await validateTargetUrl('ftp://example.com', false);
+  assert.equal(ftpCheck.valid, false);
+
+  const fileCheck = await validateTargetUrl('file:///etc/passwd', false);
+  assert.equal(fileCheck.valid, false);
+});
+
+test('SSRF: validateTargetUrl permits valid public web URLs', async () => {
+  // Test without DNS query (syntax/scheme/port validation)
+  const validNoDns = await validateTargetUrl('https://example.com/test', false);
+  assert.equal(validNoDns.valid, true);
+  assert.equal(validNoDns.url, 'https://example.com/test');
+
+  const validHttp = await validateTargetUrl('http://example.com', false);
+  assert.equal(validHttp.valid, true);
+  assert.equal(validHttp.url, 'http://example.com/');
 });

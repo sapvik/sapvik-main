@@ -1,46 +1,26 @@
 /**
  * Cloudflare Pages Function: /api/audit
- * Pure SSRF protection, manual redirect following, bounded stream parsing, Cache API.
+ * Strict POST endpoint, Turnstile verification, SSRF protection,
+ * bounded stream parsing, and Edge Cache API caching.
  */
 
 import { validateTargetUrl } from '../lib/ssrf.js';
 import { executeLiveScan } from '../lib/scanner.js';
 import { verifyTurnstileToken } from '../lib/security.js';
 
-export async function onRequest(context) {
+export async function onRequestPost(context) {
   const { request, env } = context;
 
-  // Support both POST (preferred, payload with Turnstile) and GET
   let targetUrl = '';
   let turnstileToken = '';
 
-  if (request.method === 'POST') {
-    try {
-      const body = await request.json();
-      targetUrl = (body.url || '').trim();
-      turnstileToken = body.turnstileToken || body['cf-turnstile-response'] || '';
-    } catch {
-      return new Response(JSON.stringify({ success: false, error: 'invalid_json', message: 'Malformed JSON payload.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  } else if (request.method === 'GET') {
-    const url = new URL(request.url);
-    targetUrl = (url.searchParams.get('url') || '').trim();
-    turnstileToken = url.searchParams.get('turnstileToken') || '';
-  } else if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-  } else {
-    return new Response(JSON.stringify({ success: false, error: 'method_not_allowed' }), {
-      status: 405,
+  try {
+    const body = await request.json();
+    targetUrl = (body.url || '').trim();
+    turnstileToken = body.turnstileToken || body['cf-turnstile-response'] || '';
+  } catch {
+    return new Response(JSON.stringify({ success: false, error: 'invalid_json', message: 'Malformed JSON payload.' }), {
+      status: 400,
       headers: { 'Content-Type': 'application/json' }
     });
   }
@@ -68,7 +48,7 @@ export async function onRequest(context) {
     }
   }
 
-  // 2. Validate URL & Initial SSRF Check
+  // 2. Validate URL & Initial SSRF Pre-check
   const validation = await validateTargetUrl(targetUrl, true);
   if (!validation.valid) {
     return new Response(JSON.stringify({
@@ -84,7 +64,7 @@ export async function onRequest(context) {
 
   const normalizedTarget = validation.url;
 
-  // 3. Cloudflare Edge Cache API Lookup (Normalised Key)
+  // 3. Edge Cache API Lookup (Keyed by Normalized Target URL, 5 min TTL)
   const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit?url=${encodeURIComponent(normalizedTarget)}`);
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   let cache;
@@ -108,17 +88,16 @@ export async function onRequest(context) {
     'Access-Control-Allow-Origin': '*'
   };
 
-  // Cache successful audit scans for 5 minutes (300 seconds)
   if (scanResult.success) {
     responseHeaders['Cache-Control'] = 'public, max-age=300';
   }
 
   const response = new Response(JSON.stringify(scanResult), {
-    status: scanResult.success ? 200 : 200, // Return 200 with success: false for diagnostic error handling
+    status: 200,
     headers: responseHeaders
   });
 
-  // Store in Edge Cache if successful
+  // Store successful scans in Cloudflare Edge Cache API (~5 min)
   if (scanResult.success && cache) {
     try {
       context.waitUntil(cache.put(cacheKey, response.clone()));
@@ -128,4 +107,25 @@ export async function onRequest(context) {
   }
 
   return response;
+}
+
+// Reject other HTTP methods (e.g. GET) with 405 Method Not Allowed
+export async function onRequest(context) {
+  if (context.request.method === 'POST') {
+    return await onRequestPost(context);
+  }
+  if (context.request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
+  }
+  return new Response(JSON.stringify({ success: false, error: 'method_not_allowed', message: 'Endpoint requires POST.' }), {
+    status: 405,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }

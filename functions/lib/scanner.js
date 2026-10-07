@@ -32,7 +32,7 @@ async function readBoundedStream(response, byteLimit = MAX_STREAM_BYTES) {
         }
       }
     }
-  } catch (err) {
+  } catch {
     // Stream closed or canceled
   }
 
@@ -52,11 +52,14 @@ async function readBoundedStream(response, byteLimit = MAX_STREAM_BYTES) {
 
 /**
  * Analyzes HTML text for key tags, schemas, and analytics scripts.
+ * Operates without .toLowerCase() on the full document to prevent memory spikes.
  */
 export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
-  // Case-insensitive regexes on the raw text (no .toLowerCase() string cloning)
+  // Case-insensitive regexes on the raw text
   const hasSchema = /schema\.org|application\/ld\+json/i.test(html);
-  const hasLocalSchema = /\b(LocalBusiness|MedicalOrganization|ProfessionalService|LegalService|AutomotiveBusiness|Dentist|Physician)\b/i.test(html);
+  
+  // LocalBusiness: exclude "store" to avoid false matches on "restore" or "storefront"
+  const hasLocalSchema = /\b(LocalBusiness|MedicalOrganization|ProfessionalService|LegalService|AutomotiveBusiness|Dentist|Physician|Restaurant|HealthAndBeautyBusiness)\b/i.test(html);
   
   // GA4 / GTM: Require GA4 ID near gtag/analytics or official script tags (avoids g-recaptcha class match)
   const hasGtm = /googletagmanager\.com\/(?:gtm\.js|gtag\/js)/i.test(html) || /gtag\s*\(\s*['"]config['"]/i.test(html);
@@ -71,41 +74,36 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
   const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
   const hasCanonical = /<link\s+[^>]*rel=["']canonical["']/i.test(html);
 
-  // Scoring (0-100)
-  let score = 25;
-  if (elapsedMs < 600) score += 25;
-  else if (elapsedMs < 1200) score += 15;
-  if (hasSsl) score += 20;
-  if (hasSchema) score += 15;
-  if (hasPixel) score += 5;
-  if (hasAnalytics) score += 10;
-
+  // Findings list (each item must have: id, severity, title, evidence, fix)
   const findings = [];
 
-  // 1. Response Time
+  // 1. Response Time (measured from edge)
   if (elapsedMs > 800) {
     findings.push({
-      id: "latency_high",
+      id: "response_time_slow",
       severity: "warning",
-      title: `Server Response Time: ${elapsedMs}ms`,
-      fix: "Optimize initial server processing, database queries, and edge CDN delivery."
+      title: `Response time: ${elapsedMs}ms`,
+      evidence: `Measured edge response time was ${elapsedMs}ms (> 800ms threshold).`,
+      fix: "Optimize origin processing, database queries, and static asset caching on a global CDN."
     });
   } else {
     findings.push({
-      id: "latency_fast",
+      id: "response_time_fast",
       severity: "good",
-      title: `Fast Edge Response Time: ${elapsedMs}ms`,
-      fix: "Initial response within recommended performance thresholds."
+      title: `Response time: ${elapsedMs}ms`,
+      evidence: `Measured edge response time was ${elapsedMs}ms (<= 800ms).`,
+      fix: "Edge response is within recommended performance benchmarks."
     });
   }
 
-  // 2. Meta Pixel (Info severity: not critical unless running paid social)
-  if (!hasPixel) {
+  // 2. SSL Status
+  if (!hasSsl) {
     findings.push({
-      id: "pixel_missing",
-      severity: "info",
-      title: "Meta Conversion Tracking not detected in initial HTML",
-      fix: "Add Meta CAPI or Pixel if you run direct-response social advertising."
+      id: "ssl_missing",
+      severity: "critical",
+      title: "Encrypted HTTPS not active on destination",
+      evidence: `Destination resolved over unencrypted HTTP: ${finalUrl}`,
+      fix: "Install an SSL/TLS certificate and configure automatic HTTPS redirection."
     });
   }
 
@@ -114,15 +112,17 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
     findings.push({
       id: "schema_missing",
       severity: "warning",
-      title: "Structured Schema.org Entity not detected in initial HTML",
-      fix: "Add JSON-LD entity data to improve Google Knowledge Panel and local search visibility."
+      title: "Structured Schema.org entity not detected in initial HTML",
+      evidence: "No schema.org or JSON-LD script blocks identified in the first 500KB of HTML.",
+      fix: "Deploy JSON-LD Organization or LocalBusiness schemas to enhance rich search snippet eligibility."
     });
   } else if (!hasLocalSchema) {
     findings.push({
-      id: "local_schema_missing",
+      id: "local_schema_recommended",
       severity: "info",
       title: "LocalBusiness Schema recommended",
-      fix: "Include geo-coordinates and business category for local search pack relevance."
+      evidence: "General schema detected, but specific LocalBusiness schema was not detected in initial HTML.",
+      fix: "Include geo-coordinates and LocalBusiness markup for higher local 3-pack relevance."
     });
   }
 
@@ -132,22 +132,35 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
       id: "analytics_missing",
       severity: "warning",
       title: "Google Analytics 4 / GTM container not detected in initial HTML",
-      fix: "Deploy unified tracking for cross-channel conversion attribution."
+      evidence: "No gtag.js, Google Tag Manager container, or GA4 measurement ID detected in initial HTML.",
+      fix: "Deploy GTM or GA4 for cross-channel conversion and attribution tracking."
+    });
+  }
+
+  // 5. Meta Pixel (Info severity: not critical unless running paid social)
+  if (!hasPixel) {
+    findings.push({
+      id: "pixel_missing",
+      severity: "info",
+      title: "Meta conversion tracking not detected in initial HTML",
+      evidence: "No Meta Pixel script (fbevents.js) identified in initial HTML.",
+      fix: "Add Meta Conversions API or Pixel if running paid direct-response campaigns on Instagram/Facebook."
     });
   }
 
   return {
     success: true,
     url: finalUrl,
+    response_time_ms: elapsedMs,
     measured_latency_ms: elapsedMs,
-    score: Math.min(100, Math.max(15, score)),
     has_ssl: hasSsl,
     has_hsts: hasHsts,
     has_schema: hasSchema,
     has_pixel: hasPixel,
     has_analytics: hasAnalytics,
     has_viewport: hasViewport,
-    findings: findings.slice(0, 4)
+    has_canonical: hasCanonical,
+    findings: findings.slice(0, 5)
   };
 }
 
@@ -188,17 +201,33 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 8) {
     } catch (err) {
       clearTimeout(timeoutId);
       const isAbort = err.name === 'AbortError';
+      const isCertError = err.message && (
+        err.message.includes('certificate') ||
+        err.message.includes('CERT_') ||
+        err.message.includes('SSL') ||
+        err.message.includes('tls')
+      );
+
+      if (isCertError) {
+        return {
+          success: false,
+          error: "ssl_certificate_invalid",
+          message: "SSL/TLS certificate on target server is invalid, expired, or untrusted.",
+          has_ssl: false // Certificate error indicates SSL failure
+        };
+      }
+
       return {
         success: false,
         error: isAbort ? "scan_timeout" : "network_unreachable",
         message: isAbort ? `Request timed out after ${timeoutSeconds} seconds without response.` : "Target server could not be reached.",
-        has_ssl: null // null indicates reachability/timeout issue, not an SSL error
+        has_ssl: null // null indicates reachability or timeout, not an explicit SSL error
       };
     } finally {
       clearTimeout(timeoutId);
     }
 
-    // Handle Redirects
+    // Handle Redirects (manual hops)
     if ([301, 302, 303, 307, 308].includes(resp.status)) {
       const location = resp.headers.get('location');
       if (!location) {

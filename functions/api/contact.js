@@ -1,6 +1,7 @@
 /**
  * Cloudflare Pages Function: /api/contact
- * Validated lead capture, Turnstile verification, HTML escaping, and zero-loss dispatch.
+ * Validated lead capture, Turnstile verification, HTML escaping,
+ * Brevo SMTP dispatch, webhook streaming, and delivery guarantee.
  */
 
 import { escapeHtml, validateOrigin, verifyTurnstileToken, validateContactPayload } from '../lib/security.js';
@@ -35,9 +36,8 @@ export async function onRequestPost(context) {
     });
   }
 
-  // 3. Honeypot check
+  // 3. Honeypot check (silently drop bot submissions)
   if (data.website_url_hp) {
-    // Silently drop bot submission
     return new Response(JSON.stringify({ ok: true, lead_id: 'SUB-BOT-DISCARD' }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -59,7 +59,7 @@ export async function onRequestPost(context) {
     }
   }
 
-  // 5. Input Validation
+  // 5. Server-Side Input & Consent Validation
   const validation = validateContactPayload(data);
   if (!validation.valid) {
     return new Response(JSON.stringify({ ok: false, message: validation.error }), {
@@ -79,21 +79,22 @@ export async function onRequestPost(context) {
   const utm = data.utm || {};
   const audit = data.audit || null;
 
-  // Robust UUID Lead ID
-  const leadId = `SAPVIK-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  // Standard UUID Lead ID
+  const leadId = crypto.randomUUID();
 
-  // 6. Lead Delivery (Priority: Team Notification Email & Webhook)
+  // 6. Lead Notification Delivery
   let deliverySucceeded = false;
   const brevoKey = env ? env.BREVO_API_KEY : null;
   const webhookUrl = env ? env.LEAD_WEBHOOK_URL : null;
   const teamEmail = (env && env.NOTIFICATION_EMAIL) || 'growth@sapvik.com';
+  const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'alerts@sapvik.com';
 
   // A. Dispatch Transactional Alert Email to Team via Brevo SMTP API
   if (brevoKey) {
     try {
       const emailHtml = `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #12161C;">
-          <h2 style="color: #C93A22;">[NEW AUDIT LEAD] Ref: ${escapeHtml(leadId)}</h2>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #12161C;">
+          <h2 style="color: #C93A22;">[NEW DISCOVERY LEAD] Ref: ${escapeHtml(leadId)}</h2>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold; width: 140px;">Name:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(name)}</td></tr>
             <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Phone:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></td></tr>
@@ -101,11 +102,11 @@ export async function onRequestPost(context) {
             <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Company:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(business || 'N/A')}</td></tr>
             <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Website:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(website || 'N/A')}</td></tr>
             <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Service Focus:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(service)}</td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Marketing Consent:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${marketingConsent ? 'Granted' : 'Denied'}</td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Marketing Updates:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${marketingConsent ? 'Opted In' : 'Declined'}</td></tr>
           </table>
-          <h3>Notes / Objectives:</h3>
+          <h3>Inquiry Notes:</h3>
           <p style="background: #F4F5F6; padding: 12px; border-left: 3px solid #C93A22;">${escapeHtml(details || 'No additional notes provided.')}</p>
-          ${audit ? `<h3>Attached Audit Score:</h3><p>Score: ${escapeHtml(String(audit.score))}/100 | Target: ${escapeHtml(audit.url || '')}</p>` : ''}
+          ${audit ? `<h3>Attached Scanner Finding:</h3><p>Status: ${escapeHtml(String(audit.url || ''))} | Response Time: ${escapeHtml(String(audit.response_time_ms || ''))}ms</p>` : ''}
           <p style="font-size: 12px; color: #718096; margin-top: 24px;">Captured at ${new Date().toISOString()} | Client IP: ${escapeHtml(clientIp)}</p>
         </div>
       `;
@@ -114,11 +115,13 @@ export async function onRequestPost(context) {
         method: 'POST',
         headers: {
           'api-key': brevoKey,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          sender: { name: 'SAPVIK Lead Gateway', email: 'gateway@sapvik.com' },
+          sender: { name: 'SAPVIK Lead Gateway', email: senderEmail },
           to: [{ email: teamEmail }],
+          replyTo: { email: email, name: name },
           subject: `[Lead Alert] ${name} - ${business || service}`,
           htmlContent: emailHtml
         })
@@ -154,60 +157,63 @@ export async function onRequestPost(context) {
   }
 
   // C. Asynchronous Brevo Contact Sync (Non-blocking via waitUntil)
-  if (brevoKey) {
+  if (brevoKey && context.waitUntil) {
     const contactSyncPromise = (async () => {
       try {
+        const contactPayload = {
+          email,
+          attributes: {
+            FIRSTNAME: name,
+            SMS: phone,
+            COMPANY: business,
+            WEBSITE: website,
+            SERVICE: service,
+            MARKETING_CONSENT: marketingConsent
+          },
+          updateEnabled: true
+        };
+        // Add to marketing list only if explicit marketing consent is granted
+        if (marketingConsent && env.BREVO_MARKETING_LIST_ID) {
+          contactPayload.listIds = [parseInt(env.BREVO_MARKETING_LIST_ID, 10)];
+        }
+
         await fetch('https://api.brevo.com/v3/contacts', {
           method: 'POST',
           headers: {
             'api-key': brevoKey,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify({
-            email,
-            attributes: {
-              FIRSTNAME: name,
-              SMS: phone,
-              COMPANY: business,
-              WEBSITE: website,
-              SERVICE: service,
-              MARKETING_CONSENT: marketingConsent
-            },
-            updateEnabled: true
-          })
+          body: JSON.stringify(contactPayload)
         });
       } catch (crmErr) {
         console.error('Non-critical CRM contact sync error:', crmErr);
       }
     })();
 
-    if (context.waitUntil) {
-      context.waitUntil(contactSyncPromise);
-    }
+    context.waitUntil(contactSyncPromise);
   }
 
   // 7. Enforce Delivery Guarantee
-  // In local development without configured API keys, allow graceful success with mock note
-  const isLocalDev = !env || (!env.BREVO_API_KEY && !env.LEAD_WEBHOOK_URL);
-
-  if (deliverySucceeded || isLocalDev) {
+  // If delivery succeeded, return ok: true with leadId
+  if (deliverySucceeded) {
     return new Response(JSON.stringify({
       ok: true,
       lead_id: leadId,
-      message: 'Audit request received successfully.'
+      message: 'Inquiry received and lead notification dispatched.'
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  // If live transmission completely failed, return explicit offline response with WhatsApp fallback
+  // If no delivery path was configured or all deliveries failed, NEVER return ok: true!
   return new Response(JSON.stringify({
     ok: false,
     lead_id: leadId,
-    error: 'gateway_offline',
+    error: 'delivery_offline',
     whatsapp_fallback: true,
-    message: 'Automated transmission gateway is currently offline. Please connect directly via WhatsApp.'
+    message: 'Automated notification delivery is currently offline. Please connect directly via WhatsApp.'
   }), {
     status: 503,
     headers: { 'Content-Type': 'application/json' }

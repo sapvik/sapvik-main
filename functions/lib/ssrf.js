@@ -1,6 +1,10 @@
 /**
  * SSRF and Network Target Validation
  * Pure JS module for Cloudflare Pages Functions and Node.js testing.
+ *
+ * NOTE: DoH pre-validation filters known malicious targets, internal hostnames,
+ * and loopback/private IPs, but does not bind fetch's own runtime DNS resolution in edge runtimes.
+ * Turnstile verification and Cloudflare WAF rules serve as the primary abuse and rate controls.
  */
 
 // Private & Reserved IPv4 CIDRs [startInt, endInt]
@@ -20,21 +24,21 @@ function cidrToRange(cidr) {
 }
 
 const RESERVED_IPV4_RANGES = [
-  '0.0.0.0/8',       // "This" network
-  '10.0.0.0/8',      // Private RFC 1918
-  '100.64.0.0/10',   // Carrier-grade NAT
-  '127.0.0.0/8',     // Loopback
-  '169.254.0.0/16',  // Link-local / Cloud Metadata
-  '172.16.0.0/12',   // Private RFC 1918 (172.16.0.0 - 172.31.255.255)
-  '192.0.0.0/24',    // IETF Protocol Assignments
-  '192.0.2.0/24',    // TEST-NET-1
-  '192.88.99.0/24',  // 6to4 Relay Anycast
-  '192.168.0.0/16',  // Private RFC 1918
-  '198.18.0.0/15',   // Benchmarking
-  '198.51.100.0/24', // TEST-NET-2
-  '203.0.113.0/24',  // TEST-NET-3
-  '224.0.0.0/4',     // Multicast
-  '240.0.0.0/4',     // Reserved / Future Use
+  '0.0.0.0/8',         // "This" network
+  '10.0.0.0/8',        // Private RFC 1918
+  '100.64.0.0/10',     // Carrier-grade NAT
+  '127.0.0.0/8',       // Loopback
+  '169.254.0.0/16',    // Link-local / Cloud Metadata
+  '172.16.0.0/12',     // Private RFC 1918 (172.16.0.0 - 172.31.255.255)
+  '192.0.0.0/24',      // IETF Protocol Assignments
+  '192.0.2.0/24',      // TEST-NET-1
+  '192.88.99.0/24',    // 6to4 Relay Anycast
+  '192.168.0.0/16',    // Private RFC 1918
+  '198.18.0.0/15',     // Benchmarking
+  '198.51.100.0/24',   // TEST-NET-2
+  '203.0.113.0/24',    // TEST-NET-3
+  '224.0.0.0/4',       // Multicast
+  '240.0.0.0/4',       // Reserved / Future Use
   '255.255.255.255/32' // Broadcast
 ].map(cidrToRange);
 
@@ -43,6 +47,7 @@ const RESERVED_IPV4_RANGES = [
  * Returns null if not a numeric IP.
  */
 export function normalizeNumericIp(host) {
+  if (!host || typeof host !== 'string') return null;
   const clean = host.trim().replace(/^\[|\]$/g, '');
 
   // 1. Single integer decimal (e.g. 2130706433 = 127.0.0.1)
@@ -59,7 +64,7 @@ export function normalizeNumericIp(host) {
   }
 
   // 2. Hex notation (e.g. 0x7f000001)
-  if (/^0x[0-9a-fA-F]+$/.test(clean)) {
+  if (/^0x[0-9a-fA-F]+$/i.test(clean)) {
     const num = parseInt(clean, 16);
     if (num >= 0 && num <= 4294967295) {
       return [
@@ -72,7 +77,7 @@ export function normalizeNumericIp(host) {
   }
 
   // 3. Dot-separated octal or mixed hex parts (e.g. 0177.0.0.1)
-  if (/^([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)$/.test(clean)) {
+  if (/^([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)\.([0-9a-fA-Fx]+)$/i.test(clean)) {
     const parts = clean.split('.').map(p => {
       if (p.startsWith('0x') || p.startsWith('0X')) return parseInt(p, 16);
       if (p.startsWith('0') && p.length > 1) return parseInt(p, 8);
@@ -99,23 +104,27 @@ export function isPrivateIpv4(ipStr) {
 }
 
 /**
- * Checks whether an IPv6 string is private or loopback.
+ * Checks whether an IPv6 string is private, loopback, link-local, or IPv4-mapped.
+ * Covers: ::1, fc00::/7, fe80::/10, ::ffff:0:0/96, etc.
  */
 export function isPrivateIpv6(ipStr) {
+  if (!ipStr || typeof ipStr !== 'string') return false;
   const clean = ipStr.toLowerCase().replace(/^\[|\]$/g, '');
   
-  // Loopback & unspecified
-  if (clean === '::1' || clean === '::' || clean === '0:0:0:0:0:0:0:1') return true;
+  // Loopback (::1) & unspecified (::)
+  if (clean === '::1' || clean === '::' || clean === '0:0:0:0:0:0:0:1' || clean === '0:0:0:0:0:0:0:0') return true;
 
-  // IPv4-mapped IPv6 (::ffff:127.0.0.1 or ::ffff:7f00:1)
+  // IPv4-mapped IPv6 (::ffff:0:0/96 or ::ffff:127.0.0.1)
   if (clean.startsWith('::ffff:')) {
     const v4Part = clean.slice(7);
     if (v4Part.includes('.')) {
       return isPrivateIpv4(v4Part);
     }
+    // Hex IPv4 mapped (e.g. ::ffff:7f00:1)
+    return true;
   }
 
-  // Unique Local Address (fc00::/7: fc... or fd...)
+  // Unique Local Address (fc00::/7: covers fc00:: through fdff::)
   if (/^f[cd][0-9a-f]{2}:/i.test(clean)) return true;
 
   // Link-Local (fe80::/10: fe8..., fe9..., fea..., feb...)
@@ -128,30 +137,38 @@ export function isPrivateIpv6(ipStr) {
 }
 
 /**
- * Resolves a hostname via Cloudflare DNS over HTTPS (DoH).
- * Filters out CNAME records; returns A and AAAA IP records.
+ * Resolves a hostname via Cloudflare DNS over HTTPS (DoH) for both A and AAAA records.
+ * Ignores CNAME records and returns only public IP addresses.
+ * Fails closed on lookup errors or when only CNAME answers exist without A/AAAA.
  */
 export async function resolveDnsOverHttps(hostname) {
   const ips = [];
-  try {
-    const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`;
-    const resp = await fetch(dohUrl, {
-      headers: { 'Accept': 'application/dns-json' }
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      if (Array.isArray(data.Answer)) {
-        for (const ans of data.Answer) {
-          // Type 1 is A record
-          if (ans.type === 1 && ans.data) {
-            ips.push(ans.data.trim());
+  const recordTypes = ['A', 'AAAA'];
+
+  for (const rtype of recordTypes) {
+    try {
+      const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${rtype}`;
+      const resp = await fetch(dohUrl, {
+        headers: { 'Accept': 'application/dns-json' }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data.Answer)) {
+          for (const ans of data.Answer) {
+            // Type 1 is A record, Type 28 is AAAA record. Explicitly ignore Type 5 (CNAME)
+            if (ans.type === 1 && ans.data) {
+              ips.push(ans.data.trim());
+            } else if (ans.type === 28 && ans.data) {
+              ips.push(ans.data.trim());
+            }
           }
         }
       }
+    } catch {
+      // DoH request network/timeout error
     }
-  } catch (err) {
-    // DNS query failure
   }
+
   return ips;
 }
 
@@ -187,7 +204,7 @@ export async function validateTargetUrl(rawUrl, checkDns = true) {
     return { valid: false, error: 'Only HTTP and HTTPS protocols are permitted.' };
   }
 
-  // Port check
+  // Port check: strict 80 or 443
   const port = parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === 'https:' ? 443 : 80);
   if (port !== 80 && port !== 443) {
     return { valid: false, error: 'Only standard web ports 80 and 443 are supported.' };
@@ -198,12 +215,19 @@ export async function validateTargetUrl(rawUrl, checkDns = true) {
     return { valid: false, error: 'Target URL is missing a valid hostname.' };
   }
 
-  // Localhost names
-  if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local') || hostname.endsWith('.internal')) {
+  // Localhost & internal domain names
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.internal') ||
+    hostname.endsWith('.lan') ||
+    hostname.endsWith('.home')
+  ) {
     return { valid: false, error: 'Access to localhost and internal hostnames is blocked.' };
   }
 
-  // Numeric IPv4 representation
+  // Numeric IPv4 representation (decimal, hex, octal)
   const numericIpv4 = normalizeNumericIp(hostname);
   if (numericIpv4) {
     if (isPrivateIpv4(numericIpv4)) {
@@ -216,16 +240,16 @@ export async function validateTargetUrl(rawUrl, checkDns = true) {
     return { valid: false, error: `Direct IP ${hostname} belongs to a private or restricted network.` };
   }
 
-  // Direct IPv6
+  // Direct IPv6 (including bracketed notation like [::1])
   if (isPrivateIpv6(hostname)) {
     return { valid: false, error: `Direct IPv6 ${hostname} belongs to a private or loopback network.` };
   }
 
   // DNS Rebinding / Private Domain check
-  if (checkDns && !numericIpv4 && !/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) {
+  if (checkDns && !numericIpv4 && !/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && !hostname.includes(':')) {
     const resolvedIps = await resolveDnsOverHttps(hostname);
     if (resolvedIps.length === 0) {
-      // Fail closed if domain does not resolve
+      // Fail closed if domain does not resolve to any public A or AAAA records
       return { valid: false, error: `Domain does not resolve to an active public IP address.` };
     }
     for (const ip of resolvedIps) {
