@@ -1,6 +1,52 @@
 import { test, expect } from '@playwright/test';
 
+// Computed SHA-256 token for default password "sapvik2026"
+const DEFAULT_AUTH_TOKEN = '14b3462340e0b0e3f6b99b0600d4f018ca8409acac51fddc1c17bc8120ad13b9';
+
+test.describe('Edge Password Gate & Access Control', () => {
+
+  test('Blocks unauthenticated access, rejects wrong passwords, and unlocks with valid passcode', async ({ page }) => {
+    // 1. Visit root page unauthenticated
+    const initialRes = await page.goto('/');
+    expect(initialRes.status()).toBe(401);
+
+    // 2. Lock screen should be visible
+    const lockCard = page.locator('.lock-card');
+    await expect(lockCard).toBeVisible();
+    await expect(page.locator('h1.lock-title')).toHaveText('Preview Authorization');
+
+    // 3. Submit wrong passcode
+    await page.fill('#password', 'wrong-passcode-99');
+    await page.click('button[type="submit"]');
+
+    // Error banner displayed and still locked
+    const errBanner = page.locator('.error-banner');
+    await expect(errBanner).toBeVisible();
+    await expect(errBanner).toContainText('Incorrect access passcode');
+
+    // 4. Submit correct passcode
+    await page.fill('#password', 'sapvik2026');
+    await page.click('button[type="submit"]');
+
+    // 5. Successful authentication unlocks the website
+    await page.waitForSelector('#home');
+    await expect(page.locator('#home')).toBeVisible();
+  });
+
+});
+
 test.describe('SAPVIK Production Smoke Tests', () => {
+
+  test.beforeEach(async ({ context }) => {
+    // Authenticate session via edge cookie for feature tests
+    await context.addCookies([
+      {
+        name: 'sapvik_auth',
+        value: DEFAULT_AUTH_TOKEN,
+        url: 'http://127.0.0.1:8082'
+      }
+    ]);
+  });
 
   test('360px Mobile Viewport has NO horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 740 });
