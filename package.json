@@ -1,0 +1,18 @@
+{
+  "name": "sapvik-website",
+  "version": "2.0.0",
+  "description": "SAPVIK Official Website - Precision Digital Growth Partner",
+  "scripts": {
+    "dev": "python server.py",
+    "test": "node tests/audit_tests.js"
+  },
+  "keywords": [
+    "digital-marketing",
+    "growth",
+    "gmb",
+    "performance-marketing"
+  ],
+  "author": "SAPVIK Tech",
+  "license": "UNLICENSED",
+  "private": true
+}

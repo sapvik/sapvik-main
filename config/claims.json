@@ -1,0 +1,25 @@
+{
+  "claims": [
+    {
+      "id": "speed_target",
+      "statement": "Sub-second initial paint on optimized networks",
+      "type": "engineering_target",
+      "verified": true,
+      "source": "Lighthouse and CrUX benchmarks on lightweight static deployments"
+    },
+    {
+      "id": "gmb_timeframe",
+      "statement": "Target ranking visibility improvements within 60 to 90 days",
+      "type": "estimated_timeframe",
+      "verified": true,
+      "source": "Empirical local citation and review aggregation cycles"
+    },
+    {
+      "id": "sla_response",
+      "statement": "Discovery audit and consultation turnaround within 24 business hours",
+      "type": "operational_sla",
+      "verified": true,
+      "source": "SAPVIK standard client onboarding policy"
+    }
+  ]
+}
