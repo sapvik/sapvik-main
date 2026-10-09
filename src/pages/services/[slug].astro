@@ -15,6 +15,15 @@ interface Props {
 
 const { service } = Astro.props;
 const otherServices = SERVICES.filter(s => s.id !== service.id);
+
+const outcomeMap: Record<string, string> = {
+  'websites': 'Higher Conversion Rate',
+  'gmb': 'Inbound Local Calls',
+  'media': 'Brand Trust & Reach',
+  'promotions': 'Qualified Commercial Leads',
+  'apps': 'Workflow Efficiency',
+  'branding': 'Market Credibility'
+};
 ---
 
 <Base
@@ -23,103 +32,162 @@ const otherServices = SERVICES.filter(s => s.id !== service.id);
 >
   <article class="service-detail-page">
     <div class="container">
-      <div class="service-hero frame-box">
-        <div class="service-kicker">
-          <span class="mono-label">{service.code} &bull; Capability Overview</span>
-        </div>
-        <h1 class="service-title">{service.name}</h1>
-        <p class="service-lead">{service.headline}</p>
-        <p class="service-body">{service.description}</p>
+      
+      <!-- Editorial Breadcrumb Navigation -->
+      <nav class="breadcrumb-bar" aria-label="Breadcrumbs" style="margin-bottom: 1.5rem;">
+        <ol style="list-style: none; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-family: var(--font-mono); color: var(--c-text-muted); padding: 0; margin: 0; flex-wrap: wrap;">
+          <li><a href="/" style="color: inherit; text-decoration: none;">HOME</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="/#services" style="color: inherit; text-decoration: none;">SERVICES</a></li>
+          <li aria-hidden="true">/</li>
+          <li style="color: var(--c-vermilion); font-weight: 700;" aria-current="page">{service.code} &bull; {service.name.toUpperCase()}</li>
+        </ol>
+      </nav>
 
-        <div class="service-hero-actions">
-          <a href="/#contact" class="btn btn-vermilion btn-lg">
-            <span>Request Strategy Review for {service.name}</span>
-            <span>&rarr;</span>
-          </a>
-          <a href="/#services" class="btn btn-secondary btn-lg">
-            <span>&larr; View All Capabilities</span>
-          </a>
+      <!-- Section Header -->
+      <div class="section-head" style="margin-bottom: 2.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span class="badge">{service.code}</span>
+          <span class="mono-label">Pillar of Execution &bull; Pan-India Delivery</span>
         </div>
+        <h1 class="section-title">
+          {service.name}<span class="vermilion-square" aria-hidden="true"></span>
+        </h1>
+        <p class="section-desc">
+          {service.headline}
+        </p>
       </div>
 
+      <!-- Two-Column Editorial Layout -->
       <div class="service-details-grid">
-        <div class="details-main frame-box">
-          <h2 class="section-title">Core Deliverables & Scope</h2>
-          <ul class="deliverables-checklist">
-            {service.deliverables.map((item) => (
-              <li>
-                <span class="check-icon" aria-hidden="true">&bull;</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+        
+        <!-- Left Column: Narrative, Deliverables, Actions -->
+        <div class="details-main-column">
+          <div class="frame-box" style="padding: 2.25rem 2rem; margin-bottom: 2rem;">
+            <span class="mono-label" style="display: block; margin-bottom: 0.5rem; color: var(--c-vermilion);">
+              TECHNICAL SPECIFICATION
+            </span>
+            <h2 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 1rem;">
+              Capability Architecture & Methodology
+            </h2>
+            <p style="font-size: 1.05rem; color: var(--c-text-secondary); line-height: 1.7; margin-bottom: 2rem;">
+              {service.description}
+            </p>
+
+            <span class="mono-label" style="display: block; margin-bottom: 0.85rem;">
+              CORE DELIVERABLES & SCOPE OF EXECUTION
+            </span>
+            <ul class="service-deliverables" style="margin-bottom: 2.25rem;">
+              {service.deliverables.map((item) => (
+                <li class="deliverable-item">
+                  <span class="item-dash">—</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div class="hero-cta-group" style="margin-bottom: 0;">
+              <a href="/#contact" class="btn btn-vermilion btn-lg">
+                <span>Request Strategy Review for {service.name}</span>
+                <span>&rarr;</span>
+              </a>
+              <a href="/#services" class="btn btn-secondary btn-lg">
+                <span>&larr; View All Capabilities</span>
+              </a>
+            </div>
+          </div>
         </div>
 
-        <div class="details-sidebar frame-box">
-          <h3 class="sidebar-head">Operational Metric Focus</h3>
-          <p class="sidebar-text">
-            Performance on this engagement is evaluated primarily through:
-          </p>
-          <div class="metric-highlight">
-            <strong>{service.metricsFocus}</strong>
+        <!-- Right Column: Telemetry, SLA, Related Pillars -->
+        <div class="details-sidebar-column">
+          
+          <!-- Card 1: Key Metric Target -->
+          <div class="frame-box" style="padding: 1.75rem; margin-bottom: 1.75rem;">
+            <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.35rem;">
+              PRIMARY OUTCOME
+            </span>
+            <h3 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.5rem;">
+              {outcomeMap[service.id] || service.metricsFocus}
+            </h3>
+            <p style="font-size: 0.88rem; color: var(--c-text-muted); line-height: 1.55;">
+              Evaluated through bi-weekly performance debriefs focused on verified commercial inquiries and revenue attribution.
+            </p>
           </div>
 
-          <h3 class="sidebar-head" style="margin-top: 2rem;">Related Capabilities</h3>
-          <ul class="related-list">
-            {otherServices.slice(0, 3).map((other) => (
-              <li>
-                <a href={`/services/${other.slug}.html`} class="related-link">
-                  {other.name} &rarr;
-                </a>
+          <!-- Card 2: Operational Standards -->
+          <div class="frame-box" style="padding: 1.75rem; margin-bottom: 1.75rem;">
+            <span class="mono-label" style="display: block; margin-bottom: 0.75rem;">
+              OPERATIONAL COMMITMENTS
+            </span>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.88rem; color: var(--c-text-secondary);">
+              <li style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <span style="color: var(--c-vermilion); font-weight: 800; line-height: 1.2;">&bull;</span>
+                <span><strong>&lt;24h Turnaround SLA:</strong> Rapid diagnostic response on incoming architecture reviews.</span>
               </li>
-            ))}
-          </ul>
+              <li style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <span style="color: var(--c-vermilion); font-weight: 800; line-height: 1.2;">&bull;</span>
+                <span><strong>100% Asset Ownership:</strong> You retain full DNS, code repository, and ad account administration.</span>
+              </li>
+              <li style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <span style="color: var(--c-vermilion); font-weight: 800; line-height: 1.2;">&bull;</span>
+                <span><strong>Direct Platform Invoicing:</strong> Zero agency percentage markups on third-party ad spend.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Card 3: Other Capabilities -->
+          <div class="frame-box" style="padding: 1.75rem;">
+            <span class="mono-label" style="display: block; margin-bottom: 0.75rem;">
+              OTHER GROWTH CAPABILITIES
+            </span>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+              {otherServices.map((other) => (
+                <li>
+                  <a href={`/services/${other.slug}.html`} class="related-pillar-link">
+                    <span>{other.name}</span>
+                    <span style="color: var(--c-vermilion);">&rarr;</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+      
+      <!-- Bottom Strategic Discovery Box -->
+      <div class="frame-box" style="margin-top: 2.5rem; padding: clamp(1.75rem, 4vw, 2.5rem); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; border-left: 4px solid var(--c-vermilion);">
+        <div style="max-width: 680px;">
+          <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.35rem;">
+            COMMERCIAL GROWTH PARTNERSHIP &bull; {service.code}
+          </span>
+          <h3 style="font-family: var(--font-display); font-size: 1.45rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.4rem;">
+            Scale Your {service.name} Pipeline
+          </h3>
+          <p style="color: var(--c-text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 0;">
+            Book an initial technical architecture review with our senior team. Zero agency retainers upfront, direct platform ad billing, and strict turnaround SLA.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="/#contact" class="btn btn-vermilion btn-lg">
+            <span>Request Diagnostic Review</span>
+            <span>&rarr;</span>
+          </a>
+          <a href="https://wa.me/918800592147?text=Hi%20SAPVIK%2C%20I'd%20like%20to%20discuss%20{encodeURIComponent(service.name)}." target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+            <span>WhatsApp Direct</span>
+          </a>
         </div>
       </div>
+
     </div>
   </article>
 </Base>
 
 <style>
   .service-detail-page {
-    padding-top: clamp(2rem, 4vw, 3.5rem);
+    padding-top: calc(var(--header-h) + 2.5rem);
     padding-bottom: clamp(4rem, 7vw, 6rem);
-  }
-
-  .service-hero {
-    margin-bottom: 2.5rem;
-  }
-
-  .service-kicker {
-    margin-bottom: 0.5rem;
-  }
-
-  .service-title {
-    margin-bottom: 0.75rem;
-    font-size: clamp(2.2rem, 4.5vw, 3.2rem);
-  }
-
-  .service-lead {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--c-text-primary);
-    line-height: 1.45;
-    margin-bottom: 1rem;
-    max-width: 780px;
-  }
-
-  .service-body {
-    font-size: 1.05rem;
-    color: var(--c-text-muted);
-    line-height: 1.6;
-    margin-bottom: 2rem;
-    max-width: 720px;
-  }
-
-  .service-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
   }
 
   .service-details-grid {
@@ -128,69 +196,26 @@ const otherServices = SERVICES.filter(s => s.id !== service.id);
     gap: 2rem;
   }
 
-  @media (min-width: 800px) {
+  @media (min-width: 900px) {
     .service-details-grid {
-      grid-template-columns: 1.8fr 1fr;
+      grid-template-columns: 1.9fr 1fr;
     }
   }
 
-  .deliverables-checklist {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    margin-top: 1.5rem;
-  }
-
-  .deliverables-checklist li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 1.05rem;
-    color: var(--c-text-secondary);
-    line-height: 1.5;
-  }
-
-  .check-icon {
-    color: var(--c-success);
-    font-weight: 800;
-    font-size: 1.2rem;
-  }
-
-  .sidebar-head {
-    font-size: 1.05rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .sidebar-text {
+  .related-pillar-link {
     font-size: 0.9rem;
-    color: var(--c-text-muted);
-    margin-bottom: 0.75rem;
-  }
-
-  .metric-highlight {
-    background: var(--c-surface-subdued);
-    border-left: 3px solid var(--c-vermilion);
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    color: var(--c-text-primary);
-  }
-
-  .related-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-  }
-
-  .related-link {
-    font-size: 0.92rem;
-    color: var(--c-text-primary);
     font-weight: 600;
+    color: var(--c-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    border-bottom: 1px dashed var(--c-border);
+    transition: color 0.15s ease, padding-left 0.15s ease;
   }
 
-  .related-link:hover {
+  .related-pillar-link:hover {
     color: var(--c-vermilion);
+    padding-left: 0.25rem;
   }
 </style>

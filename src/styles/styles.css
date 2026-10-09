@@ -1,4 +1,4 @@
-﻿@import './fonts.css';
+@import './fonts.css';
 /* ==========================================================================
    SAPVIK TECH - OFFICIAL DESIGN SYSTEM & RESPONSIVE ARCHITECTURE
    Brand Standards: Concept G (Vertex) | Pure Craft, Zero Clich├⌐s
@@ -244,13 +244,13 @@ button, input, select, textarea {
   background: var(--c-surface-subdued);
 }
 
-.btn-vermilion {
+.btn-vermilion, .btn-orange {
   background: var(--c-vermilion);
   color: #FFFFFF;
   border: 1px solid var(--c-vermilion);
 }
 
-.btn-vermilion:hover {
+.btn-vermilion:hover, .btn-orange:hover {
   background: var(--c-vermilion-hover);
   border-color: var(--c-vermilion-hover);
   box-shadow: 0 4px 14px var(--c-vermilion-glow);

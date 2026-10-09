@@ -80,8 +80,8 @@ export async function onRequestPost(context) {
     // Cache API unavailable in some local runtime mocks
   }
 
-  // 4. Execute Live Bounded Scan
-  const scanResult = await executeLiveScan(normalizedTarget, 8);
+  // 4. Execute Live Bounded Scan (3.5s origin timeout with rapid perimeter fallback)
+  const scanResult = await executeLiveScan(normalizedTarget, 3.5);
 
   const responseHeaders = {
     'Content-Type': 'application/json',
