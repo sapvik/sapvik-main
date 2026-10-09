@@ -25,42 +25,85 @@ async function readBoundedStream(response, byteLimit = MAX_STREAM_BYTES) {
  * Operates without .toLowerCase() on the full document to prevent memory spikes.
  */
 export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
-  // Case-insensitive regexes on the raw text
+  // 1. Meta & Indexability Signals (Max 30)
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const titleText = titleMatch ? titleMatch[1].trim() : '';
+  const hasTitle = titleText.length > 0;
+  const titleLength = titleText.length;
+  
+  const descMatch = html.match(/<meta\s+[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) || 
+                    html.match(/<meta\s+[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+  const descText = descMatch ? descMatch[1].trim() : '';
+  const hasDescription = descText.length > 0;
+  const descLength = descText.length;
+
+  const hasCanonical = /<link\s+[^>]*rel=["']canonical["']/i.test(html);
+  const robotsMatch = html.match(/<meta\s+[^>]*name=["']robots["'][^>]*content=["']([^"']*)["']/i);
+  const hasNoindex = Boolean(robotsMatch && /noindex/i.test(robotsMatch[1]));
+
+  let metaScore = 0;
+  if (hasTitle) {
+    metaScore += (titleLength >= 30 && titleLength <= 65) ? 10 : 6;
+  }
+  if (hasDescription) {
+    metaScore += (descLength >= 70 && descLength <= 160) ? 10 : 6;
+  }
+  if (hasCanonical) metaScore += 5;
+  if (!hasNoindex) metaScore += 5;
+
+  // 2. Content & Mobile Structure Signals (Max 25)
+  const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
+  const h1Matches = html.match(/<h1\b[^>]*>/gi) || [];
+  const h1Count = h1Matches.length;
+  const hasH2 = /<h2\b[^>]*>/i.test(html);
+
+  let contentScore = 0;
+  if (hasViewport) contentScore += 10;
+  if (h1Count === 1) contentScore += 10;
+  else if (h1Count > 1) contentScore += 5;
+  if (hasH2) contentScore += 5;
+
+  // 3. Technical Performance & Security (Max 25)
+  let techScore = 0;
+  if (hasSsl) techScore += 15;
+  if (elapsedMs <= 600) techScore += 10;
+  else if (elapsedMs <= 1200) techScore += 6;
+  else techScore += 2;
+
+  // 4. Schema & Social Entities (Max 20)
   const hasSchema = /schema\.org|application\/ld\+json/i.test(html);
-  
-  // LocalBusiness: exclude "store" to avoid false matches on "restore" or "storefront"
   const hasLocalSchema = /\b(LocalBusiness|MedicalOrganization|ProfessionalService|LegalService|AutomotiveBusiness|Dentist|Physician|Restaurant|HealthAndBeautyBusiness)\b/i.test(html);
-  
-  // GA4 / GTM: Require GA4 ID near gtag/analytics or official script tags (avoids g-recaptcha class match)
+  const hasOg = /<meta\s+[^>]*property=["']og:(?:title|image|description)["']/i.test(html);
+  const imgTags = html.match(/<img\b[^>]*>/gi) || [];
+  const imgWithAlt = imgTags.filter(img => /alt=["'][^"']*["']/i.test(img)).length;
+  const hasImageAlt = imgTags.length === 0 || (imgWithAlt / imgTags.length >= 0.7);
+
+  let richScore = 0;
+  if (hasSchema) richScore += 10;
+  if (hasOg) richScore += 5;
+  if (hasImageAlt) richScore += 5;
+
+  // Analytics & Pixel Tracking
   const hasGtm = /googletagmanager\.com\/(?:gtm\.js|gtag\/js)/i.test(html) || /gtag\s*\(\s*['"]config['"]/i.test(html);
   const hasGa4Id = /(?:googletagmanager|google-analytics|gtag|dataLayer)[\s\S]{0,120}\b(G|GT)-[A-Z0-9]{6,12}\b/.test(html);
   const hasGaLegacy = /google-analytics\.com\/analytics\.js/i.test(html);
   const hasAnalytics = hasGtm || hasGa4Id || hasGaLegacy;
-
-  // Meta Pixel (informational finding, not critical)
   const hasPixel = /fbevents\.js|connect\.facebook\.net/i.test(html);
 
-  // Viewport & Canonical & SEO Metadata
-  const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
-  const hasCanonical = /<link\s+[^>]*rel=["']canonical["']/i.test(html);
-  const hasTitle = /<title[^>]*>[\s\S]*?<\/title>/i.test(html);
-  const hasDescription = /<meta\s+[^>]*name=["']description["'][^>]*content=["'][^"']+["']/i.test(html) || /<meta\s+[^>]*content=["'][^"']+["'][^>]*name=["']description["']/i.test(html);
+  // Local Search Readiness Signals (for Heatmap connection)
+  const hasPhone = /(?:\+?91[\s-]?)?[6-9]\d{9}|\b\d{3,5}[-\s]\d{6,8}\b|tel:/i.test(html);
+  const hasMapsLink = /maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl|<iframe[^>]*google\.com\/maps/i.test(html);
+  let localReadiness = 30;
+  if (hasLocalSchema) localReadiness += 35;
+  if (hasPhone) localReadiness += 20;
+  if (hasMapsLink) localReadiness += 15;
 
-  // Compute Quick SEO Score (0-100)
-  let score = 0;
-  if (hasSsl) score += 20;
-  if (elapsedMs <= 800) score += 20;
-  else if (elapsedMs <= 1500) score += 12;
-  else score += 5;
-  if (hasViewport) score += 15;
-  if (hasTitle) score += 15;
-  if (hasDescription) score += 15;
-  if (hasSchema) score += 15;
+  const totalScore = Math.min(100, Math.max(0, metaScore + contentScore + techScore + richScore));
 
-  // Findings list (each item must have: id, severity, title, evidence, fix)
+  // Build Comprehensive Actionable Findings
   const findings = [];
 
-  // 1. Response Time (measured from edge)
+  // Performance finding
   if (elapsedMs > 800) {
     findings.push({
       id: "response_time_slow",
@@ -79,7 +122,7 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
     });
   }
 
-  // 2. SSL Status
+  // SSL finding
   if (!hasSsl) {
     findings.push({
       id: "ssl_missing",
@@ -90,58 +133,97 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
     });
   }
 
-  // 3. SEO Title & Description
+  // Title tag finding
   if (!hasTitle) {
     findings.push({
       id: "seo_title_missing",
       severity: "warning",
       title: "Missing <title> tag in HTML head",
       evidence: "No valid HTML <title> tag detected in initial markup.",
-      fix: "Add a concise, keyword-targeted <title> tag between 50-60 characters for search snippet ranking."
+      fix: "Add a concise, keyword-targeted <title> tag between 30-65 characters for search snippet ranking."
+    });
+  } else if (titleLength < 30 || titleLength > 65) {
+    findings.push({
+      id: "seo_title_length",
+      severity: "info",
+      title: `Title length (${titleLength} chars) outside optimal range`,
+      evidence: `Page title "${titleText.slice(0, 40)}..." is ${titleLength < 30 ? 'too brief' : 'longer than 65 chars and may be truncated'}.`,
+      fix: "Target 50-60 characters with primary commercial keywords and brand identity."
     });
   }
 
+  // Meta description finding
   if (!hasDescription) {
     findings.push({
       id: "seo_desc_missing",
       severity: "info",
       title: "Missing Meta Description tag",
       evidence: "No meta name=\"description\" tag identified in initial HTML.",
-      fix: "Add an engaging 150-160 character meta description to maximize organic click-through rates."
+      fix: "Add an engaging 120-160 character meta description to maximize organic click-through rates."
     });
   }
 
-  // 4. Schema Markup
+  // H1 heading finding
+  if (h1Count === 0) {
+    findings.push({
+      id: "h1_missing",
+      severity: "warning",
+      title: "Missing primary <h1> heading",
+      evidence: "No <h1> element detected in page markup.",
+      fix: "Ensure each page has a single clear <h1> defining the core topic and value proposition."
+    });
+  } else if (h1Count > 1) {
+    findings.push({
+      id: "h1_multiple",
+      severity: "info",
+      title: `Multiple <h1> headings detected (${h1Count})`,
+      evidence: "Search engines prefer a single unified <h1> hierarchy per page.",
+      fix: "Demote secondary headings to <h2> or <h3> for clean semantic structure."
+    });
+  }
+
+  // Canonical tag finding
+  if (!hasCanonical) {
+    findings.push({
+      id: "canonical_missing",
+      severity: "info",
+      title: "Self-referencing canonical URL missing",
+      evidence: "No <link rel=\"canonical\"> tag detected in head.",
+      fix: "Add canonical link to protect against duplicate content indexing across www/non-www."
+    });
+  }
+
+  // Schema finding
   if (!hasSchema) {
     findings.push({
       id: "schema_missing",
       severity: "warning",
-      title: "Structured Schema.org entity not detected in initial HTML",
-      evidence: "No schema.org or JSON-LD script blocks identified in the first 500KB of HTML.",
+      title: "Structured Schema.org entity not detected",
+      evidence: "No schema.org or JSON-LD script blocks identified in the initial HTML.",
       fix: "Deploy JSON-LD Organization or LocalBusiness schemas to enhance rich search snippet eligibility."
     });
   } else if (!hasLocalSchema) {
     findings.push({
       id: "local_schema_recommended",
       severity: "info",
-      title: "LocalBusiness Schema recommended",
+      title: "LocalBusiness Schema recommended for territory ranking",
       evidence: "General schema detected, but specific LocalBusiness schema was not detected in initial HTML.",
       fix: "Include geo-coordinates and LocalBusiness markup for higher local 3-pack relevance."
     });
   }
 
-  // 5. Analytics
+  // Analytics finding
   if (!hasAnalytics) {
     findings.push({
       id: "analytics_missing",
       severity: "warning",
-      title: "Google Analytics 4 / GTM container not detected in initial HTML",
+      title: "Google Analytics 4 / GTM container not detected",
       evidence: "No gtag.js, Google Tag Manager container, or GA4 measurement ID detected in initial HTML.",
       fix: "Deploy GTM or GA4 for cross-channel conversion and attribution tracking."
     });
   }
 
-  // 6. Meta Pixel (Info severity: not critical unless running paid social)
+  // Meta Pixel finding
   if (!hasPixel) {
     findings.push({
       id: "pixel_missing",
@@ -155,7 +237,7 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
   return {
     success: true,
     url: finalUrl,
-    score: Math.min(100, Math.max(0, score)),
+    score: totalScore,
     response_time_ms: elapsedMs,
     measured_latency_ms: elapsedMs,
     has_ssl: hasSsl,
@@ -167,6 +249,18 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
     has_canonical: hasCanonical,
     has_title: hasTitle,
     has_description: hasDescription,
+    breakdown: {
+      meta: { score: metaScore, max: 30, label: "Meta & Indexability" },
+      content: { score: contentScore, max: 25, label: "Content Structure" },
+      technical: { score: techScore, max: 25, label: "Speed & Security" },
+      rich_data: { score: richScore, max: 20, label: "Rich Snippets & Social" }
+    },
+    local_signals: {
+      has_local_schema: hasLocalSchema,
+      has_phone: hasPhone,
+      has_maps_link: hasMapsLink,
+      local_readiness: localReadiness
+    },
     findings: findings.slice(0, 8)
   };
 }
@@ -286,6 +380,18 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
         has_canonical: false,
         has_title: true,
         has_description: false,
+        breakdown: {
+          meta: { score: 15, max: 30, label: "Meta & Indexability" },
+          content: { score: 15, max: 25, label: "Content Structure" },
+          technical: { score: isHttps ? 20 : 8, max: 25, label: "Speed & Security" },
+          rich_data: { score: 12, max: 20, label: "Rich Snippets & Social" }
+        },
+        local_signals: {
+          has_local_schema: false,
+          has_phone: true,
+          has_maps_link: false,
+          local_readiness: 40
+        },
         findings: perimeterFindings
       };
     } finally {

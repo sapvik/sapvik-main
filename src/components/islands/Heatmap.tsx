@@ -48,28 +48,14 @@ const OPTIMIZED_DATA: GeoNode[] = [
 export default function Heatmap() {
   const [auditedDomain, setAuditedDomain] = useState<string | null>(null);
   const [auditedScore, setAuditedScore] = useState<number | null>(null);
+  const [localSignals, setLocalSignals] = useState<{
+    has_local_schema?: boolean;
+    has_phone?: boolean;
+    has_maps_link?: boolean;
+    local_readiness?: number;
+  } | null>(null);
   const [mode, setMode] = useState<'audited' | 'unoptimized' | 'optimized'>('optimized');
   const [inspectedNode, setInspectedNode] = useState<GeoNode | null>(null);
-  const [inputDomain, setInputDomain] = useState('');
-
-  const handleDirectAudit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = inputDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
-    if (!clean) return;
-    setAuditedDomain(clean);
-    setAuditedScore(62);
-    setMode('audited');
-    setInspectedNode(null);
-    try {
-      sessionStorage.setItem('sapvik_latest_audit', JSON.stringify({
-        domain: clean,
-        score: 62,
-        latency: 380,
-        has_ssl: true
-      }));
-    } catch {}
-    trackEvent('heatmap_toggle', { mode: 'audited', domain: clean });
-  };
 
   useEffect(() => {
     // Check if an audit was stored in session
@@ -80,6 +66,9 @@ export default function Heatmap() {
         if (parsed.domain) {
           setAuditedDomain(parsed.domain);
           setAuditedScore(parsed.score || 65);
+          if (parsed.local_signals) {
+            setLocalSignals(parsed.local_signals);
+          }
           setMode('audited');
         }
       }
@@ -91,6 +80,9 @@ export default function Heatmap() {
       if (detail && detail.domain) {
         setAuditedDomain(detail.domain);
         setAuditedScore(detail.score || 65);
+        if (detail.local_signals) {
+          setLocalSignals(detail.local_signals);
+        }
         setMode('audited');
         setInspectedNode(null);
       }
@@ -145,36 +137,31 @@ export default function Heatmap() {
                 <span className="badge" style={{ background: 'var(--c-vermilion-soft)', color: 'var(--c-vermilion)', borderColor: 'var(--c-vermilion)', fontSize: '0.7rem', padding: '0.15rem 0.45rem' }}>
                   ● AUDIT LINKED ({auditedScore || 62}/100)
                 </span>
-              ) : null}
+              ) : (
+                <span className="badge" style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem' }}>
+                  GENERAL BASELINE
+                </span>
+              )}
             </div>
             <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--c-text-primary)' }}>
-              {auditedDomain ? `Local Footprint: ${auditedDomain}` : 'Geographic Pin Audit'}
+              {auditedDomain ? `Local Footprint: ${auditedDomain}` : 'Geographic Radius Simulation'}
             </span>
             {!auditedDomain && (
-              <form onSubmit={handleDirectAudit} style={{ display: 'flex', gap: '0.35rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  placeholder="e.g. kailashclinic.in"
-                  value={inputDomain}
-                  onChange={(e) => setInputDomain(e.target.value)}
-                  aria-label="Enter business domain for local audit"
-                  style={{
-                    fontSize: '0.75rem',
-                    padding: '0.3rem 0.55rem',
-                    border: '1px solid var(--c-border-strong)',
-                    background: 'var(--c-surface)',
-                    color: 'var(--c-text-primary)',
-                    width: '150px'
-                  }}
-                />
+              <div style={{ marginTop: '0.35rem' }}>
                 <button
-                  type="submit"
-                  className="btn btn-orange btn-sm"
-                  style={{ fontSize: '0.7rem', padding: '0.3rem 0.65rem', minHeight: '30px' }}
+                  type="button"
+                  onClick={() => {
+                    document.getElementById('scanner')?.scrollIntoView({ behavior: 'smooth' });
+                    setTimeout(() => {
+                      document.getElementById('scannerUrlInput')?.focus();
+                    }, 500);
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', minHeight: '28px' }}
                 >
-                  Map Domain Pins
+                  <span>Scan Your Domain Above &uarr;</span>
                 </button>
-              </form>
+              </div>
             )}
           </div>
 
@@ -239,6 +226,9 @@ export default function Heatmap() {
           <span>● #4–10 Fair</span>
           <span>● #11+ Poor (Inquiries Lost)</span>
         </div>
+        <div style={{ marginTop: '0.65rem', fontSize: '0.72rem', color: 'var(--c-text-muted)', textAlign: 'center' }}>
+          Interactive simulation model calibrated to on-page audit signals. Full 16-point GPS coordinate scan completed during client onboarding.
+        </div>
       </div>
 
       {/* Heatmap Strategic Analysis */}
@@ -273,6 +263,35 @@ export default function Heatmap() {
               <div className="heatmap-stat-lbl">TOP-3 DOMINANCE SHARE</div>
             </div>
           </div>
+
+          {/* Live On-Page Local Signals (if domain was audited) */}
+          {localSignals && (
+            <div style={{ margin: '1.25rem 0', padding: '0.85rem 1rem', background: 'var(--c-surface-subdued)', border: '1px solid var(--c-border)', fontSize: '0.82rem' }}>
+              <div className="mono-label" style={{ fontSize: '0.7rem', color: 'var(--c-vermilion)', marginBottom: '0.45rem' }}>
+                ON-PAGE LOCAL AUTHORITY SIGNALS
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>LocalBusiness Schema Markup:</span>
+                  <strong style={{ color: localSignals.has_local_schema ? 'var(--c-success)' : 'var(--c-warning)' }}>
+                    {localSignals.has_local_schema ? '✓ ACTIVE' : '✗ NOT DETECTED'}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Click-to-Call Phone Contact:</span>
+                  <strong style={{ color: localSignals.has_phone ? 'var(--c-success)' : 'var(--c-text-muted)' }}>
+                    {localSignals.has_phone ? '✓ DETECTED' : '— UNVERIFIED'}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Google Maps Embed / Pin Link:</span>
+                  <strong style={{ color: localSignals.has_maps_link ? 'var(--c-success)' : 'var(--c-text-muted)' }}>
+                    {localSignals.has_maps_link ? '✓ DETECTED' : '— NOT LINKED'}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div
             id="heatmapNotice"
