@@ -1,204 +1,105 @@
 ---
 import { SITE } from '../config/site';
-import { SERVICES } from '../config/services';
 ---
 
+<!-- SITE FOOTER -->
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <!-- Brand Col -->
-    <div class="footer-col brand-col">
-      <div class="footer-brand">
-        <svg width="28" height="28" viewBox="0 0 200 200" fill="none" aria-hidden="true">
-          <path d="M40 160L100 40L160 160L100 130L40 160Z" fill="var(--c-vermilion)"/>
-        </svg>
-        <span class="footer-brand-title">{SITE.brand.name}</span>
+  <div class="container">
+    
+    <div class="footer-matrix">
+      
+      <!-- Brand Info -->
+      <div class="footer-meta-block">
+        <a href="/#home" aria-label="SAPVIK Homepage">
+          <img src="/assets/logo.svg?v=3" alt="SAPVIK Logo" class="brand-logo-img">
+        </a>
+        <p style="margin-top: 1rem; color: var(--c-text-secondary); line-height: 1.6; font-size: 0.95rem;">
+          Precision digital growth partner for ambitious businesses. Websites, GMB Management, Media, Promotions, Apps, and Branding.
+        </p>
+        <div style="margin-top: 1.25rem;">
+          <span class="mono-label" style="color: var(--c-vermilion); font-weight: 700;">Sharper digital. Stronger business.</span>
+        </div>
       </div>
-      <p class="footer-tagline">{SITE.brand.tagline}</p>
-      <div class="footer-sla-badge">
-        <span class="mono-label">Turnaround SLA</span>
-        <p>{SITE.brand.slaStatement}</p>
+
+      <!-- Services -->
+      <div>
+        <h4 class="footer-nav-title">Services</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/services/websites-development.html">Websites Development</a></li>
+          <li><a href="/services/gmb-management.html">GMB Management</a></li>
+          <li><a href="/services/media-management.html">Media Management</a></li>
+          <li><a href="/services/digital-promotions.html">Digital Promotions</a></li>
+          <li><a href="/services/application-development.html">Application Development</a></li>
+          <li><a href="/services/branding.html">Branding</a></li>
+        </ul>
+      </div>
+
+      <!-- Explore -->
+      <div>
+        <h4 class="footer-nav-title">Explore</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/#heatmap">Local Heatmap Simulator</a></li>
+          <li><a href="/#calculator">Growth Simulator</a></li>
+          <li><a href="/#process">4-Stage Process</a></li>
+          <li><a href="/#proof">Client Proof</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+          <li><a href="/#contact">Request Audit</a></li>
+        </ul>
+      </div>
+
+      <!-- Connect & Compliance -->
+      <div>
+        <h4 class="footer-nav-title">Connect</h4>
+        <ul class="footer-nav-list">
+          <li><a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} target="_blank" rel="noopener">WhatsApp Direct</a></li>
+          <li><a href={`mailto:${SITE.brand.email}`}>{SITE.brand.email}</a></li>
+          <li><a href={SITE.brand.social.linkedin} target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href={SITE.brand.social.instagram} target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="/sitemap.xml">XML Sitemap</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Legal Compliance Bottom Bar -->
+    <div class="footer-bottom-bar">
+      <div>
+        &copy; 2026 SAPVIK Tech. All rights reserved. Precision digital systems for commercial scale.
+      </div>
+      <div class="footer-legal-links">
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+        <a href="/cookies.html">Cookie Disclosure</a>
+        <button type="button" id="footerConsentReset" class="consent-reset-link" style="background: none; border: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; padding: 0;">Cookie Settings</button>
       </div>
     </div>
 
-    <!-- Services Col -->
-    <div class="footer-col">
-      <h3 class="footer-heading">Capabilities</h3>
-      <ul class="footer-list">
-        {SERVICES.map(service => (
-          <li>
-            <a href={`/services/${service.slug}`} class="footer-link">
-              {service.name}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-
-    <!-- Communication & Direct Col -->
-    <div class="footer-col">
-      <h3 class="footer-heading">Direct Inquiries</h3>
-      <ul class="footer-list">
-        <li>
-          <a href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`} class="footer-link" data-track="call">
-            {SITE.brand.phoneDisplay}
-          </a>
-        </li>
-        <li>
-          <a href={`mailto:${SITE.brand.email}`} class="footer-link" data-track="email">
-            {SITE.brand.email}
-          </a>
-        </li>
-        <li>
-          <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} class="footer-link" target="_blank" rel="noopener" data-track="whatsapp">
-            WhatsApp Direct Chat &rarr;
-          </a>
-        </li>
-      </ul>
-
-      <h3 class="footer-heading" style="margin-top: 1.5rem;">Legal & Privacy</h3>
-      <ul class="footer-list">
-        <li><a href="/privacy" class="footer-link">Privacy Policy</a></li>
-        <li><a href="/terms" class="footer-link">Terms of Service</a></li>
-        <li><a href="/cookies" class="footer-link">Cookie Notice</a></li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="container footer-bottom">
-    <div class="footer-legal-row">
-      <p>&copy; {new Date().getFullYear()} {SITE.brand.name}. All rights reserved.</p>
-      <p class="footer-disclaimer">
-        All growth models are illustrative. Digital marketing campaigns are structured with transparent client asset ownership and documented SLAs.
-      </p>
-    </div>
   </div>
 </footer>
 
-<style>
-  .site-footer {
-    background: var(--c-surface-dark);
-    color: #CBD5E1;
-    padding-top: clamp(3.5rem, 6vw, 5rem);
-    padding-bottom: 2rem;
-    border-top: 1px solid #232A34;
-    margin-top: auto;
-  }
+<!-- STICKY MOBILE ACTION DOCK (TWO HIGH-CONTRAST TOUCH ACTIONS) -->
+<aside class="mobile-bottom-dock" id="mobileBottomDock" aria-label="Quick Actions">
+  <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} target="_blank" rel="noopener" class="dock-btn dock-btn-whatsapp">
+    <span>WhatsApp Direct</span>
+  </a>
+  <a href="/#contact" class="dock-btn dock-btn-audit">
+    <span>Claim Free Audit</span>
+  </a>
+</aside>
 
-  .footer-inner {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .footer-inner {
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 3rem;
+<script>
+  function initFooterConsent() {
+    const resetBtn = document.getElementById('footerConsentReset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('sapvik:open-consent'));
+      });
     }
   }
 
-  .footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.75rem;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFooterConsent);
+  } else {
+    initFooterConsent();
   }
-
-  .footer-brand-title {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.4rem;
-    letter-spacing: 0.04em;
-    color: #FFFFFF;
-  }
-
-  .footer-tagline {
-    font-size: 0.95rem;
-    color: #94A3B8;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-    max-width: 320px;
-  }
-
-  .footer-sla-badge {
-    background: rgba(255, 255, 255, 0.04);
-    border-left: 2px solid var(--c-vermilion);
-    padding: 0.75rem 1rem;
-    max-width: 320px;
-  }
-
-  .footer-sla-badge p {
-    font-size: 0.82rem;
-    color: #E2E8F0;
-    margin-top: 0.25rem;
-  }
-
-  .footer-heading {
-    font-family: var(--font-display);
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #FFFFFF;
-    margin-bottom: 1rem;
-  }
-
-  .footer-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .footer-link {
-    font-size: 0.9rem;
-    color: #94A3B8;
-    transition: color 0.15s ease;
-  }
-
-  .footer-link:hover {
-    color: #FFFFFF;
-  }
-
-  .footer-bottom {
-    margin-top: 3.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .footer-legal-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    font-size: 0.82rem;
-    color: #64748B;
-  }
-
-  @media (min-width: 768px) {
-    .footer-legal-row {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-    }
-  }
-
-  .footer-disclaimer {
-    max-width: 640px;
-  }
-</style>
-
-<script is:inline>
-  document.querySelectorAll('footer [data-track]').forEach(el => {
-    el.addEventListener('click', () => {
-      const type = el.getAttribute('data-track');
-      window.dataLayer = window.dataLayer || [];
-      if (type === 'whatsapp') {
-        window.dataLayer.push({ event: 'click_whatsapp', location: 'footer', event_timestamp: Date.now() });
-      } else if (type === 'call') {
-        window.dataLayer.push({ event: 'click_call', location: 'footer', event_timestamp: Date.now() });
-      } else if (type === 'email') {
-        window.dataLayer.push({ event: 'click_email', location: 'footer', event_timestamp: Date.now() });
-      }
-    });
-  });
 </script>

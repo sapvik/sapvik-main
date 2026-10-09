@@ -1,241 +1,186 @@
 import React, { useState } from 'react';
 import { trackEvent } from '../../lib/analytics';
 
-interface GridCell {
-  x: number;
-  y: number;
-  rank: number; // 1 to 20+
-  label: string;
+interface GeoNode {
+  rank: number;
+  area: string;
+  className: string;
 }
 
-const INITIAL_GRID: GridCell[] = [
-  { x: 0, y: 0, rank: 1, label: "Top Rank #1 (Primary Storefront)" },
-  { x: 1, y: 0, rank: 2, label: "Top Rank #2 (+1.5 km North)" },
-  { x: 2, y: 0, rank: 4, label: "Mid Rank #4 (+3.0 km North)" },
-  { x: 3, y: 0, rank: 7, label: "Low Rank #7 (+4.5 km North)" },
+const UNOPTIMIZED_DATA: GeoNode[] = [
+  { rank: 14, className: 'rank-poor', area: 'Central' },
+  { rank: 9,  className: 'rank-poor', area: 'North' },
+  { rank: 18, className: 'rank-poor', area: 'East' },
+  { rank: 12, className: 'rank-poor', area: 'South-E' },
+  { rank: 8,  className: 'rank-poor', area: 'Downtown' },
+  { rank: 16, className: 'rank-poor', area: 'Ring Rd' },
+  { rank: 22, className: 'rank-poor', area: 'North-W' },
+  { rank: 11, className: 'rank-poor', area: 'East-Ext' },
+  { rank: 15, className: 'rank-poor', area: 'Uptown' },
+  { rank: 7,  className: 'rank-poor', area: 'Hub' },
+  { rank: 19, className: 'rank-poor', area: 'South-W' },
+  { rank: 13, className: 'rank-poor', area: 'East-S' },
+  { rank: 21, className: 'rank-poor', area: 'West-Ext' },
+  { rank: 10, className: 'rank-poor', area: 'Airport' },
+  { rank: 17, className: 'rank-poor', area: 'Jct' },
+  { rank: 14, className: 'rank-poor', area: 'Sector 5' }
+];
 
-  { x: 0, y: 1, rank: 1, label: "Top Rank #1 (+1.5 km West)" },
-  { x: 1, y: 1, rank: 1, label: "Top Rank #1 (Central Core)" },
-  { x: 2, y: 1, rank: 3, label: "Mid Rank #3 (+1.5 km East)" },
-  { x: 3, y: 1, rank: 6, label: "Low Rank #6 (+3.0 km East)" },
-
-  { x: 0, y: 2, rank: 3, label: "Mid Rank #3 (+3.0 km West)" },
-  { x: 1, y: 2, rank: 2, label: "Top Rank #2 (+1.5 km South)" },
-  { x: 2, y: 2, rank: 5, label: "Mid Rank #5 (+1.5 km SE)" },
-  { x: 3, y: 2, rank: 9, label: "Low Rank #9 (+3.0 km SE)" },
-
-  { x: 0, y: 3, rank: 5, label: "Mid Rank #5 (+4.5 km SW)" },
-  { x: 1, y: 3, rank: 4, label: "Mid Rank #4 (+3.0 km South)" },
-  { x: 2, y: 3, rank: 8, label: "Low Rank #8 (+3.0 km South)" },
-  { x: 3, y: 3, rank: 12, label: "Low Rank #12 (+4.5 km South)" }
+const OPTIMIZED_DATA: GeoNode[] = [
+  { rank: 1, className: 'rank-top', area: 'Central' },
+  { rank: 2, className: 'rank-top', area: 'North' },
+  { rank: 1, className: 'rank-top', area: 'East' },
+  { rank: 1, className: 'rank-top', area: 'South-E' },
+  { rank: 1, className: 'rank-top', area: 'Downtown' },
+  { rank: 2, className: 'rank-top', area: 'Ring Rd' },
+  { rank: 1, className: 'rank-top', area: 'North-W' },
+  { rank: 2, className: 'rank-top', area: 'East-Ext' },
+  { rank: 1, className: 'rank-top', area: 'Uptown' },
+  { rank: 1, className: 'rank-top', area: 'Hub' },
+  { rank: 2, className: 'rank-top', area: 'South-W' },
+  { rank: 1, className: 'rank-top', area: 'East-S' },
+  { rank: 2, className: 'rank-top', area: 'West-Ext' },
+  { rank: 1, className: 'rank-top', area: 'Airport' },
+  { rank: 3, className: 'rank-top', area: 'Jct' },
+  { rank: 1, className: 'rank-top', area: 'Sector 5' }
 ];
 
 export default function Heatmap() {
-  const [selectedCell, setSelectedCell] = useState<GridCell>(INITIAL_GRID[5]); // Default center
+  const [isOptimized, setIsOptimized] = useState(true);
+  const [inspectedNode, setInspectedNode] = useState<GeoNode | null>(null);
 
-  const handleSelectCell = (cell: GridCell) => {
-    setSelectedCell(cell);
-    trackEvent('heatmap_toggle', {
-      rank: cell.rank,
-      node_id: `${cell.x}-${cell.y}`
-    });
+  const handleToggle = (optimized: boolean) => {
+    setIsOptimized(optimized);
+    setInspectedNode(null);
+    trackEvent('heatmap_toggle', { mode: optimized ? 'optimized' : 'unoptimized' });
   };
 
-  const getRankColor = (rank: number) => {
-    if (rank <= 3) return '#15803D'; // Green (Local 3-Pack)
-    if (rank <= 6) return '#B45309'; // Amber (First Page Mid)
-    return '#C93A22';               // Vermilion / Red (Beyond Top Fold)
-  };
+  const data = isOptimized ? OPTIMIZED_DATA : UNOPTIMIZED_DATA;
 
   return (
-    <div className="heatmap-container framed-card" id="heatmap">
-      <div className="heatmap-head">
-        <span className="mono-label">Geo-Grid Density Audit</span>
-        <h2 className="heatmap-title">Illustration: Local Visibility Density Model</h2>
-        <p className="heatmap-desc">
-          Google Maps rankings change every 500 meters. This illustrative 4x4 coordinate model shows how Local 3-Pack discovery drops outside your immediate postal perimeter without structured citation management.
-        </p>
-      </div>
-
-      <div className="heatmap-layout">
-        {/* 4x4 Interactive Grid */}
-        <div className="grid-board" role="region" aria-label="Local Ranking Grid">
-          {INITIAL_GRID.map((cell, idx) => {
-            const isSelected = selectedCell.x === cell.x && selectedCell.y === cell.y;
-            const bg = getRankColor(cell.rank);
-            return (
-              <button
-                key={idx}
-                type="button"
-                className={`grid-node ${isSelected ? 'selected' : ''}`}
-                style={{ backgroundColor: bg }}
-                onClick={() => handleSelectCell(cell)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleSelectCell(cell);
-                  }
-                }}
-                aria-label={`Coordinate ${cell.x}, ${cell.y}: Rank #${cell.rank} - ${cell.label}`}
-                aria-pressed={isSelected}
-              >
-                <span className="node-number">{cell.rank}</span>
-              </button>
-            );
-          })}
+    <div className="heatmap-wrapper">
+      {/* Heatmap Visual Console */}
+      <div className="frame-box heatmap-visual-box">
+        <div className="heatmap-toggle-bar">
+          <div>
+            <span className="mono-label" style={{ display: 'block' }}>SIMULATOR STATE</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--c-text-primary)' }}>Geographic Pin Audit</span>
+          </div>
+          <div className="heatmap-btn-group" role="group" aria-label="Heatmap Mode Toggle">
+            <button
+              type="button"
+              className={`heatmap-mode-btn ${!isOptimized ? 'active' : ''}`}
+              id="btnModeUnoptimized"
+              onClick={() => handleToggle(false)}
+            >
+              Unoptimized
+            </button>
+            <button
+              type="button"
+              className={`heatmap-mode-btn ${isOptimized ? 'active' : ''}`}
+              id="btnModeOptimized"
+              onClick={() => handleToggle(true)}
+            >
+              SAPVIK Sprint
+            </button>
+          </div>
         </div>
 
-        {/* Selected Coordinate Inspector */}
-        <div className="inspector-panel">
-          <div className="inspector-badge">
-            <span className="mono-label">Selected Node Detail</span>
-          </div>
-          <h3 className="inspector-title">Rank #{selectedCell.rank}</h3>
-          <p className="inspector-location">{selectedCell.label}</p>
-          
-          <div className="inspector-status">
-            <span className="status-label">Local 3-Pack Status:</span>
-            <strong style={{ color: selectedCell.rank <= 3 ? 'var(--c-success)' : 'var(--c-vermilion)' }}>
-              {selectedCell.rank <= 3 ? 'In Top 3 Visible Pack' : 'Below Top 3 Fold'}
-            </strong>
-          </div>
+        {/* 16-Node Geo Grid */}
+        <div className="geo-grid-matrix" id="geoGridMatrix" aria-label="16 Geographic Radius Nodes">
+          {data.map((node, idx) => (
+            <div
+              key={idx}
+              className={`geo-grid-node ${node.className}`}
+              role="button"
+              tabIndex={0}
+              style={{ transform: 'scale(1)' }}
+              onClick={() => setInspectedNode(node)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setInspectedNode(node);
+                }
+              }}
+            >
+              <span className="rank-num">#{node.rank}</span>
+              <span className="radius-lbl">{node.area}</span>
+            </div>
+          ))}
+        </div>
 
-          <p className="inspector-analysis">
-            {selectedCell.rank <= 3
-              ? "Positioned in the prime zero-click Google Maps phone pack. High inbound call intent."
-              : "Customers at this radius are directed to competing businesses closer to their active GPS point."}
+        {/* Heatmap Legend */}
+        <div className="heatmap-legend">
+          <span>● #1–3 Top 3 (Dominant)</span>
+          <span>● #4–10 Fair</span>
+          <span>● #11+ Poor (Inquiries Lost)</span>
+        </div>
+      </div>
+
+      {/* Heatmap Strategic Analysis */}
+      <div className="frame-box heatmap-analysis-box">
+        <div>
+          <div className="badge" style={{ marginBottom: '0.75rem' }}>LOCAL SEARCH MECHANICS</div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--c-text-primary)', marginBottom: '0.75rem' }}>
+            Ranking in the Top 3 Captures the Bulk of Buyer Inquiries
+          </h3>
+          <p style={{ fontSize: '0.95rem', color: 'var(--c-text-secondary)', lineHeight: 1.65 }}>
+            When high-intent customers search for local clinics, stores, or professional services, Google serves the 3-Pack map bundle before organic links. Falling outside position #3 directs prospective customers directly to nearby competitors.
           </p>
 
-          {/* Legend */}
-          <div className="heatmap-legend">
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#15803D' }}></span>
-              <span>Rank #1–3 (Local Pack)</span>
+          {/* Inbound Inquiry Telemetry */}
+          <div className="heatmap-stat-grid">
+            <div className="heatmap-stat-cell">
+              <div className="heatmap-stat-val" id="heatmapCallsVal">
+                {isOptimized ? '148 / mo' : '32 / mo'}
+              </div>
+              <div className="heatmap-stat-lbl">ESTIMATED INBOUND CALLS</div>
             </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#B45309' }}></span>
-              <span>Rank #4–6 (Mid Page)</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: '#C93A22' }}></span>
-              <span>Rank #7+ (Low Intent)</span>
+            <div className="heatmap-stat-cell">
+              <div className="heatmap-stat-val" id="heatmapRankVal">
+                {isOptimized ? '100%' : '0%'}
+              </div>
+              <div className="heatmap-stat-lbl">TOP-3 DOMINANCE SHARE</div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <style>{`
-        .heatmap-container {
-          margin-top: 2rem;
-          margin-bottom: 2rem;
-        }
-        .heatmap-title {
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .heatmap-desc {
-          color: var(--c-text-muted);
-          max-width: 680px;
-          margin-bottom: 2rem;
-        }
-        .heatmap-layout {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 2rem;
-        }
-        @media (min-width: 800px) {
-          .heatmap-layout {
-            grid-template-columns: 320px 1fr;
-            align-items: center;
-          }
-        }
-        .grid-board {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 8px;
-          background: #EAECEF;
-          padding: 12px;
-          border: 1px solid var(--c-border);
-          max-width: 320px;
-        }
-        .grid-node {
-          width: 60px;
-          height: 60px;
-          min-width: 44px;
-          min-height: 44px;
-          border: 2px solid transparent;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #FFFFFF;
-          cursor: pointer;
-          transition: transform 0.1s ease, border-color 0.1s ease;
-        }
-        .grid-node:hover {
-          transform: scale(1.05);
-        }
-        .grid-node.selected {
-          border-color: #12161C;
-          box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #12161C;
-          z-index: 2;
-        }
-        .node-number {
-          font-family: var(--font-display);
-          font-size: 1.25rem;
-          font-weight: 800;
-        }
-        .inspector-panel {
-          background: var(--c-surface-subdued);
-          border: 1px solid var(--c-border);
-          padding: 1.5rem;
-        }
-        .inspector-badge {
-          margin-bottom: 0.5rem;
-        }
-        .inspector-title {
-          font-size: 1.75rem;
-          font-weight: 800;
-          margin-bottom: 0.25rem;
-        }
-        .inspector-location {
-          font-size: 0.9rem;
-          color: var(--c-text-muted);
-          margin-bottom: 1rem;
-        }
-        .inspector-status {
-          margin-bottom: 0.75rem;
-          font-size: 0.9rem;
-        }
-        .status-label {
-          color: var(--c-text-muted);
-          margin-right: 0.5rem;
-        }
-        .inspector-analysis {
-          font-size: 0.88rem;
-          color: var(--c-text-secondary);
-          line-height: 1.5;
-          margin-bottom: 1.5rem;
-        }
-        .heatmap-legend {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-          padding-top: 1rem;
-          border-top: 1px dashed var(--c-border);
-        }
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          font-size: 0.75rem;
-          color: var(--c-text-muted);
-        }
-        .legend-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
-      `}</style>
+          <div
+            id="heatmapNotice"
+            style={{
+              padding: '1rem',
+              background: 'var(--c-surface-subdued)',
+              borderLeft: '3px solid var(--c-vermilion)',
+              fontSize: '0.85rem',
+              lineHeight: 1.55,
+              marginBottom: '1.5rem'
+            }}
+          >
+            {inspectedNode ? (
+              <span><strong>Pin Inspection [{inspectedNode.area}]:</strong> Business holds rank <strong>#{inspectedNode.rank}</strong> in this local zone.</span>
+            ) : isOptimized ? (
+              <span><strong>SAPVIK SPRINT STATE:</strong> Demonstrating 16 out of 16 local pin radii in Top 3. High local search authority drives steady inbound inquiry flow.</span>
+            ) : (
+              <span><strong>UNOPTIMIZED BASELINE:</strong> Business ranks outside Local 3-Pack across surrounding sectors. Inquiries leak to top-3 competitors.</span>
+            )}
+          </div>
+        </div>
+
+        <a
+          href="#contact"
+          className="btn btn-vermilion btn-lg btn-full"
+          onClick={(e) => {
+            e.preventDefault();
+            const contactEl = document.getElementById('contact') || document.getElementById('contact-section');
+            contactEl?.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+              document.getElementById('formName')?.focus();
+            }, 600);
+          }}
+        >
+          <span>Lock In Your Local Territory</span>
+          <span>&rarr;</span>
+        </a>
+      </div>
     </div>
   );
 }

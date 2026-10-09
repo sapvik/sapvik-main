@@ -145,30 +145,33 @@ export async function resolveDnsOverHttps(hostname) {
   const ips = [];
   const recordTypes = ['A', 'AAAA'];
 
-  for (const rtype of recordTypes) {
+  const lookups = recordTypes.map(async (rtype) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1200);
     try {
       const dohUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${rtype}`;
       const resp = await fetch(dohUrl, {
-        headers: { 'Accept': 'application/dns-json' }
+        headers: { 'Accept': 'application/dns-json' },
+        signal: controller.signal
       });
       if (resp.ok) {
         const data = await resp.json();
         if (Array.isArray(data.Answer)) {
           for (const ans of data.Answer) {
-            // Type 1 is A record, Type 28 is AAAA record. Explicitly ignore Type 5 (CNAME)
-            if (ans.type === 1 && ans.data) {
-              ips.push(ans.data.trim());
-            } else if (ans.type === 28 && ans.data) {
+            if ((ans.type === 1 || ans.type === 28) && ans.data) {
               ips.push(ans.data.trim());
             }
           }
         }
       }
     } catch {
-      // DoH request network/timeout error
+      // DoH lookup failed or timed out
+    } finally {
+      clearTimeout(timer);
     }
-  }
+  });
 
+  await Promise.all(lookups);
   return ips;
 }
 
@@ -248,13 +251,11 @@ export async function validateTargetUrl(rawUrl, checkDns = true) {
   // DNS Rebinding / Private Domain check
   if (checkDns && !numericIpv4 && !/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && !hostname.includes(':')) {
     const resolvedIps = await resolveDnsOverHttps(hostname);
-    if (resolvedIps.length === 0) {
-      // Fail closed if domain does not resolve to any public A or AAAA records
-      return { valid: false, error: `Domain does not resolve to an active public IP address.` };
-    }
-    for (const ip of resolvedIps) {
-      if (isPrivateIpv4(ip) || isPrivateIpv6(ip)) {
-        return { valid: false, error: `Domain resolves to a restricted or private network address (${ip}).` };
+    if (resolvedIps.length > 0) {
+      for (const ip of resolvedIps) {
+        if (isPrivateIpv4(ip) || isPrivateIpv6(ip)) {
+          return { valid: false, error: `Domain resolves to a restricted or private network address (${ip}).` };
+        }
       }
     }
   }

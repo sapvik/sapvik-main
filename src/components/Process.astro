@@ -1,98 +1,51 @@
 ---
-const STEPS = [
-  {
-    num: "01",
-    title: "Discovery & Architecture Audit",
-    desc: "We analyze your existing website, server response times, conversion funnels, and local Google profile citations to identify structural blockers."
-  },
-  {
-    num: "02",
-    title: "Platform & Asset Buildout",
-    desc: "We construct conversion-focused web architecture, localized profile listings, and visual media assets engineered around verified user intent."
-  },
-  {
-    num: "03",
-    title: "Attribution & Event Tracking",
-    desc: "We deploy server-side event tracking across Google Ads, Meta, and analytics containers with zero double-counting to ensure clean inquiry attribution."
-  },
-  {
-    num: "04",
-    title: "Controlled Scaling & Weekly Reviews",
-    desc: "We manage acquisition campaigns with strict cost-per-lead limits, transparent client asset ownership, and verified weekly commercial reporting."
-  }
-];
 ---
 
-<section class="section process-section" id="process">
+<!-- EXECUTION PROCESS (4 STAGES) -->
+<section class="section-pad" id="process" aria-label="Our Process">
   <div class="container">
-    <div class="section-head centered">
-      <span class="mono-label">Execution Methodology</span>
-      <h2 class="section-title">A Disciplined, 4-Stage Delivery Lifecycle</h2>
-      <p class="section-sub">
-        Digital growth fails when built on disconnected tactics. Every project follows a clear, verifiable operational cadence.
+    <div class="section-head">
+      <span class="mono-label">Systematic Delivery</span>
+      <h2 class="section-title">How We Partner & Execute</h2>
+      <p class="section-desc">
+        Disciplined four-stage execution designed to eliminate guesswork and deliver measurable business outcomes.
       </p>
     </div>
 
-    <div class="process-grid">
-      {STEPS.map((step) => (
-        <div class="process-step framed-card">
-          <div class="step-num">{step.num}</div>
-          <h3 class="step-title">{step.title}</h3>
-          <p class="step-desc">{step.desc}</p>
-        </div>
-      ))}
+    <div class="process-columns">
+      
+      <div class="frame-box process-step-box">
+        <span class="process-step-num">STAGE 01</span>
+        <h3 class="process-step-title">Forensic Audit</h3>
+        <p class="process-step-text">
+          We analyze your current site speed, local search rank radii, past ad performance, and competitor bottlenecks to establish a verified baseline.
+        </p>
+      </div>
+
+      <div class="frame-box process-step-box">
+        <span class="process-step-num">STAGE 02</span>
+        <h3 class="process-step-title">Foundation Sprint</h3>
+        <p class="process-step-text">
+          We deploy your high-speed website, clean up local NAP citations, structure Google Business Profile categories, and set up tracking pixels.
+        </p>
+      </div>
+
+      <div class="frame-box process-step-box">
+        <span class="process-step-num">STAGE 03</span>
+        <h3 class="process-step-title">Scale & Acquire</h3>
+        <p class="process-step-text">
+          We launch targeted Google Search and Meta direct-response campaigns to bring in ready-to-buy inquiries and expand local map rankings.
+        </p>
+      </div>
+
+      <div class="frame-box process-step-box">
+        <span class="process-step-num">STAGE 04</span>
+        <h3 class="process-step-title">Optimize & Scale</h3>
+        <p class="process-step-text">
+          Bi-weekly data debriefs. We eliminate wasted ad spend, refine conversion funnels, and scale high-performing acquisition channels.
+        </p>
+      </div>
+
     </div>
   </div>
 </section>
-
-<style>
-  .process-section {
-    background: #FFFFFF;
-    border-top: 1px solid var(--c-border);
-    border-bottom: 1px solid var(--c-border);
-  }
-
-  .process-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 640px) {
-    .process-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .process-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  .process-step {
-    padding: 1.75rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .step-num {
-    font-family: var(--font-mono);
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--c-vermilion);
-    margin-bottom: 0.75rem;
-  }
-
-  .step-title {
-    font-size: 1.15rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.35;
-  }
-
-  .step-desc {
-    font-size: 0.88rem;
-    color: var(--c-text-muted);
-    line-height: 1.55;
-  }
-</style>

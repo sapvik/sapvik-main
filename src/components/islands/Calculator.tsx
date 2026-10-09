@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect } from 'react';
 import assumptionsData from '../../config/assumptions.json';
 import { computeProjections, type IndustryAssumption } from '../../lib/calculatorMath';
 import { trackEvent } from '../../lib/analytics';
@@ -6,39 +6,29 @@ import { trackEvent } from '../../lib/analytics';
 const assumptions = (assumptionsData.industries as Record<string, IndustryAssumption>) || {};
 
 const AVAILABLE_SERVICES = [
-  { id: 'promotions', label: 'Digital Promotions (Paid Ads)' },
   { id: 'websites', label: 'Websites Development' },
-  { id: 'gmb', label: 'GMB & Local Citations' },
+  { id: 'gmb', label: 'GMB Management' },
+  { id: 'promotions', label: 'Digital Promotions (Ads)' },
   { id: 'media', label: 'Media Management' },
   { id: 'apps', label: 'Application Development' },
-  { id: 'branding', label: 'Branding & Identity' }
+  { id: 'branding', label: 'Branding' }
 ];
 
 export default function Calculator() {
-  const sliderId = useId();
-  const industryId = useId();
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const [budget, setBudget] = useState<number>(50000);
-  const [industryKey, setIndustryKey] = useState<string>('healthcare');
-  const [selectedServices, setSelectedServices] = useState<string[]>(['promotions', 'websites']);
-  const [saleValue, setSaleValue] = useState<string>('');
-  const [closeRate, setCloseRate] = useState<string>('');
-
-  const numSaleValue = saleValue ? parseFloat(saleValue) : undefined;
-  const numCloseRate = closeRate ? parseFloat(closeRate) : undefined;
+  const [industryKey, setIndustryKey] = useState<string>('other');
+  const [selectedServices, setSelectedServices] = useState<string[]>(['websites', 'gmb', 'promotions']);
 
   const projection = computeProjections(
     {
       budget,
       industryKey,
-      selectedServices,
-      saleValue: numSaleValue,
-      closeRatePct: numCloseRate
+      selectedServices
     },
     assumptions
   );
@@ -50,351 +40,211 @@ export default function Calculator() {
         : prev.filter((id) => id !== serviceId);
       return updated;
     });
+
     trackEvent('calc_interact', {
-      budget_tier: `${Math.round(budget / 1000)}k`,
-      service_toggled: serviceId,
-      is_checked: checked
+      interaction_type: 'service_toggle',
+      service: serviceId,
+      state: checked ? 'added' : 'removed'
+    });
+  };
+
+  const handleBudgetChange = (newBudget: number) => {
+    setBudget(newBudget);
+    trackEvent('calc_interact', {
+      interaction_type: 'budget_slide',
+      budget: newBudget
     });
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val);
+    return '₹' + val.toLocaleString('en-IN');
+  };
+
+  const formatImpressions = (val: number) => {
+    if (val >= 100000) {
+      return (val / 100000).toFixed(1) + ' Lakh+';
+    }
+    return val.toLocaleString('en-IN') + '+';
+  };
+
+  const selectedNames = AVAILABLE_SERVICES.filter(s => selectedServices.includes(s.id)).map(s => s.label);
+  const indObj = assumptions[industryKey];
+  const indLabel = indObj ? indObj.name : 'Commercial';
+
+  const handleClaimBlueprint = () => {
+    trackEvent('calc_claim', {
+      budget,
+      industry: industryKey,
+      services_count: selectedServices.length
+    });
+
+    // Populate ContactForm island via custom event
+    const blueprintText = `[Claimed Blueprint Configuration]\nCategory: ${indLabel}\nServices: ${selectedNames.join(', ')}\nTarget Monthly Media Budget: ${formatCurrency(budget)} / mo\nPlease reach out with technical proposal and deliverables.`;
+    
+    window.dispatchEvent(new CustomEvent('sapvik:claim-blueprint', {
+      detail: {
+        service: selectedServices.length === 1 ? selectedServices[0] : 'all',
+        details: blueprintText
+      }
+    }));
+
+    const contactEl = document.getElementById('contact') || document.getElementById('contact-section');
+    contactEl?.scrollIntoView({ behavior: 'smooth' });
+
+    setTimeout(() => {
+      document.getElementById('formName')?.focus();
+    }, 600);
   };
 
   return (
-    <div className="calculator-card framed-card" id="simulator" data-hydrated={mounted ? "true" : undefined}>
-      <div className="calculator-head">
-        <span className="mono-label">Illustrative Growth Simulator</span>
-        <h2 className="calc-title">Digital Acquisition & Budget Modeler</h2>
-        <p className="calc-desc">
-          Test realistic inquiry volumes based on industry benchmark placeholders. Real commercial outcomes depend on competitive bids, category close rates, and conversion infrastructure.
-        </p>
-      </div>
-
-      <div className="calc-grid">
-        {/* Left: Input Controls */}
-        <div className="calc-inputs">
-          {/* Vertical Selector */}
-          <div className="form-field">
-            <label htmlFor={industryId} className="field-label">Industry Category</label>
-            <select
-              id={industryId}
-              className="field-select"
-              value={industryKey}
-              onChange={(e) => setIndustryKey(e.target.value)}
-            >
-              {Object.entries(assumptions).map(([key, ind]) => (
-                <option key={key} value={key}>{ind.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Monthly Budget Slider */}
-          <div className="form-field">
-            <div className="slider-label-row">
-              <label htmlFor={sliderId} className="field-label">Monthly Ad Budget</label>
-              <span className="budget-display">{formatCurrency(budget)}</span>
-            </div>
-            <input
-              id={sliderId}
-              type="range"
-              min="20000"
-              max="500000"
-              step="5000"
-              value={budget}
-              onChange={(e) => setBudget(parseInt(e.target.value, 10))}
-              aria-valuemin={20000}
-              aria-valuemax={500000}
-              aria-valuenow={budget}
-              aria-valuetext={formatCurrency(budget)}
-              className="budget-slider"
-            />
-            <div className="slider-scale">
-              <span>₹20k</span>
-              <span>₹250k</span>
-              <span>₹500k</span>
-            </div>
-          </div>
-
-          {/* Integrated Services Checkboxes */}
-          <div className="form-field">
-            <span className="field-label">Selected Growth Capabilities</span>
-            <div className="chips-container" role="group" aria-label="Capabilities Selector">
-              {AVAILABLE_SERVICES.map((srv) => {
-                const isChecked = selectedServices.includes(srv.id);
-                return (
-                  <label key={srv.id} className={`calc-chip ${isChecked ? 'active' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      value={srv.id}
-                      onChange={(e) => handleCheckboxChange(srv.id, e.target.checked)}
-                      className="calc-checkbox"
-                    />
-                    <span>{srv.label}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Optional ROAS Calculation */}
-          <div className="form-field roas-row">
-            <div>
-              <label htmlFor="saleValInput" className="field-label">Avg Ticket Value (₹, optional)</label>
-              <input
-                id="saleValInput"
-                type="number"
-                placeholder="e.g. 5000"
-                value={saleValue}
-                onChange={(e) => setSaleValue(e.target.value)}
-                className="field-input"
-              />
-            </div>
-            <div>
-              <label htmlFor="closeRateInput" className="field-label">Lead Close Rate (%, optional)</label>
-              <input
-                id="closeRateInput"
-                type="number"
-                placeholder="e.g. 20"
-                value={closeRate}
-                onChange={(e) => setCloseRate(e.target.value)}
-                className="field-input"
-              />
-            </div>
-          </div>
+    <div className="frame-box calculator-deck" id="simulator" data-hydrated={mounted ? "true" : undefined}>
+      {/* Controls Left */}
+      <div className="calc-controls">
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label htmlFor="calcIndustrySelect" className="form-label" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--c-text-primary)', marginBottom: '0.4rem' }}>
+            Commercial Category
+          </label>
+          <select
+            id="calcIndustrySelect"
+            className="form-control"
+            style={{ width: '100%', padding: '0.75rem 1rem', fontSize: '15px', border: '1px solid #BDC6D0', background: 'var(--c-surface)', color: 'var(--c-text-primary)' }}
+            value={industryKey}
+            onChange={(e) => {
+              setIndustryKey(e.target.value);
+              trackEvent('calc_interact', { interaction_type: 'industry_select', industry: e.target.value });
+            }}
+          >
+            <option value="other">General Local Commercial (Median CPL ₹600)</option>
+            <option value="healthcare">Clinics & Healthcare (Median CPL ₹550)</option>
+            <option value="d2c">E-Commerce / D2C (Median CPL ₹320)</option>
+            <option value="b2b">B2B & Professional Services (Median CPL ₹1,100)</option>
+            <option value="education">Education & Coaching (Median CPL ₹480)</option>
+          </select>
         </div>
 
-        {/* Right: Projected Metrics Display */}
-        <div className="calc-outputs">
-          <span className="mono-label">Monthly Projected Output</span>
+        <div className="calc-label-heading" style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--c-text-primary)', marginBottom: '0.6rem' }}>
+          Select Required Services
+        </div>
 
-          {projection.hasPromotions ? (
-            <div className="outputs-content">
-              <div className="metric-box">
-                <span className="metric-label">Estimated Monthly Inquiries</span>
-                <span id="calcOutInquiries" className="metric-num">
-                  {projection.projectedInquiriesBase}
-                </span>
-                <span className="metric-range">
-                  Range: {projection.projectedInquiriesLow} – {projection.projectedInquiriesHigh} inquiries / month
-                </span>
-              </div>
+        <div className="calc-chips-container">
+          {AVAILABLE_SERVICES.map((srv) => {
+            const isChecked = selectedServices.includes(srv.id);
+            return (
+              <label key={srv.id} className={`calc-chip ${isChecked ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  value={srv.id}
+                  className="calc-checkbox"
+                  checked={isChecked}
+                  onChange={(e) => handleCheckboxChange(srv.id, e.target.checked)}
+                />
+                <span>{srv.label}</span>
+              </label>
+            );
+          })}
+        </div>
 
-              <div className="metric-box">
-                <span className="metric-label">Estimated Targeted Impressions</span>
-                <span className="metric-num">
-                  {projection.projectedImpressions.toLocaleString('en-IN')}
-                </span>
-                <span className="metric-range">High-intent search & social impressions</span>
-              </div>
-
-              {projection.projectedRoas !== undefined && (
-                <div className="metric-box highlight">
-                  <span className="metric-label">Projected Pipeline ROAS</span>
-                  <span className="metric-num" style={{ color: 'var(--c-success)' }}>
-                    {projection.projectedRoas}x
-                  </span>
-                  <span className="metric-range">
-                    Est. Revenue: {formatCurrency(projection.projectedRevenue || 0)}
-                  </span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="organic-notice-box">
-              <p className="notice-head">⚠ No Paid Media Channel Selected</p>
-              <p className="notice-body">
-                Organic services (Websites, GMB, Media, Applications, Branding) build foundational brand infrastructure, conversion speed, and local trust. Direct measurable monthly lead inquiries require an active paid advertising budget in <strong>Digital Promotions</strong>.
-              </p>
-            </div>
-          )}
-
-          <div className="calc-claim-action" style={{ marginTop: '1.25rem', marginBottom: '1rem' }}>
-            <a
-              href="#contact"
-              className="btn btn-primary btn-sm"
-              onClick={() => trackEvent('calc_claim', {
-                budget_tier: `${Math.round(budget / 1000)}k`,
-                industry_key: industryKey
-              })}
-            >
-              Apply Estimates to Review &rarr;
-            </a>
+        {/* Ad Budget Slider */}
+        <div className="calc-slider-block" style={{ marginTop: '1.5rem' }}>
+          <div className="slider-readout" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span className="mono-label">Monthly Media/Ad Budget:</span>
+            <span className="slider-val-num" id="calcBudgetValue" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.15rem', fontWeight: 700, color: 'var(--c-vermilion)' }}>
+              {formatCurrency(budget)}
+            </span>
           </div>
-
-          <div className="model-footnote">
-            <p>
-              * Benchmark Source: Placeholder model. Calculations exclude discretionary third-party GST or payment gateway fees.
-            </p>
+          <label htmlFor="calcBudgetSlider" className="visually-hidden" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden' }}>
+            Monthly Media Budget Slider
+          </label>
+          <input
+            type="range"
+            id="calcBudgetSlider"
+            className="instrument-slider"
+            min="20000"
+            max="250000"
+            step="5000"
+            value={budget}
+            onChange={(e) => handleBudgetChange(parseInt(e.target.value, 10))}
+            style={{ width: '100%', accentColor: 'var(--c-vermilion)', cursor: 'pointer' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--c-text-muted)', marginTop: '0.5rem' }}>
+            <span>₹20,000 (Starter)</span>
+            <span>₹1,00,000 (Growth)</span>
+            <span>₹2,50,000 (Scale)</span>
           </div>
         </div>
       </div>
 
-      <style>{`
-        .calculator-card {
-          margin-top: 2rem;
-          margin-bottom: 2rem;
-        }
-        .calc-title {
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .calc-desc {
-          color: var(--c-text-muted);
-          max-width: 680px;
-          margin-bottom: 2rem;
-        }
-        .calc-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 2rem;
-        }
-        @media (min-width: 860px) {
-          .calc-grid {
-            grid-template-columns: 1.2fr 1fr;
-          }
-        }
-        .form-field {
-          margin-bottom: 1.5rem;
-        }
-        .field-label {
-          display: block;
-          font-family: var(--font-mono);
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          font-weight: 700;
-          color: var(--c-text-primary);
-          margin-bottom: 0.5rem;
-        }
-        .field-select, .field-input {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          border: 1px solid var(--c-border-strong);
-          background: #FFFFFF;
-          color: var(--c-text-primary);
-          outline: none;
-        }
-        .slider-label-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .budget-display {
-          font-family: var(--font-display);
-          font-size: 1.2rem;
-          font-weight: 800;
-          color: var(--c-vermilion);
-        }
-        .budget-slider {
-          width: 100%;
-          margin: 0.75rem 0;
-          accent-color: var(--c-vermilion);
-          cursor: pointer;
-        }
-        .slider-scale {
-          display: flex;
-          justify-content: space-between;
-          font-family: var(--font-mono);
-          font-size: 0.72rem;
-          color: var(--c-text-dim);
-        }
-        .chips-container {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-        .calc-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.4rem;
-          padding: 0.45rem 0.75rem;
-          background: #FFFFFF;
-          border: 1px solid var(--c-border);
-          font-size: 0.8rem;
-          cursor: pointer;
-          user-select: none;
-        }
-        .calc-chip.active {
-          border-color: var(--c-text-primary);
-          background: var(--c-surface-dark);
-          color: #FFFFFF;
-        }
-        .roas-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-        }
-        .calc-outputs {
-          background: var(--c-surface-subdued);
-          border: 1px solid var(--c-border);
-          padding: 1.5rem;
-          display: flex;
-          flex-direction: column;
-        }
-        .outputs-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-top: 1rem;
-          flex: 1;
-        }
-        .metric-box {
-          background: #FFFFFF;
-          border: 1px solid var(--c-border);
-          padding: 1.25rem;
-        }
-        .metric-box.highlight {
-          border-left: 3px solid var(--c-success);
-        }
-        .metric-label {
-          display: block;
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          color: var(--c-text-muted);
-          margin-bottom: 0.25rem;
-        }
-        .metric-num {
-          display: block;
-          font-family: var(--font-display);
-          font-size: 2rem;
-          font-weight: 800;
-          color: var(--c-text-primary);
-        }
-        .metric-range {
-          font-size: 0.78rem;
-          color: var(--c-text-dim);
-        }
-        .organic-notice-box {
-          background: #FFFFFF;
-          border-left: 3px solid var(--c-warning);
-          padding: 1.25rem;
-          margin-top: 1rem;
-          flex: 1;
-        }
-        .notice-head {
-          font-weight: 700;
-          color: var(--c-warning);
-          margin-bottom: 0.5rem;
-        }
-        .notice-body {
-          font-size: 0.85rem;
-          color: var(--c-text-muted);
-          line-height: 1.5;
-        }
-        .model-footnote {
-          margin-top: 1.5rem;
-          padding-top: 1rem;
-          border-top: 1px dashed var(--c-border);
-          font-size: 0.72rem;
-          color: var(--c-text-dim);
-        }
-      `}</style>
+      {/* Output Readout Right */}
+      <div className="calc-stage">
+        <div>
+          <div className="mono-label" style={{ marginBottom: '0.5rem', color: 'var(--c-vermilion)' }}>
+            PROJECTED MONTHLY OUTPUT
+          </div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.45rem', fontWeight: 800, color: 'var(--c-text-primary)', marginBottom: '1.5rem' }}>
+            Illustrative Simulator Output
+          </h3>
+
+          <div className="telemetry-grid">
+            <div className="telemetry-cell">
+              <div className="telemetry-val" id="calcOutImpressions">
+                {projection.hasPromotions ? formatImpressions(projection.projectedImpressions) : 'Brand Reach'}
+              </div>
+              <div className="telemetry-lbl">ESTIMATED IMPRESSIONS</div>
+            </div>
+
+            <div className="telemetry-cell highlight">
+              <div className="telemetry-val" id="calcOutInquiries" style={{ color: 'var(--c-vermilion)' }}>
+                {projection.hasPromotions
+                  ? `${projection.projectedInquiriesLow} – ${projection.projectedInquiriesHigh}`
+                  : '—'}
+              </div>
+              <div className="telemetry-lbl">ESTIMATED INQUIRIES</div>
+            </div>
+
+            <div className="telemetry-cell">
+              <div className="telemetry-val" id="calcOutLocalLift">
+                {selectedServices.includes('gmb') ? 'Top 3 Push' : 'Standard'}
+              </div>
+              <div className="telemetry-lbl">LOCAL 3-PACK LIFT</div>
+            </div>
+
+            <div className="telemetry-cell">
+              <div className="telemetry-val" id="calcOutEfficiency">
+                {selectedServices.includes('websites') ? 'High Speed' : 'Base'}
+              </div>
+              <div className="telemetry-lbl">FUNNEL EFFICIENCY</div>
+            </div>
+          </div>
+
+          <div className="blueprint-dispatch" id="blueprintDispatchText">
+            <div style={{ marginBottom: '0.35rem' }}>
+              <strong>Configured Scope:</strong> {selectedNames.length > 0 ? selectedNames.join(', ') : 'None selected'}
+            </div>
+            <div style={{ marginBottom: '0.35rem' }}>
+              <strong>Allocated Monthly Ad Budget:</strong> {formatCurrency(budget)} ({indLabel})
+            </div>
+            {!projection.hasPromotions && (
+              <div style={{ color: 'var(--c-warning)', marginBottom: '0.35rem' }}>
+                Note: Lead inquiries require active ad spend in Digital Promotions.
+              </div>
+            )}
+            <div style={{ fontSize: '0.8rem', color: 'var(--c-text-muted)', fontStyle: 'italic' }}>
+              Illustrative simulator based on benchmark placeholders in assumptions.json. Actual returns depend on market category, unit economics, conversion efficiency, and operational close rate.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-vermilion btn-lg btn-full"
+          id="claimBlueprintBtn"
+          onClick={handleClaimBlueprint}
+          style={{ marginTop: '1.5rem' }}
+        >
+          <span>Claim This Growth Blueprint</span>
+          <span>&darr;</span>
+        </button>
+      </div>
     </div>
   );
 }

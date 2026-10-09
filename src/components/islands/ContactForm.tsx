@@ -44,35 +44,43 @@ export default function ContactForm() {
         widgetIdRef.current = id;
       } catch {}
     }
+
+    const handleBlueprint = (e: any) => {
+      if (e.detail) {
+        setFormData(prev => ({
+          ...prev,
+          service: e.detail.service || prev.service,
+          details: e.detail.details || prev.details
+        }));
+      }
+    };
+    window.addEventListener('sapvik:claim-blueprint', handleBlueprint);
+    return () => window.removeEventListener('sapvik:claim-blueprint', handleBlueprint);
   }, []);
 
   const validate = () => {
     const errors: Record<string, string> = {};
-
-    if (!formData.name.trim() || formData.name.trim().length < 2) {
-      errors.name = 'Please provide your full name (at least 2 characters).';
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required.';
+      document.getElementById('formName')?.focus();
+    } else if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required.';
+      document.getElementById('formPhone')?.focus();
+    } else if (!/^[0-9+() -]{8,20}$/.test(formData.phone.trim())) {
+      errors.phone = 'Please provide a valid phone number.';
+      document.getElementById('formPhone')?.focus();
+    } else if (!formData.email.trim()) {
+      errors.email = 'Business email is required.';
+      document.getElementById('formEmail')?.focus();
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.email = 'Please provide a valid email address.';
+      document.getElementById('formEmail')?.focus();
+    } else if (!formData.consent) {
+      errors.consent = 'DPDP consent is required to process your inquiry.';
+      document.getElementById('formConsent')?.focus();
     }
-
-    const phoneClean = formData.phone.replace(/\D/g, '');
-    if (!formData.phone.trim() || phoneClean.length < 8) {
-      errors.phone = 'Please provide a valid direct phone or WhatsApp number.';
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
-      errors.email = 'Please provide a valid business email address.';
-    }
-
-    if (!formData.consent) {
-      errors.consent = 'You must acknowledge the privacy notice to submit this inquiry.';
-    }
-
     setFieldErrors(errors);
-    const isValid = Object.keys(errors).length === 0;
-    if (!isValid) {
-      trackEvent('form_error', { form_id: 'contact_form', error_field: Object.keys(errors)[0] });
-    }
-    return isValid;
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,52 +94,43 @@ export default function ContactForm() {
 
     setIsSubmitting(true);
 
-    // Collect session attribution and scan data
-    let attribution = {};
-    let auditData = null;
-    try {
-      const storedAttr = sessionStorage.getItem('sapvik_attribution');
-      if (storedAttr) attribution = JSON.parse(storedAttr);
-
-      const storedAudit = sessionStorage.getItem('sapvik_latest_audit');
-      if (storedAudit) auditData = JSON.parse(storedAudit);
-    } catch {}
-
-    const payload = {
-      name: formData.name.trim(),
-      phone: formData.phone.trim(),
-      email: formData.email.trim(),
-      business: formData.business.trim(),
-      website: formData.website.trim(),
-      service: formData.service,
-      details: formData.details.trim(),
-      consent: formData.consent,
-      marketing_consent: formData.marketingConsent,
-      turnstileToken,
-      utm: attribution,
-      audit: auditData
-    };
+    let token = turnstileToken;
+    if (!token && window.turnstile && widgetIdRef.current) {
+      try {
+        token = window.turnstile.getResponse(widgetIdRef.current) || '';
+      } catch {}
+    }
 
     try {
       const resp = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          business: formData.business,
+          website: formData.website,
+          service: formData.service,
+          notes: formData.details,
+          consent: formData.consent,
+          marketingConsent: formData.marketingConsent,
+          turnstileToken: token
+        })
       });
 
-      const result = await resp.json();
+      const data = await resp.json();
 
-      if (resp.ok && result.ok) {
-        setSubmitSuccess(result.lead_id);
+      if (resp.ok && data.ok) {
+        setSubmitSuccess(data.lead_id || 'REGISTERED');
         trackEvent('generate_lead', {
-          lead_id: result.lead_id,
-          service: formData.service,
-          source: 'contact_form'
+          lead_id: data.lead_id,
+          service_focus: formData.service,
+          delivery_status: data.status || 'delivered'
         });
       } else {
-        // Delivery failed or offline fallback
-        setErrorMessage(result.message || 'Notification transmission could not be completed.');
-        if (result.whatsapp_fallback || result.error === 'delivery_offline') {
+        setErrorMessage(data.message || 'Submission encountered an issue.');
+        if (data.status === 'delivery_offline') {
           setDeliveryOffline(true);
         }
       }
@@ -152,36 +151,32 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="contact-card framed-card" id="contact">
-      <div className="contact-head">
-        <span className="mono-label">Discovery Consultation</span>
-        <h2 className="contact-title">Begin Digital Architecture & Growth Review</h2>
-        <p className="contact-desc">
-          Receive an actionable operational review of your web platform, conversion bottlenecks, and local visibility. Backed by our 24 business hours turnaround SLA.
-        </p>
-      </div>
+    <div className="frame-box audit-form-deck" id="contact">
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.45rem', fontWeight: 800, color: 'var(--c-text-primary)', marginBottom: '0.5rem' }}>
+        Claim Your Growth Blueprint
+      </h3>
+      <p style={{ fontSize: '0.88rem', color: 'var(--c-text-muted)', marginBottom: '1.75rem' }}>
+        Provide your details below. Our technical team conducts an initial diagnostic and responds within 24 business hours.
+      </p>
 
       {submitSuccess ? (
-        <div className="status-panel success-panel" id="formStatusPanel">
-          <div className="status-badge">✓ REQUEST REGISTERED</div>
-          <h3 className="status-title">Discovery Request Confirmed</h3>
-          <p className="status-ref">
-            Lead Reference UUID: <code>{submitSuccess}</code>
-          </p>
-          <p className="status-desc">
-            Thank you, {formData.name}. Our lead growth strategist has received your inquiry for{' '}
-            <strong>{formData.business || formData.website || 'your business'}</strong>.
-            We will review your digital footprint and reach out within 24 business hours.
+        <div className="form-status-panel" id="formStatusPanel" style={{ display: 'block', padding: '1.5rem', background: 'var(--c-surface-subdued)', borderLeft: '4px solid var(--c-success)' }}>
+          <div style={{ fontWeight: 800, color: 'var(--c-success)', marginBottom: '0.5rem' }}>✓ DISCOVERY REQUEST REGISTERED</div>
+          <p style={{ fontSize: '0.88rem', color: 'var(--c-text-secondary)', lineHeight: 1.6 }}>
+            Thank you, <strong>{formData.name}</strong>. Your inquiry reference is <code>{submitSuccess}</code>. Our lead growth strategist will review your digital footprint and reach out within 24 business hours.
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} onFocus={handleFormFocus} className="contact-form" id="auditForm" noValidate>
+        <form onSubmit={handleSubmit} onFocus={handleFormFocus} id="auditForm" noValidate>
+          {/* Honeypot anti-spam field */}
+          <input type="text" id="formHp" name="website_url_hp" style={{ display: 'none !important' }} tabIndex={-1} autoComplete="off" />
+
           {errorMessage && (
-            <div className="form-error-banner" role="alert">
+            <div style={{ padding: '0.85rem 1rem', background: '#FEE2E2', borderLeft: '3px solid var(--c-vermilion)', color: '#991B1B', fontSize: '0.85rem', marginBottom: '1.25rem' }} role="alert">
               <p>⚠ {errorMessage}</p>
               {deliveryOffline && (
-                <div className="whatsapp-fallback-action">
-                  <p className="fallback-note">
+                <div style={{ marginTop: '0.75rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: '#7F1D1D', marginBottom: '0.5rem' }}>
                     Your details are preserved. Connect directly with our team on WhatsApp:
                   </p>
                   <a
@@ -199,72 +194,69 @@ export default function ContactForm() {
           )}
 
           <div className="form-row">
-            <div className="form-col">
-              <label htmlFor="formName" className="form-label">
-                Full Name <span className="req">*</span>
-              </label>
+            <div className="form-field">
+              <label htmlFor="formName" className="form-label">Full Name *</label>
               <input
-                id="formName"
                 type="text"
-                className={`form-input ${fieldErrors.name ? 'error' : ''}`}
-                placeholder="Rahul Sharma"
+                id="formName"
+                className={`form-control ${fieldErrors.name ? 'error' : ''}`}
+                placeholder="e.g. Rahul Sharma"
+                autoComplete="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                aria-describedby={fieldErrors.name ? 'formNameError' : undefined}
                 required
               />
               {fieldErrors.name && (
-                <span id="formNameError" className="field-error-text">{fieldErrors.name}</span>
+                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.name}</span>
               )}
             </div>
 
-            <div className="form-col">
-              <label htmlFor="formPhone" className="form-label">
-                Direct Phone / WhatsApp <span className="req">*</span>
-              </label>
+            <div className="form-field">
+              <label htmlFor="formPhone" className="form-label">Phone / WhatsApp *</label>
               <input
-                id="formPhone"
                 type="tel"
-                className={`form-input ${fieldErrors.phone ? 'error' : ''}`}
-                placeholder="+91 98200 12345"
+                id="formPhone"
+                className={`form-control ${fieldErrors.phone ? 'error' : ''}`}
+                placeholder="+91 88005 92147"
+                inputMode="tel"
+                autoComplete="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                aria-describedby={fieldErrors.phone ? 'formPhoneError' : undefined}
                 required
               />
               {fieldErrors.phone && (
-                <span id="formPhoneError" className="field-error-text">{fieldErrors.phone}</span>
+                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.phone}</span>
               )}
             </div>
           </div>
 
           <div className="form-row">
-            <div className="form-col">
-              <label htmlFor="formEmail" className="form-label">
-                Business Email <span className="req">*</span>
-              </label>
+            <div className="form-field">
+              <label htmlFor="formEmail" className="form-label">Business Email *</label>
               <input
-                id="formEmail"
                 type="email"
-                className={`form-input ${fieldErrors.email ? 'error' : ''}`}
-                placeholder="rahul@company.in"
+                id="formEmail"
+                className={`form-control ${fieldErrors.email ? 'error' : ''}`}
+                placeholder="rahul@company.com"
+                inputMode="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                aria-describedby={fieldErrors.email ? 'formEmailError' : undefined}
                 required
               />
               {fieldErrors.email && (
-                <span id="formEmailError" className="field-error-text">{fieldErrors.email}</span>
+                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.email}</span>
               )}
             </div>
 
-            <div className="form-col">
-              <label htmlFor="formBusiness" className="form-label">Company / Brand Name</label>
+            <div className="form-field">
+              <label htmlFor="formBusiness" className="form-label">Company / Clinic Name</label>
               <input
-                id="formBusiness"
                 type="text"
-                className="form-input"
-                placeholder="Apex Healthcare Pvt Ltd"
+                id="formBusiness"
+                className="form-control"
+                placeholder="Brand Name"
+                autoComplete="organization"
                 value={formData.business}
                 onChange={(e) => setFormData({ ...formData, business: e.target.value })}
               />
@@ -272,241 +264,88 @@ export default function ContactForm() {
           </div>
 
           <div className="form-row">
-            <div className="form-col">
-              <label htmlFor="formWebsite" className="form-label">Current Website URL (optional)</label>
+            <div className="form-field">
+              <label htmlFor="formWebsite" className="form-label">Website URL or Google Maps Link</label>
               <input
+                type="url"
                 id="formWebsite"
-                type="text"
-                className="form-input"
-                placeholder="https://apexhealth.in"
+                className="form-control"
+                placeholder="https://yourbrand.com"
+                autoComplete="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
               />
             </div>
 
-            <div className="form-col">
-              <label htmlFor="formService" className="form-label">Primary Capability of Interest</label>
+            <div className="form-field">
+              <label htmlFor="formService" className="form-label">Primary Service Focus</label>
               <select
                 id="formService"
-                className="form-select"
+                className="form-control"
                 value={formData.service}
                 onChange={(e) => setFormData({ ...formData, service: e.target.value })}
               >
-                <option value="all">Full Digital Architecture (All Capabilities)</option>
+                <option value="all">Full Digital Growth Suite (All Six Pillars)</option>
                 {SERVICES.map((s) => (
-                  <option key={s.id} value={s.name}>{s.name}</option>
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="form-field-full">
-            <label htmlFor="formDetails" className="form-label">Inquiry Notes or Objectives</label>
+          <div className="form-field">
+            <label htmlFor="formDetails" className="form-label">Growth Objectives or Specific Bottlenecks</label>
             <textarea
               id="formDetails"
-              className="form-textarea"
+              className="form-control form-textarea"
               rows={3}
-              placeholder="Outline your current conversion challenges, target customer vertical, or expansion goals..."
+              placeholder="Detail your monthly lead goals, current website status, or desired outcomes..."
               value={formData.details}
               onChange={(e) => setFormData({ ...formData, details: e.target.value })}
             ></textarea>
           </div>
 
-          {/* Turnstile Container */}
-          <div ref={turnstileContainerRef} className="turnstile-slot" id="contactTurnstile"></div>
-
-          {/* Consent Checkboxes */}
-          <div className="consent-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                id="formConsent"
-                checked={formData.consent}
-                onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
-                aria-describedby={fieldErrors.consent ? 'formConsentError' : undefined}
-                required
-              />
-              <span>
-                I acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy Notice</a> and consent to SAPVIK processing my submitted contact information for this inquiry. <span className="req">*</span>
-              </span>
+          <div className="form-consent-row">
+            <input
+              type="checkbox"
+              id="formConsent"
+              className="form-consent-checkbox"
+              checked={formData.consent}
+              onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
+              required
+            />
+            <label htmlFor="formConsent">
+              I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="/privacy.html" target="_blank" style={{ color: 'var(--c-vermilion)', textDecoration: 'underline' }}>Privacy Policy</a>. *
             </label>
-            {fieldErrors.consent && (
-              <span id="formConsentError" className="field-error-text block-err">{fieldErrors.consent}</span>
-            )}
+          </div>
+          {fieldErrors.consent && (
+            <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '-0.25rem', marginBottom: '0.75rem', display: 'block' }}>{fieldErrors.consent}</span>
+          )}
 
-            <label className="checkbox-label" style={{ marginTop: '0.5rem' }}>
-              <input
-                type="checkbox"
-                id="formMarketingConsent"
-                checked={formData.marketingConsent}
-                onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
-              />
-              <span>
-                (Optional) Keep me updated with practical digital acquisition teardowns and benchmarks.
-              </span>
+          <div className="form-consent-row" style={{ marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+            <input
+              type="checkbox"
+              id="formMarketingConsent"
+              className="form-consent-checkbox"
+              checked={formData.marketingConsent}
+              onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
+            />
+            <label htmlFor="formMarketingConsent" style={{ fontSize: '0.8rem', color: 'var(--c-text-muted)' }}>
+              (Optional) Send me occasional growth engineering guides and benchmark updates.
             </label>
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary submit-btn"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
-          >
-            {isSubmitting ? 'Transmitting Request...' : 'Transmit Discovery Request →'}
+          {/* Turnstile Bot Challenge Container */}
+          <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1.25rem' }}></div>
+
+          <button type="submit" className="btn btn-vermilion btn-lg btn-full" disabled={isSubmitting}>
+            <span>{isSubmitting ? 'Submitting Request...' : 'Submit Audit Request'}</span>
+            <span>&rarr;</span>
           </button>
         </form>
       )}
 
-      <style>{`
-        .contact-card {
-          margin-top: 2rem;
-          margin-bottom: 2rem;
-        }
-        .contact-title {
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .contact-desc {
-          color: var(--c-text-muted);
-          max-width: 680px;
-          margin-bottom: 2rem;
-        }
-        .contact-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1.25rem;
-        }
-        @media (min-width: 640px) {
-          .form-row {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-        .form-col, .form-field-full {
-          display: flex;
-          flex-direction: column;
-        }
-        .form-label {
-          font-family: var(--font-mono);
-          font-size: 0.72rem;
-          text-transform: uppercase;
-          font-weight: 700;
-          color: var(--c-text-primary);
-          margin-bottom: 0.4rem;
-        }
-        .req {
-          color: var(--c-vermilion);
-        }
-        .form-input, .form-select, .form-textarea {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          border: 1px solid var(--c-border-strong);
-          background: #FFFFFF;
-          color: var(--c-text-primary);
-          outline: none;
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-          border-color: var(--c-vermilion);
-        }
-        .form-input.error {
-          border-color: var(--c-vermilion);
-          background: rgba(201, 58, 34, 0.03);
-        }
-        .field-error-text {
-          font-size: 0.75rem;
-          color: var(--c-vermilion);
-          font-weight: 600;
-          margin-top: 0.25rem;
-        }
-        .block-err {
-          display: block;
-        }
-        .turnstile-slot {
-          min-height: 10px;
-        }
-        .consent-group {
-          padding-top: 0.5rem;
-        }
-        .checkbox-label {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.6rem;
-          font-size: 0.85rem;
-          color: var(--c-text-secondary);
-          cursor: pointer;
-        }
-        .checkbox-label input {
-          margin-top: 0.25rem;
-          accent-color: var(--c-vermilion);
-        }
-        .checkbox-label a {
-          color: var(--c-vermilion);
-          text-decoration: underline;
-        }
-        .submit-btn {
-          width: 100%;
-          margin-top: 0.5rem;
-        }
-        @media (min-width: 640px) {
-          .submit-btn {
-            width: auto;
-            align-self: flex-start;
-          }
-        }
-        .form-error-banner {
-          background: rgba(201, 58, 34, 0.08);
-          border-left: 3px solid var(--c-vermilion);
-          padding: 1rem;
-          margin-bottom: 0.5rem;
-        }
-        .whatsapp-fallback-action {
-          margin-top: 0.75rem;
-          padding-top: 0.75rem;
-          border-top: 1px dashed rgba(201, 58, 34, 0.2);
-        }
-        .fallback-note {
-          font-size: 0.85rem;
-          color: var(--c-text-primary);
-          margin-bottom: 0.5rem;
-        }
-        .status-panel {
-          background: #FFFFFF;
-          border: 1px solid var(--c-border);
-          border-left: 4px solid var(--c-success);
-          padding: 2rem;
-        }
-        .status-badge {
-          font-family: var(--font-mono);
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: var(--c-success);
-          margin-bottom: 0.5rem;
-        }
-        .status-title {
-          font-size: 1.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .status-ref {
-          font-size: 0.9rem;
-          color: var(--c-text-muted);
-          margin-bottom: 1rem;
-        }
-        .status-ref code {
-          background: #F1F5F9;
-          padding: 0.2rem 0.4rem;
-          font-family: var(--font-mono);
-          color: var(--c-text-primary);
-        }
-        .status-desc {
-          color: var(--c-text-secondary);
-          line-height: 1.6;
-        }
-      `}</style>
+      <div id="formStatusPanel" className="form-status-panel"></div>
     </div>
   );
 }

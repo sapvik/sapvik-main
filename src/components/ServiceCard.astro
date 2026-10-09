@@ -6,147 +6,86 @@ interface Props {
 }
 
 const { service } = Astro.props;
+
+const outcomeMap: Record<string, string> = {
+  'websites': 'Higher Conversion Rate',
+  'gmb': 'Inbound Local Calls',
+  'media': 'Brand Trust & Reach',
+  'promotions': 'Qualified Commercial Leads',
+  'apps': 'Workflow Efficiency',
+  'branding': 'Market Credibility'
+};
 ---
 
-<article class="service-card framed-card">
-  <div class="card-kicker">
-    <span class="mono-label">{service.code}</span>
-  </div>
-
-  <h3 class="card-title">
-    <a href={`/services/${service.slug}`} class="card-title-link">
-      {service.name}
-    </a>
-  </h3>
-
-  <p class="card-headline">{service.headline}</p>
-  <p class="card-desc">{service.description}</p>
-
-  <div class="card-deliverables">
-    <span class="deliverables-head">Key Deliverables</span>
-    <ul class="deliverables-list">
+<article class="frame-box service-panel" id={`service-${service.id}`}>
+  <div>
+    <div class="service-header-row">
+      <span class="service-code">{service.code}</span>
+      {service.id === 'websites' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      )}
+      {service.id === 'gmb' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      )}
+      {service.id === 'media' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M23 7l-7 5 7 5V7z"></path>
+          <rect x="1" y="5" width="15" height="14" rx="2"></rect>
+        </svg>
+      )}
+      {service.id === 'promotions' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="20" x2="12" y2="10"></line>
+          <line x1="18" y1="20" x2="18" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="16"></line>
+        </svg>
+      )}
+      {service.id === 'apps' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+      )}
+      {service.id === 'branding' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      )}
+    </div>
+    <h3 class="service-title">
+      <a href={`/services/${service.slug}.html`} style="color: inherit; text-decoration: none;">
+        {service.name}
+      </a>
+    </h3>
+    <p class="service-narrative">
+      {service.description}
+    </p>
+    <ul class="service-deliverables">
       {service.deliverables.map((item) => (
-        <li>{item}</li>
+        <li class="deliverable-item">
+          <span class="item-dash">—</span>
+          <span>{item}</span>
+        </li>
       ))}
     </ul>
   </div>
-
-  <div class="card-footer">
-    <span class="focus-label">Metric Focus:</span>
-    <span class="focus-val">{service.metricsFocus}</span>
+  <div class="service-kpi-footer" style="display: flex; justify-content: space-between; align-items: flex-end; gap: 0.75rem;">
+    <div>
+      <span class="mono-label">PRIMARY OUTCOME</span>
+      <span class="service-kpi-val">{outcomeMap[service.id] || service.metricsFocus}</span>
+    </div>
+    <a href={`/services/${service.slug}.html`} class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.4rem 0.85rem; min-height: 36px; white-space: nowrap;">
+      <span>Explore</span>
+      <span>&rarr;</span>
+    </a>
   </div>
-
-  <a href={`/services/${service.slug}`} class="card-cta">
-    Explore Capability &rarr;
-  </a>
 </article>
-
-<style>
-  .service-card {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .service-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
-  }
-
-  .card-kicker {
-    margin-bottom: 0.5rem;
-  }
-
-  .card-title {
-    font-size: 1.35rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-title-link:hover {
-    color: var(--c-vermilion);
-  }
-
-  .card-headline {
-    font-weight: 600;
-    color: var(--c-text-primary);
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-    line-height: 1.45;
-  }
-
-  .card-desc {
-    font-size: 0.88rem;
-    color: var(--c-text-muted);
-    line-height: 1.55;
-    margin-bottom: 1.25rem;
-  }
-
-  .card-deliverables {
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px dashed var(--c-border);
-    margin-bottom: 1.25rem;
-  }
-
-  .deliverables-head {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    color: var(--c-text-muted);
-    margin-bottom: 0.4rem;
-  }
-
-  .deliverables-list {
-    list-style: none;
-    font-size: 0.82rem;
-    color: var(--c-text-secondary);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .deliverables-list li::before {
-    content: "– ";
-    color: var(--c-vermilion);
-    font-weight: bold;
-  }
-
-  .card-footer {
-    font-size: 0.78rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--c-border-subtle);
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    margin-bottom: 1rem;
-  }
-
-  .focus-label {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    color: var(--c-text-muted);
-  }
-
-  .focus-val {
-    color: var(--c-text-primary);
-    font-weight: 600;
-  }
-
-  .card-cta {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--c-vermilion);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .card-cta:hover {
-    color: var(--c-vermilion-hover);
-  }
-</style>

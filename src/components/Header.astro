@@ -2,305 +2,101 @@
 import { SITE } from '../config/site';
 ---
 
+<!-- Skip Link for Keyboard Accessibility -->
+<a href="#mainContent" class="skip-link">Skip to main content</a>
+
+<!-- SITE HEADER & NAVIGATION -->
 <header class="site-header" id="siteHeader">
-  <div class="container header-inner">
-    <!-- Brand Logo -->
-    <a href="/" class="brand-link" aria-label="SAPVIK Homepage">
-      <svg class="brand-logo" width="32" height="32" viewBox="0 0 200 200" fill="none" aria-hidden="true">
-        <path d="M40 160L100 40L160 160L100 130L40 160Z" fill="var(--c-vermilion)"/>
-      </svg>
-      <span class="brand-name">{SITE.brand.name}</span>
+  <div class="container header-container">
+    <a href="/#home" class="brand-logo-link" aria-label="SAPVIK Homepage">
+      <img src="/assets/logo.svg?v=3" alt="SAPVIK Logo - Build. Be Seen. Grow." class="brand-logo-img" width="180" height="42">
     </a>
 
-    <!-- Desktop Navigation -->
-    <nav class="desktop-nav" aria-label="Main Navigation">
-      <a href="/#services" class="nav-link">Services</a>
-      <a href="/#scanner" class="nav-link">Site Scanner</a>
-      <a href="/#simulator" class="nav-link">Growth Estimator</a>
-      <a href="/#faq" class="nav-link">FAQ</a>
-      <a href="/#contact" class="btn btn-primary btn-sm nav-cta">Start Discovery &rarr;</a>
+    <!-- Desktop Nav -->
+    <nav aria-label="Main Navigation">
+      <ul class="nav-links">
+        <li><a href="/#services" class="nav-link"><span class="nav-index">01.</span>Services</a></li>
+        <li><a href="/#heatmap" class="nav-link"><span class="nav-index">02.</span>Local Heatmap</a></li>
+        <li><a href="/#calculator" class="nav-link"><span class="nav-index">03.</span>Simulator</a></li>
+        <li><a href="/#process" class="nav-link"><span class="nav-index">04.</span>Process</a></li>
+        <li><a href="/#proof" class="nav-link"><span class="nav-index">05.</span>Proof</a></li>
+        <li><a href="/#faq" class="nav-link"><span class="nav-index">06.</span>FAQ</a></li>
+        <li><a href="/#contact" class="nav-link"><span class="nav-index">07.</span>Contact</a></li>
+      </ul>
     </nav>
 
-    <!-- Mobile Hamburger Toggle -->
-    <button
-      type="button"
-      class="hamburger-btn"
-      id="hamburgerBtn"
-      aria-label="Open navigation menu"
-      aria-expanded="false"
-      aria-controls="mobileDrawer"
-    >
-      <span class="hamburger-bar"></span>
-      <span class="hamburger-bar"></span>
-      <span class="hamburger-bar"></span>
-    </button>
-  </div>
-
-  <!-- Accessible Mobile Drawer Dialog with Focus Trap & Inert Support -->
-  <div
-    class="mobile-drawer"
-    id="mobileDrawer"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Navigation Menu"
-    hidden
-  >
-    <div class="drawer-header">
-      <div class="drawer-brand">
-        <svg width="24" height="24" viewBox="0 0 200 200" fill="none" aria-hidden="true">
-          <path d="M40 160L100 40L160 160L100 130L40 160Z" fill="var(--c-vermilion)"/>
-        </svg>
-        <span>{SITE.brand.name}</span>
-      </div>
-      <button
-        type="button"
-        class="drawer-close-btn"
-        id="drawerCloseBtn"
-        aria-label="Close navigation menu"
-      >
-        &times;
+    <!-- Header CTAs -->
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="/#contact" class="btn btn-primary btn-sm">Audit Request &rarr;</a>
+      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNavDrawer">
+        <span class="hamburger-box" aria-hidden="true">
+          <span class="hamburger-inner"></span>
+        </span>
+        <span class="mobile-toggle-label">MENU</span>
       </button>
-    </div>
-
-    <nav class="drawer-nav" aria-label="Mobile Navigation Links">
-      <a href="/#services" class="drawer-link">Services</a>
-      <a href="/#scanner" class="drawer-link">Site Scanner</a>
-      <a href="/#simulator" class="drawer-link">Growth Estimator</a>
-      <a href="/#faq" class="drawer-link">FAQ</a>
-      <a href="/#contact" class="btn btn-primary drawer-cta">Start Discovery &rarr;</a>
-    </nav>
-
-    <div class="drawer-footer">
-      <p class="drawer-contact-label">Direct Communication</p>
-      <a href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`} class="drawer-contact-item">
-        <span>Call:</span> <strong>{SITE.brand.phone}</strong>
-      </a>
-      <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} class="drawer-contact-item" target="_blank" rel="noopener">
-        <span>WhatsApp:</span> <strong>Direct Chat &rarr;</strong>
-      </a>
     </div>
   </div>
 </header>
 
-<div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-
-<style>
-  .site-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: rgba(244, 245, 246, 0.94);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--c-border);
-    height: var(--header-h);
-  }
-
-  .header-inner {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .brand-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 1.35rem;
-    letter-spacing: 0.04em;
-    color: var(--c-text-primary);
-  }
-
-  .desktop-nav {
-    display: none;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 900px) {
-    .desktop-nav { display: flex; }
-  }
-
-  .nav-link {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--c-text-secondary);
-    padding: 0.5rem 0.25rem;
-    position: relative;
-  }
-
-  .nav-link:hover {
-    color: var(--c-vermilion);
-  }
-
-  /* Hamburger Button */
-  .hamburger-btn {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    width: 44px;
-    height: 44px;
-    padding: 10px;
-    background: transparent;
-    border: 1px solid var(--c-border);
-    cursor: pointer;
-  }
-
-  @media (min-width: 900px) {
-    .hamburger-btn { display: none; }
-  }
-
-  .hamburger-bar {
-    width: 100%;
-    height: 2px;
-    background-color: var(--c-text-primary);
-    transition: transform 0.2s ease;
-  }
-
-  /* Mobile Drawer Dialog */
-  .mobile-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 85%;
-    max-width: 360px;
-    background: var(--c-surface);
-    border-left: 1px solid var(--c-border);
-    z-index: 100;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    box-shadow: -10px 0 30px rgba(18, 22, 28, 0.12);
-  }
-
-  .mobile-drawer[hidden] {
-    display: none;
-  }
-
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--c-border);
-  }
-
-  .drawer-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 800;
-    font-size: 1.2rem;
-  }
-
-  .drawer-close-btn {
-    width: 44px;
-    height: 44px;
-    background: transparent;
-    border: 1px solid var(--c-border);
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  .drawer-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 2rem 0;
-    flex: 1;
-  }
-
-  .drawer-link {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--c-text-primary);
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed var(--c-border-subtle);
-  }
-
-  .drawer-link:hover {
-    color: var(--c-vermilion);
-  }
-
-  .drawer-cta {
-    margin-top: 1rem;
-    width: 100%;
-  }
-
-  .drawer-footer {
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--c-border);
-    font-size: 0.85rem;
-  }
-
-  .drawer-contact-label {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    color: var(--c-text-muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .drawer-contact-item {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--c-text-primary);
-  }
-
-  .drawer-backdrop {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(18, 22, 28, 0.45);
-    backdrop-filter: blur(2px);
-    z-index: 90;
-  }
-
-  .drawer-backdrop[hidden] {
-    display: none;
-  }
-</style>
+<!-- Mobile Navigation Sheet -->
+<aside class="mobile-nav-drawer" id="mobileNavDrawer" aria-label="Mobile Navigation Menu" aria-hidden="true">
+  <ul class="mobile-nav-links">
+    <li><a href="/#services" class="mobile-nav-link">01. Services</a></li>
+    <li><a href="/#heatmap" class="mobile-nav-link">02. Local Heatmap</a></li>
+    <li><a href="/#calculator" class="mobile-nav-link">03. Growth Simulator</a></li>
+    <li><a href="/#process" class="mobile-nav-link">04. Process</a></li>
+    <li><a href="/#proof" class="mobile-nav-link">05. Proof</a></li>
+    <li><a href="/#faq" class="mobile-nav-link">06. FAQ</a></li>
+    <li><a href="/#contact" class="mobile-nav-link">07. Contact</a></li>
+  </ul>
+  <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem;">
+    <a href="/#contact" class="btn btn-vermilion btn-lg btn-full">Request Growth Audit</a>
+    <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} target="_blank" rel="noopener" class="btn btn-secondary btn-full">Connect on WhatsApp</a>
+  </div>
+</aside>
 
 <script>
-  // Accessible Drawer Controller with Inert and Focus Trap
-  document.addEventListener('DOMContentLoaded', () => {
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const mobileDrawer = document.getElementById('mobileDrawer');
-    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
-    const backdrop = document.getElementById('drawerBackdrop');
-    const mainContent = document.getElementById('main-content');
-    const drawerLinks = document.querySelectorAll('.drawer-link, .drawer-cta');
+  function initHeader() {
+    const header = document.getElementById('siteHeader');
+    const toggleBtn = document.getElementById('mobileMenuToggle');
+    const drawer = document.getElementById('mobileNavDrawer');
+    const mainContent = document.getElementById('mainContent') || document.getElementById('main-content');
+    const drawerLinks = document.querySelectorAll('.mobile-nav-link, .mobile-nav-drawer .btn');
 
-    if (!hamburgerBtn || !mobileDrawer || !drawerCloseBtn || !backdrop) return;
+    // Sticky header background on scroll
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 30) {
+        header?.classList.add('scrolled');
+      } else {
+        header?.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    if (!toggleBtn || !drawer) return;
 
     let previouslyFocused: HTMLElement | null = null;
 
     function openDrawer() {
       previouslyFocused = document.activeElement as HTMLElement;
-      mobileDrawer.removeAttribute('hidden');
-      backdrop.removeAttribute('hidden');
-      hamburgerBtn.setAttribute('aria-expanded', 'true');
+      drawer?.classList.add('open');
+      drawer?.removeAttribute('aria-hidden');
+      toggleBtn?.classList.add('active');
+      toggleBtn?.setAttribute('aria-expanded', 'true');
       document.body.style.overflow = 'hidden';
 
       if (mainContent) {
         mainContent.setAttribute('inert', '');
       }
 
-      // Focus first focusable element inside drawer
-      drawerCloseBtn.focus();
+      const firstLink = drawer?.querySelector('a') as HTMLElement;
+      firstLink?.focus();
     }
 
     function closeDrawer() {
-      mobileDrawer.setAttribute('hidden', '');
-      backdrop.setAttribute('hidden', '');
-      hamburgerBtn.setAttribute('aria-expanded', 'false');
+      drawer?.classList.remove('open');
+      drawer?.setAttribute('aria-hidden', 'true');
+      toggleBtn?.classList.remove('active');
+      toggleBtn?.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
 
       if (mainContent) {
@@ -312,9 +108,14 @@ import { SITE } from '../config/site';
       }
     }
 
-    hamburgerBtn.addEventListener('click', openDrawer);
-    drawerCloseBtn.addEventListener('click', closeDrawer);
-    backdrop.addEventListener('click', closeDrawer);
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = drawer.classList.contains('open');
+      if (isOpen) {
+        closeDrawer();
+      } else {
+        openDrawer();
+      }
+    });
 
     drawerLinks.forEach(link => {
       link.addEventListener('click', closeDrawer);
@@ -322,11 +123,11 @@ import { SITE } from '../config/site';
 
     // Keyboard Trap & Escape Listener
     document.addEventListener('keydown', (e) => {
-      if (!mobileDrawer.hasAttribute('hidden')) {
+      if (drawer.classList.contains('open')) {
         if (e.key === 'Escape') {
           closeDrawer();
         } else if (e.key === 'Tab') {
-          const focusables = mobileDrawer.querySelectorAll<HTMLElement>(
+          const focusables = drawer.querySelectorAll<HTMLElement>(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
           );
           if (focusables.length === 0) return;
@@ -344,5 +145,11 @@ import { SITE } from '../config/site';
         }
       }
     });
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeader);
+  } else {
+    initHeader();
+  }
 </script>

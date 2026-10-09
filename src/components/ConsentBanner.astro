@@ -76,7 +76,7 @@
 </style>
 
 <script is:inline>
-  document.addEventListener('DOMContentLoaded', () => {
+  function initConsentBanner() {
     const banner = document.getElementById('consentBanner');
     const acceptBtn = document.getElementById('btnConsentAccept');
     const rejectBtn = document.getElementById('btnConsentReject');
@@ -117,9 +117,17 @@
       });
     }
 
-    // Allow user to re-open settings from privacy or cookies pages
-    window.addEventListener('open-consent-settings', () => {
+    // Allow user to re-open settings from privacy, cookies, or footer
+    const handleOpen = () => {
       if (banner) banner.style.display = 'block';
-    });
-  });
+    };
+    window.addEventListener('open-consent-settings', handleOpen);
+    window.addEventListener('sapvik:open-consent', handleOpen);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initConsentBanner);
+  } else {
+    initConsentBanner();
+  }
 </script>

@@ -1,120 +1,86 @@
 ---
 const FAQS = [
   {
-    q: "What is your turnaround SLA for discovery inquiries and audits?",
-    a: "We review and respond to discovery submissions within 24 business hours. Our operational team examines your current website response times, local profile health, and commercial objectives before our introductory review."
+    q: "What services does SAPVIK provide?",
+    a: "SAPVIK operates across six core pillars: Websites Development, GMB Management, Media Management, Digital Promotions (Google & Meta Ads), Application Development, and Branding. We can handle the full ecosystem or run specific high-priority initiatives."
   },
   {
-    q: "Who owns the advertising accounts and created digital assets?",
-    a: "The client retains 100% direct administrative ownership of all Google Ads accounts, Meta Business Managers, domain registrations, code repositories, and creative collateral. We operate strictly as authorized managers; we never hostage client infrastructure."
+    q: "How quickly can we see results with GMB Management?",
+    a: "Most businesses begin seeing citation indexing and ranking movement within 30 to 60 days, with top-3 local positions developing across 60 to 90 days depending on local market competition."
   },
   {
-    q: "How is ad spend billed and managed?",
-    a: "Third-party ad spend is billed directly from Google Ads or Meta to your corporate card. We do not intermediate media payments or add undisclosed percentage markups on top of ad network billing."
+    q: "What is the turnaround time for discovery audits?",
+    a: "Our technical strategists review submitted websites and respond with tailored architecture findings within 24 business hours."
   },
   {
-    q: "How are campaign results and inquiry metrics verified?",
-    a: "Every lead generation campaign is wired to verifiable conversion actions (completed discovery forms, verified phone calls, direct WhatsApp conversations). We do not substitute vanity impressions or click counts for verified business inquiries."
-  },
-  {
-    q: "Why do organic services not generate direct ad reach numbers in the simulator?",
-    a: "Web development, Google Business optimization, and branding build vital conversion infrastructure and trust. However, buying guaranteed daily customer impressions requires an active media spend in Digital Promotions. We separate organic baseline work from media buying."
+    q: "How does SAPVIK report on ROI and campaign performance?",
+    a: "We provide bi-weekly performance debriefs focused on verified business metrics: cost-per-acquisition, verified inbound calls, and closed revenue attribution."
   }
 ];
 ---
 
-<section class="section faq-section" id="faq">
+<!-- FAQ SECTION -->
+<section class="section-pad" id="faq" aria-label="Frequently Asked Questions">
   <div class="container">
-    <div class="section-head centered">
-      <span class="mono-label">Operational FAQ</span>
+    <div class="section-head" style="text-align: center;">
+      <span class="mono-label">Clarity & Answers</span>
       <h2 class="section-title">Frequently Asked Questions</h2>
-      <p class="section-sub">
-        Clear answers regarding ownership, operational turnaround, reporting transparency, and engagement policies.
+      <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+        Straightforward answers about our deliverables, pricing structure, and execution timelines.
       </p>
     </div>
 
-    <div class="faq-list">
+    <div class="faq-stack">
       {FAQS.map((item, idx) => (
-        <details class="faq-item framed-card" id={`faq-${idx}`}>
-          <summary class="faq-summary">
-            <span class="faq-question">{item.q}</span>
-            <span class="faq-icon" aria-hidden="true">+</span>
-          </summary>
+        <div class="faq-row">
+          <button type="button" class="faq-trigger" aria-expanded="false" id={`faq-btn-${idx}`}>
+            <span>{item.q}</span>
+            <span class="faq-indicator">+</span>
+          </button>
           <div class="faq-content">
-            <p>{item.a}</p>
+            <div>
+              {item.a}
+            </div>
           </div>
-        </details>
+        </div>
       ))}
     </div>
   </div>
 </section>
 
-<style>
-  .faq-list {
-    max-width: 860px;
-    margin-left: auto;
-    margin-right: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
+<script>
+  function initFaq() {
+    const triggers = document.querySelectorAll('.faq-trigger');
+    triggers.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.faq-row');
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
 
-  .faq-item {
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .faq-summary {
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 1.5rem;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--c-text-primary);
-  }
-
-  .faq-summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .faq-question {
-    padding-right: 1rem;
-  }
-
-  .faq-icon {
-    font-family: var(--font-mono);
-    font-size: 1.35rem;
-    color: var(--c-vermilion);
-    transition: transform 0.2s ease;
-  }
-
-  .faq-item[open] .faq-icon {
-    transform: rotate(45deg);
-  }
-
-  .faq-content {
-    padding: 0 1.5rem 1.5rem 1.5rem;
-    font-size: 0.92rem;
-    color: var(--c-text-muted);
-    line-height: 1.6;
-    border-top: 1px dashed var(--c-border-subtle);
-    padding-top: 1rem;
-  }
-</style>
-
-<script is:inline>
-  document.querySelectorAll('.faq-item').forEach((details, idx) => {
-    details.addEventListener('toggle', () => {
-      if (details.open) {
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: 'faq_open',
-          question_id: `faq_${idx}`,
-          event_timestamp: Date.now()
+        // Close other rows
+        triggers.forEach((otherBtn) => {
+          if (otherBtn !== btn) {
+            otherBtn.setAttribute('aria-expanded', 'false');
+            otherBtn.closest('.faq-row')?.classList.remove('active');
+          }
         });
-      }
+
+        if (isOpen) {
+          btn.setAttribute('aria-expanded', 'false');
+          row?.classList.remove('active');
+        } else {
+          btn.setAttribute('aria-expanded', 'true');
+          row?.classList.add('active');
+          if (window.dataLayer) {
+            window.dataLayer.push({ event: 'faq_open', faq_id: `faq_${idx}` });
+          }
+        }
+      });
     });
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFaq);
+  } else {
+    initFaq();
+  }
 </script>

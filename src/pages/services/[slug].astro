@@ -23,7 +23,7 @@ const otherServices = SERVICES.filter(s => s.id !== service.id);
 >
   <article class="service-detail-page">
     <div class="container">
-      <div class="service-hero framed-card">
+      <div class="service-hero frame-box">
         <div class="service-kicker">
           <span class="mono-label">{service.code} &bull; Capability Overview</span>
         </div>
@@ -32,29 +32,30 @@ const otherServices = SERVICES.filter(s => s.id !== service.id);
         <p class="service-body">{service.description}</p>
 
         <div class="service-hero-actions">
-          <a href="/#contact" class="btn btn-primary">
-            Request Strategy Review for {service.name} &rarr;
+          <a href="/#contact" class="btn btn-vermilion btn-lg">
+            <span>Request Strategy Review for {service.name}</span>
+            <span>&rarr;</span>
           </a>
-          <a href="/#services" class="btn btn-secondary">
-            &larr; View All Capabilities
+          <a href="/#services" class="btn btn-secondary btn-lg">
+            <span>&larr; View All Capabilities</span>
           </a>
         </div>
       </div>
 
       <div class="service-details-grid">
-        <div class="details-main framed-card">
+        <div class="details-main frame-box">
           <h2 class="section-title">Core Deliverables & Scope</h2>
           <ul class="deliverables-checklist">
             {service.deliverables.map((item) => (
               <li>
-                <span class="check-icon" aria-hidden="true">✓</span>
+                <span class="check-icon" aria-hidden="true">&bull;</span>
                 <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div class="details-sidebar framed-card">
+        <div class="details-sidebar frame-box">
           <h3 class="sidebar-head">Operational Metric Focus</h3>
           <p class="sidebar-text">
             Performance on this engagement is evaluated primarily through:
@@ -67,7 +68,7 @@ const otherServices = SERVICES.filter(s => s.id !== service.id);
           <ul class="related-list">
             {otherServices.slice(0, 3).map((other) => (
               <li>
-                <a href={`/services/${other.slug}`} class="related-link">
+                <a href={`/services/${other.slug}.html`} class="related-link">
                   {other.name} &rarr;
                 </a>
               </li>
