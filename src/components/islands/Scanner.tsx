@@ -69,6 +69,7 @@ export default function Scanner() {
   const [ttfbVal, setTtfbVal] = useState('—');
   const [sslVal, setSslVal] = useState('—');
   const [sslColor, setSslColor] = useState('var(--c-text-muted)');
+  const [scanError, setScanError] = useState<string | null>(null);
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
   const [findings, setFindings] = useState<Array<{ severity: string; title: string; fix?: string; evidence?: string }>>([
     {
@@ -107,6 +108,7 @@ export default function Scanner() {
 
     setIsLoading(true);
     setHasScanned(true);
+    setScanError(null);
     setProgress(25);
     setStatusMsg('Dispatching real network probe & SSL handshake...');
 
@@ -199,6 +201,7 @@ export default function Scanner() {
         }));
       } else {
         const errorMsg = data.message || 'Target website took too long or refused connection.';
+        setScanError(errorMsg);
         setStatusMsg(`Probe halted: ${errorMsg}`);
         setScoreVal('N/A');
         setScoreColor('var(--c-text-muted)');
@@ -325,7 +328,7 @@ export default function Scanner() {
         <button
           type="submit"
           id="runScanBtn"
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary btn-sm scanner-btn"
           disabled={isLoading}
         >
           {isLoading ? 'ANALYZING SEO...' : (hasScanned ? 'RE-CHECK SEO' : 'RUN SEO CHECK')}
@@ -363,25 +366,40 @@ export default function Scanner() {
         {statusMsg}
       </div>
 
+      {/* Error Panel if Probe Failed */}
+      {scanError && (
+        <div className="scanner-error-panel" style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(230, 57, 70, 0.08)', border: '1px solid var(--c-vermilion)' }}>
+          <div style={{ fontWeight: 700, color: 'var(--c-vermilion)', marginBottom: '0.35rem' }}>
+            {scanError}
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--c-text-muted)', marginBottom: '0.75rem' }}>
+            Target host may be blocking automated probes, experiencing downtime, or does not exist.
+          </p>
+          <a href="#contact" className="btn btn-secondary btn-sm">
+            Request Manual Diagnostic &rarr;
+          </a>
+        </div>
+      )}
+
       {/* Metrics Readout */}
       <div className="scanner-results-deck">
-        <div className="scanner-metric-cell">
-          <div className="scanner-metric-val" id="scanScoreVal" style={{ color: scoreColor }}>
+        <div className="scanner-metric-cell readout-card">
+          <div className="scanner-metric-val readout-value" id="scanScoreVal" style={{ color: scoreColor }}>
             {scoreVal}
           </div>
           <div className="scanner-metric-lbl">SEO SCORE</div>
         </div>
-        <div className="scanner-metric-cell">
-          <div className="scanner-metric-val" id="scanTtfbVal">
+        <div className="scanner-metric-cell readout-card">
+          <div className="scanner-metric-val readout-value" id="scanTtfbVal">
             {ttfbVal}
           </div>
-          <div className="scanner-metric-lbl">RESPONSE TIME</div>
+          <div className="scanner-metric-lbl">Response Time</div>
         </div>
-        <div className="scanner-metric-cell">
-          <div className="scanner-metric-val" id="scanSslVal" style={{ color: sslColor }}>
+        <div className="scanner-metric-cell readout-card">
+          <div className="scanner-metric-val readout-value" id="scanSslVal" style={{ color: sslColor }}>
             {sslVal}
           </div>
-          <div className="scanner-metric-lbl">SSL STATUS</div>
+          <div className="scanner-metric-lbl">TLS / SSL Status</div>
         </div>
       </div>
 

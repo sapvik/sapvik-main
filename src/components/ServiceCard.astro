@@ -78,12 +78,12 @@ const outcomeMap: Record<string, string> = {
       ))}
     </ul>
   </div>
-  <div class="service-kpi-footer" style="display: flex; justify-content: space-between; align-items: flex-end; gap: 0.75rem;">
-    <div>
+  <div class="service-kpi-footer">
+    <div class="service-kpi-meta">
       <span class="mono-label">PRIMARY OUTCOME: </span>
       <span class="service-kpi-val">{outcomeMap[service.id] || service.metricsFocus}</span>
     </div>
-    <a href={`/services/${service.slug}.html`} class="btn btn-orange btn-vermilion btn-sm" style="font-size: 0.75rem; padding: 0.4rem 0.85rem; min-height: 36px; white-space: nowrap;">
+    <a href={`/services/${service.slug}.html`} class="btn btn-orange btn-vermilion btn-sm service-explore-btn">
       <span>Explore</span>
       <span>&rarr;</span>
     </a>

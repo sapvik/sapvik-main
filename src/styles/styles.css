@@ -57,6 +57,19 @@
   padding: 0;
 }
 
+/* Accessible Screen-Reader Only Utility */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-h) + 16px);
@@ -76,6 +89,11 @@ body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
+}
+
+main, #mainContent, section, article {
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 a {
@@ -791,26 +809,63 @@ button, input, select, textarea {
 }
 
 /* Pagination indicator pills for mobile swipe */
+.services-scroll-pagination,
 .snap-pagination-wrapper {
   display: none;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
+  gap: 0.35rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
+@media (max-width: 768px) {
+  .services-scroll-pagination,
+  .snap-pagination-wrapper {
+    display: flex;
+  }
+}
+
+.services-scroll-dot,
 .snap-dot {
+  background: transparent;
+  border: none;
+  padding: 8px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  touch-action: manipulation;
+}
+
+.services-scroll-dot .dot-indicator,
+.snap-dot {
+  display: block;
   width: 8px;
   height: 8px;
-  background: var(--c-border-strong);
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  background: #CBD5E1;
+  border-radius: 999px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.services-scroll-dot:hover .dot-indicator,
+.snap-dot:hover {
+  background: #94A3B8;
+}
+
+.services-scroll-dot:focus-visible .dot-indicator,
+.snap-dot:focus-visible {
+  outline: 2px solid var(--c-orange, #F97316);
+  outline-offset: 2px;
+}
+
+.services-scroll-dot.active .dot-indicator,
 .snap-dot.active {
-  width: 22px;
-  border-radius: 4px;
-  background: var(--c-vermilion);
+  width: 24px;
+  border-radius: 999px;
+  background: var(--c-orange, #F97316);
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
 }
 
 /* ==========================================================================
@@ -1289,44 +1344,83 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
-   CONTACT / AUDIT FORM
+   CONTACT / AUDIT FORM & EXECUTIVE DIAGNOSTIC DECKS
    ========================================================================== */
+#contact {
+  scroll-margin-top: calc(var(--header-h, 72px) + 1.5rem);
+}
+
 .audit-split {
   display: grid;
   grid-template-columns: 0.95fr 1.05fr;
-  gap: 3.5rem;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+
+.audit-split > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.audit-channels-deck {
+  padding: 2.25rem 2.25rem 2.5rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.audit-channels-header {
+  margin-bottom: 1.5rem;
+}
+
+.audit-channels-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.audit-channels-desc {
+  font-size: 0.88rem;
+  color: var(--c-text-muted);
+  line-height: 1.55;
 }
 
 .channel-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin: 2rem 0;
+  gap: 0.85rem;
+  margin: 1.25rem 0 1.75rem;
 }
 
 .channel-card {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
   background: var(--c-surface);
   border: var(--border-hairline);
   box-shadow: var(--shadow-subtle);
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   min-height: 44px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .channel-card:hover {
   border-color: var(--c-text-primary);
   box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
 }
 
 .channel-glyph {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--c-vermilion);
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border: 1px solid var(--c-border-strong);
   display: flex;
   align-items: center;
@@ -1336,52 +1430,103 @@ button, input, select, textarea {
 }
 
 .channel-meta h4 {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-muted);
+  margin-bottom: 0.2rem;
 }
 
 .channel-meta p {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--c-text-primary);
 }
 
+.diagnostic-commitments {
+  padding: 1.15rem 1.25rem;
+  background: var(--c-surface-subdued);
+  border-left: 3px solid var(--c-text-primary);
+  margin-top: auto;
+}
+
+.diagnostic-commitments-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 0.84rem;
+  color: var(--c-text-secondary);
+  line-height: 1.45;
+}
+
+.diagnostic-commitments-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.bullet-tick {
+  color: var(--c-vermilion);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .audit-form-deck {
-  padding: 2.75rem 2.5rem;
+  padding: 2.25rem 2.25rem 2.5rem 2.25rem;
+  box-sizing: border-box;
+}
+
+.audit-form-header {
+  margin-bottom: 1.35rem;
+}
+
+.audit-form-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.55rem);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  line-height: 1.25;
+  margin-bottom: 0.35rem;
+}
+
+.audit-form-desc {
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+  line-height: 1.5;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .form-field {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.95rem;
 }
 
 .form-label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--c-text-secondary);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
 }
 
 .form-control {
   width: 100%;
-  padding: 0.85rem 1rem;
-  min-height: 44px;
+  padding: 0.65rem 0.85rem;
+  min-height: 42px;
   background: var(--c-surface-subdued);
   border: 1px solid var(--c-border-strong);
   border-radius: 0;
   color: var(--c-text-primary);
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -1390,26 +1535,78 @@ button, input, select, textarea {
   background: #FFFFFF;
 }
 
+.form-control.error {
+  border-color: var(--c-vermilion);
+  background: #FFF5F5;
+}
+
 .form-textarea {
-  min-height: 100px;
+  min-height: 56px;
+  height: 56px;
   resize: vertical;
+  line-height: 1.45;
 }
 
 .form-consent-row {
   display: flex;
   align-items: flex-start;
-  gap: 0.65rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.82rem;
-  color: var(--c-text-muted);
-  line-height: 1.5;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.form-consent-row-opt {
+  margin-bottom: 1rem;
 }
 
 .form-consent-checkbox {
-  margin-top: 3px;
+  margin-top: 2px;
   accent-color: var(--c-vermilion);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.form-consent-label {
+  font-size: 0.78rem;
+  color: var(--c-text-secondary);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.form-consent-label.muted {
+  color: var(--c-text-muted);
+}
+
+.form-submit-btn {
+  width: 100%;
+  min-height: 46px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Cloudflare Turnstile Responsive Protection */
+.cf-turnstile {
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.cf-turnstile > div,
+.cf-turnstile iframe {
+  max-width: 100% !important;
+}
+
+@media (max-width: 360px) {
+  .cf-turnstile > div,
+  .cf-turnstile iframe {
+    transform: scale(0.86);
+    transform-origin: 0 0;
+  }
 }
 
 /* Form success & failure panels */
@@ -1528,6 +1725,44 @@ button, input, select, textarea {
 }
 
 @media (max-width: 768px) {
+  /* Dynamic Header Height */
+  :root {
+    --header-h: 60px;
+  }
+
+  .site-header {
+    height: 60px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-cta-desktop {
+    display: none !important;
+  }
+
+  .brand-logo-img {
+    height: 32px;
+    max-width: 135px;
+  }
+
+  .mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.65rem;
+    min-height: 40px;
+    min-width: 44px;
+    font-size: 0.75rem;
+  }
+
+  /* Body safe dock offset */
+  body {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+  }
+
   /* Mobile Bottom Dock (WhatsApp + Audit) */
   .mobile-bottom-dock {
     display: flex;
@@ -1540,8 +1775,8 @@ button, input, select, textarea {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--c-border);
-    padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
-    gap: 0.75rem;
+    padding: 0.55rem 0.85rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.65rem;
     box-shadow: 0 -4px 20px rgba(18, 22, 28, 0.08);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -1556,10 +1791,11 @@ button, input, select, textarea {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.75rem 0.5rem;
+    padding: 0.65rem 0.5rem;
     font-family: var(--font-display);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 700;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     border-radius: 0;
     min-height: 44px;
@@ -1578,65 +1814,177 @@ button, input, select, textarea {
     border: 1px solid var(--c-vermilion);
   }
 
-  /* Collapse ALL Multi-Column Grids */
+  /* Section Padding */
+  .hero-section {
+    padding-top: calc(60px + 1.5rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .section-pad,
+  .section {
+    padding-top: 2.75rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .section-head {
+    margin-bottom: 1.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 5.5vw, 2.1rem);
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .section-desc {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  /* Hero Section Mobile */
   .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 2.25rem;
-  }
-
-  .hero-engine-deck,
-  .hero-audit-deck {
-    padding: 1.5rem 1.25rem;
-  }
-
-  .heatmap-wrapper {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .calculator-deck {
-    grid-template-columns: 1fr;
-    padding: 1.5rem;
-  }
-
-  .proof-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
+    width: 100%;
   }
 
-  .audit-split {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
+  .hero-meta-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
-  .calc-chips-container {
-    grid-template-columns: 1fr;
+  .hero-title {
+    font-size: clamp(1.85rem, 6.8vw, 2.5rem);
+    line-height: 1.15;
+    word-break: break-word;
+    hyphens: auto;
+    margin-bottom: 1rem;
   }
 
-  .telemetry-grid {
-    grid-template-columns: 1fr;
+  .hero-subtitle {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
   }
 
-  .process-columns {
-    grid-template-columns: 1fr;
+  .hero-cta-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.65rem;
+    margin-bottom: 1.75rem;
   }
 
-  .proof-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .footer-matrix {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+  .hero-cta-group .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 46px;
+    font-size: 0.88rem;
+    padding: 0.75rem 1rem;
   }
 
   .hero-metrics-bar {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: var(--border-hairline);
+  }
+
+  .hero-metric-item {
+    text-align: center;
+    padding: 0.65rem 0.35rem;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+  }
+
+  .hero-metric-num {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--c-vermilion);
+    display: block;
+    line-height: 1.1;
+  }
+
+  .hero-metric-label {
+    font-size: 0.65rem;
+    color: var(--c-text-muted);
+    line-height: 1.25;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  /* Scanner (Quick SEO Score) */
+  .hero-visual,
+  #scanner {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .audit-deck-header {
+    padding: 1.35rem 1.1rem;
+  }
+
+  .audit-deck-title {
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+
+  .audit-deck-subtitle {
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .scanner-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .scanner-input-group input,
+  .scanner-input {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  .scanner-input-group button,
+  #runScanBtn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .scanner-results-deck {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+  }
+
+  .scanner-results-deck .scanner-metric-cell:first-child {
+    grid-column: span 2;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .scanner-metric-cell {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .scanner-finding-item {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.82rem;
   }
 
   /* Services Touch-Snap Horizontal Deck */
@@ -1644,14 +1992,16 @@ button, input, select, textarea {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    gap: 1rem;
+    gap: 0.85rem;
     padding-bottom: 0.75rem;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    margin-left: -1.75rem;
-    margin-right: -1.75rem;
-    padding-left: 1.75rem;
-    padding-right: 1.75rem;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+    max-width: 100%;
   }
 
   .services-framed-grid::-webkit-scrollbar {
@@ -1659,21 +2009,189 @@ button, input, select, textarea {
   }
 
   .services-framed-grid .service-panel {
-    flex: 0 0 85vw;
+    flex: 0 0 calc(100vw - 3rem);
+    max-width: 340px;
     scroll-snap-align: center;
     scroll-snap-stop: always;
-    padding: 1.85rem 1.5rem;
+    padding: 1.35rem 1.1rem;
+    box-sizing: border-box;
+  }
+
+  .service-kpi-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding-top: 0.85rem;
+  }
+
+  .service-explore-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+    font-size: 0.82rem;
+    font-weight: 700;
   }
 
   .snap-pagination-wrapper {
     display: flex;
   }
 
-  .audit-form-deck {
-    padding: 1.75rem 1.25rem;
+  /* Heatmap */
+  .heatmap-wrapper {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
-  /* Prevent iOS Safari auto-zoom on input focus by enforcing 16px font-size */
+  .heatmap-visual-box {
+    padding: 1.25rem 1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .heatmap-analysis-box {
+    padding: 1.35rem 1.1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .heatmap-toggle-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .heatmap-btn-group {
+    display: flex;
+    width: 100%;
+  }
+
+  .heatmap-mode-btn {
+    flex: 1;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.7rem;
+    justify-content: center;
+    text-align: center;
+    min-height: 40px;
+  }
+
+  .geo-grid-matrix {
+    gap: 5px;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  .geo-grid-node {
+    padding: 0.25rem 0.15rem;
+    min-height: 50px;
+  }
+
+  .geo-grid-node .rank-num {
+    font-size: 1.05rem;
+  }
+
+  .geo-grid-node .radius-lbl {
+    font-size: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 95%;
+  }
+
+  .heatmap-legend {
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: center;
+    font-size: 0.75rem;
+  }
+
+  /* Calculator */
+  .calculator-deck {
+    grid-template-columns: 1fr;
+    padding: 1.35rem 1.1rem;
+    gap: 1.75rem;
+  }
+
+  .calc-chips-container {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .calc-chip {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .calc-stage {
+    padding: 1.35rem 1.1rem;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+
+  .telemetry-val {
+    font-size: 1.45rem;
+  }
+
+  /* Process, Proof, Audit Split, Footer */
+  .process-columns,
+  .proof-layout,
+  .proof-grid,
+  .audit-split,
+  .footer-matrix {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .proof-sheet {
+    padding: 1.25rem 1rem;
+  }
+
+  .proof-metric-big {
+    font-size: 1.85rem;
+  }
+
+  .audit-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  .audit-channels-deck,
+  .audit-form-deck {
+    padding: 1.5rem 1.25rem 1.75rem 1.25rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .audit-channels-header {
+    margin-bottom: 1.15rem;
+  }
+
+  .channel-list {
+    margin: 1rem 0 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .channel-card {
+    padding: 0.85rem 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .form-field {
+    margin-bottom: 0.85rem;
+  }
+
+  /* Prevent iOS Safari auto-zoom on input focus */
   .form-control,
   .scanner-input,
   input[type="text"],
@@ -1683,6 +2201,232 @@ button, input, select, textarea {
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+/* ==========================================================================
+   EXTRA SMALL / 320px–480px SPECIALIZED MOBILE ARCHITECTURE
+   ========================================================================== */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .frame-box,
+  .framed-card {
+    padding: 1.15rem 0.85rem !important;
+  }
+
+  .badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .mono-label {
+    font-size: 0.68rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.55rem, 7.8vw, 1.95rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .hero-metrics-bar {
+    gap: 0.35rem !important;
+  }
+
+  .hero-metric-item {
+    padding: 0.5rem 0.15rem !important;
+  }
+
+  .hero-metric-num {
+    font-size: 0.98rem !important;
+  }
+
+  .hero-metric-label {
+    font-size: 0.58rem !important;
+  }
+
+  .services-framed-grid .service-panel {
+    flex: 0 0 calc(100vw - 2.2rem) !important;
+    padding: 1.15rem 0.85rem !important;
+  }
+
+  .geo-grid-matrix {
+    gap: 3px !important;
+  }
+
+  .geo-grid-node {
+    min-height: 46px !important;
+    padding: 0.2rem 0.1rem !important;
+  }
+
+  .geo-grid-node .rank-num {
+    font-size: 0.95rem !important;
+  }
+
+  .geo-grid-node .radius-lbl {
+    font-size: 0.54rem !important;
+  }
+
+  .slider-readout {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .slider-val-num {
+    font-size: 1.35rem !important;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .telemetry-val {
+    font-size: 1.25rem !important;
+  }
+
+  .telemetry-cell {
+    padding-left: 0.65rem !important;
+  }
+
+  .proof-sheet {
+    padding: 1.15rem 0.85rem !important;
+  }
+
+  .proof-metric-big {
+    font-size: 1.65rem !important;
+  }
+
+  .audit-split {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1.25rem !important;
+  }
+
+  .audit-channels-deck,
+  .audit-form-deck {
+    padding: 1.15rem 0.85rem 1.35rem 0.85rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .hero-audit-deck {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .audit-channels-title {
+    font-size: clamp(1.25rem, 5.5vw, 1.45rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  .audit-channels-desc {
+    font-size: 0.82rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .channel-list {
+    margin: 0.85rem 0 1rem !important;
+    gap: 0.6rem !important;
+  }
+
+  .channel-card {
+    padding: 0.65rem 0.75rem !important;
+    gap: 0.65rem !important;
+    min-height: 42px !important;
+  }
+
+  .channel-glyph {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .channel-meta h4 {
+    font-size: 0.68rem !important;
+  }
+
+  .channel-meta p {
+    font-size: 0.88rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .diagnostic-commitments {
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  .diagnostic-commitments-list {
+    font-size: 0.78rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .audit-form-header {
+    margin-bottom: 0.95rem !important;
+  }
+
+  .audit-form-title {
+    font-size: clamp(1.15rem, 5vw, 1.3rem) !important;
+    line-height: 1.25 !important;
+  }
+
+  .audit-form-desc {
+    font-size: 0.8rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .form-field {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .form-label {
+    font-size: 0.74rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .form-control {
+    padding: 0.55rem 0.7rem !important;
+    min-height: 40px !important;
+  }
+
+  .form-textarea {
+    min-height: 52px !important;
+    height: 52px !important;
+  }
+
+  .form-consent-row {
+    gap: 0.45rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  .form-consent-row-opt {
+    margin-bottom: 0.85rem !important;
+  }
+
+  .form-consent-label {
+    font-size: 0.74rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .form-submit-btn {
+    min-height: 44px !important;
+    font-size: 0.85rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  #contact {
+    /* Extra padding at the bottom so the sticky 58px bottom dock never overlaps the submit button or box borders */
+    padding-bottom: calc(58px + 2.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

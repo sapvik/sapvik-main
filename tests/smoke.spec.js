@@ -62,6 +62,20 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1); // Zero horizontal overflow on 360px mobile
   });
 
+  test('320px Mobile Viewport has NO horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto('/');
+
+    // Wait for content load
+    await page.waitForSelector('#home');
+
+    // Measure scroll width vs viewport width
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1); // Zero horizontal overflow on 320px mobile
+  });
+
   test('Growth Simulator: Chips toggle correctly without double-toggle bug', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');

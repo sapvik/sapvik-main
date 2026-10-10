@@ -2,8 +2,6 @@
 import { SITE } from '../config/site';
 ---
 
-<!-- Skip Link for Keyboard Accessibility -->
-<a href="#mainContent" class="skip-link">Skip to main content</a>
 
 <!-- SITE HEADER & NAVIGATION -->
 <header class="site-header" id="siteHeader">
@@ -26,9 +24,9 @@ import { SITE } from '../config/site';
     </nav>
 
     <!-- Header CTAs -->
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="/#contact" class="btn btn-primary btn-sm">Audit Request &rarr;</a>
-      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileNavDrawer">
+    <div class="header-actions">
+      <a href="/#contact" class="btn btn-primary btn-sm header-cta-desktop">Audit Request &rarr;</a>
+      <button class="mobile-toggle" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileDrawer">
         <span class="hamburger-box" aria-hidden="true">
           <span class="hamburger-inner"></span>
         </span>
@@ -39,7 +37,7 @@ import { SITE } from '../config/site';
 </header>
 
 <!-- Mobile Navigation Sheet -->
-<aside class="mobile-nav-drawer" id="mobileNavDrawer" aria-label="Mobile Navigation Menu" aria-hidden="true">
+<aside class="mobile-nav-drawer" id="mobileDrawer" aria-label="Mobile Navigation Menu" aria-hidden="true">
   <ul class="mobile-nav-links">
     <li><a href="/#services" class="mobile-nav-link">01. Services</a></li>
     <li><a href="/#heatmap" class="mobile-nav-link">02. Local Heatmap</a></li>
@@ -58,8 +56,8 @@ import { SITE } from '../config/site';
 <script>
   function initHeader() {
     const header = document.getElementById('siteHeader');
-    const toggleBtn = document.getElementById('mobileMenuToggle');
-    const drawer = document.getElementById('mobileNavDrawer');
+    const toggleBtn = document.getElementById('hamburgerBtn') || document.getElementById('mobileMenuToggle');
+    const drawer = document.getElementById('mobileDrawer') || document.getElementById('mobileNavDrawer');
     const mainContent = document.getElementById('mainContent') || document.getElementById('main-content');
     const drawerLinks = document.querySelectorAll('.mobile-nav-link, .mobile-nav-drawer .btn');
 

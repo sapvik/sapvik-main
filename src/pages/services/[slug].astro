@@ -94,7 +94,7 @@ const outcomeMap: Record<string, string> = {
           </div>
 
           <!-- Strategic Discovery Box (Fitted neatly in Left Column) -->
-          <div class="frame-box" style="padding: clamp(1.75rem, 3vw, 2.25rem); border-left: 4px solid var(--c-vermilion);">
+          <div class="frame-box discovery-box">
             <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.35rem;">
               COMMERCIAL GROWTH PARTNERSHIP &bull; {service.code}
             </span>
@@ -104,7 +104,7 @@ const outcomeMap: Record<string, string> = {
             <p style="color: var(--c-text-secondary); font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.5rem;">
               Book an initial technical architecture review with our senior team. Zero agency retainers upfront, direct platform ad billing, and strict turnaround SLA.
             </p>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="discovery-cta-group" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
               <a href="/#contact" class="btn btn-vermilion btn-lg">
                 <span>Request Diagnostic Review</span>
                 <span>&rarr;</span>
@@ -193,6 +193,68 @@ const outcomeMap: Record<string, string> = {
   @media (min-width: 900px) {
     .service-details-grid {
       grid-template-columns: 1.9fr 1fr;
+    }
+  }
+
+  .discovery-box {
+    padding: clamp(1.75rem, 3vw, 2.25rem);
+    border-left: 4px solid var(--c-vermilion);
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 640px) {
+    .service-detail-page {
+      padding-top: calc(58px + 1.25rem);
+      padding-bottom: 3.5rem;
+    }
+
+    .service-details-grid {
+      gap: 1.25rem;
+    }
+
+    .details-main-column .frame-box,
+    .details-sidebar-column .frame-box {
+      padding: 1.25rem 0.95rem !important;
+      margin-bottom: 1.25rem !important;
+      box-sizing: border-box !important;
+    }
+
+    .discovery-box {
+      padding: 1.25rem 0.95rem !important;
+      border-left-width: 3px !important;
+    }
+
+    .discovery-box .mono-label {
+      font-size: 0.66rem !important;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    .discovery-box h3 {
+      font-size: clamp(1.15rem, 5vw, 1.35rem) !important;
+      line-height: 1.25 !important;
+      margin-bottom: 0.35rem !important;
+    }
+
+    .discovery-box p {
+      font-size: 0.84rem !important;
+      line-height: 1.5 !important;
+      margin-bottom: 1.15rem !important;
+    }
+
+    .discovery-cta-group {
+      flex-direction: column !important;
+      width: 100% !important;
+      gap: 0.5rem !important;
+    }
+
+    .discovery-cta-group .btn {
+      width: 100% !important;
+      justify-content: center !important;
+      min-height: 44px !important;
+      padding: 0.75rem 0.85rem !important;
+      font-size: 0.84rem !important;
+      box-sizing: border-box !important;
     }
   }
 

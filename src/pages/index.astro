@@ -81,9 +81,26 @@ import ContactForm from '../components/islands/ContactForm.tsx';
         </p>
       </div>
 
-      <div class="services-framed-grid">
+      <div class="services-framed-grid" id="servicesGrid">
         {SERVICES.map((service) => (
           <ServiceCard service={service} />
+        ))}
+      </div>
+
+      <!-- Mobile & Touch Carousel Pagination Dots -->
+      <div class="services-scroll-pagination" id="servicesScrollDots" role="tablist" aria-label="Services carousel navigation">
+        {SERVICES.map((service, index) => (
+          <button
+            type="button"
+            class={`services-scroll-dot ${index === 0 ? 'active' : ''}`}
+            data-index={index}
+            role="tab"
+            aria-label={`Go to slide ${index + 1}: ${service.name}`}
+            aria-selected={index === 0 ? "true" : "false"}
+            tabindex="0"
+          >
+            <span class="dot-indicator"></span>
+          </button>
         ))}
       </div>
     </div>
@@ -184,13 +201,17 @@ import ContactForm from '../components/islands/ContactForm.tsx';
     <div class="container">
       <div class="audit-split">
         
-        <!-- Channels Left -->
-        <div>
-          <span class="mono-label">Direct Communication</span>
-          <h2 class="section-title">Request a Growth Diagnostic</h2>
-          <p class="section-desc">
-            Connect directly with our lead growth team. We review your current digital assets and provide actionable technical findings.
-          </p>
+        <!-- Channels Left (Framed Executive Diagnostic Deck) -->
+        <div class="frame-box audit-channels-deck">
+          <div class="audit-channels-header">
+            <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.25rem;">
+              DIRECT EXECUTIVE COMMUNICATION
+            </span>
+            <h2 class="section-title audit-channels-title">Request a Growth Diagnostic</h2>
+            <p class="section-desc audit-channels-desc">
+              Connect directly with our lead growth engineering team. We review your current digital assets and provide actionable technical findings.
+            </p>
+          </div>
 
           <div class="channel-list">
             <a href="https://wa.me/918800592147?text=Hi%20SAPVIK%20team,%20I'd%20like%20to%20discuss%20a%20digital%20growth%20audit." target="_blank" rel="noopener" class="channel-card">
@@ -213,7 +234,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
                 </svg>
               </div>
               <div class="channel-meta">
-                <h4>Direct Inquiries</h4>
+                <h4>Direct Email Inquiries</h4>
                 <p>growth@sapvik.com</p>
               </div>
             </a>
@@ -226,10 +247,30 @@ import ContactForm from '../components/islands/ContactForm.tsx';
                 </svg>
               </div>
               <div class="channel-meta">
-                <h4>Operational Headquarters</h4>
-                <p>India (Pan-India & Global Delivery)</p>
+                <h4>Operational Delivery</h4>
+                <p>Pan-India & Global Delivery</p>
               </div>
             </div>
+          </div>
+
+          <div class="diagnostic-commitments">
+            <span class="mono-label" style="display: block; margin-bottom: 0.65rem; color: var(--c-text-primary);">
+              OPERATIONAL ENGAGEMENT SLA
+            </span>
+            <ul class="diagnostic-commitments-list">
+              <li>
+                <span class="bullet-tick">&bull;</span>
+                <span><strong>&lt;24h Diagnostic SLA:</strong> Direct response from senior growth engineering leads.</span>
+              </li>
+              <li>
+                <span class="bullet-tick">&bull;</span>
+                <span><strong>100% Asset Ownership:</strong> You retain full DNS, code repositories, and ad account administration.</span>
+              </li>
+              <li>
+                <span class="bullet-tick">&bull;</span>
+                <span><strong>Confidential Data:</strong> Handled under strict commercial NDA protocols.</span>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -239,4 +280,69 @@ import ContactForm from '../components/islands/ContactForm.tsx';
       </div>
     </div>
   </section>
+
+  <script>
+    function initServicesCarousel() {
+      const grid = document.getElementById('servicesGrid');
+      const dots = document.querySelectorAll<HTMLButtonElement>('.services-scroll-dot');
+      if (!grid || dots.length === 0) return;
+
+      const panels = grid.querySelectorAll<HTMLElement>('.service-panel');
+      if (panels.length === 0) return;
+
+      dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+          const idx = parseInt(dot.getAttribute('data-index') || '0', 10);
+          if (panels[idx]) {
+            panels[idx].scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+              inline: 'center'
+            });
+          }
+        });
+      });
+
+      let ticking = false;
+      const updateActiveDot = () => {
+        const gridRect = grid.getBoundingClientRect();
+        const gridCenter = gridRect.left + gridRect.width / 2;
+
+        let closestIdx = 0;
+        let minDistance = Infinity;
+
+        panels.forEach((panel, idx) => {
+          const rect = panel.getBoundingClientRect();
+          const panelCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(gridCenter - panelCenter);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = idx;
+          }
+        });
+
+        dots.forEach((dot, idx) => {
+          const isActive = idx === closestIdx;
+          dot.classList.toggle('active', isActive);
+          dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        ticking = false;
+      };
+
+      grid.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(updateActiveDot);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      updateActiveDot();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initServicesCarousel);
+    } else {
+      initServicesCarousel();
+    }
+  </script>
 </Base>

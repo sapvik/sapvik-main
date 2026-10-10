@@ -130,7 +130,7 @@ export default function ContactForm() {
         });
       } else {
         setErrorMessage(data.message || 'Submission encountered an issue.');
-        if (data.status === 'delivery_offline') {
+        if (data.status === 'delivery_offline' || data.error === 'delivery_offline' || data.whatsapp_fallback) {
           setDeliveryOffline(true);
         }
       }
@@ -151,13 +151,18 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="frame-box audit-form-deck" id="contact">
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.45rem', fontWeight: 800, color: 'var(--c-text-primary)', marginBottom: '0.5rem' }}>
-        Claim Your Growth Blueprint
-      </h3>
-      <p style={{ fontSize: '0.88rem', color: 'var(--c-text-muted)', marginBottom: '1.75rem' }}>
-        Provide your details below. Our technical team conducts an initial diagnostic and responds within 24 business hours.
-      </p>
+    <div className="frame-box audit-form-deck" id="audit-form-deck">
+      <div className="audit-form-header">
+        <span className="mono-label" style={{ color: 'var(--c-vermilion)', display: 'block', marginBottom: '0.25rem' }}>
+          CONFIDENTIAL ONBOARDING
+        </span>
+        <h3 className="audit-form-title">
+          Claim Your Growth Blueprint
+        </h3>
+        <p className="audit-form-desc">
+          Provide your details below. Our technical team conducts an initial diagnostic and responds within 24 business hours.
+        </p>
+      </div>
 
       {submitSuccess ? (
         <div className="form-status-panel" id="formStatusPanel" style={{ display: 'block', padding: '1.5rem', background: 'var(--c-surface-subdued)', borderLeft: '4px solid var(--c-success)' }}>
@@ -175,7 +180,7 @@ export default function ContactForm() {
             <div style={{ padding: '0.85rem 1rem', background: '#FEE2E2', borderLeft: '3px solid var(--c-vermilion)', color: '#991B1B', fontSize: '0.85rem', marginBottom: '1.25rem' }} role="alert">
               <p>⚠ {errorMessage}</p>
               {deliveryOffline && (
-                <div style={{ marginTop: '0.75rem' }}>
+                <div className="whatsapp-fallback-action" style={{ marginTop: '0.75rem' }}>
                   <p style={{ fontSize: '0.8rem', color: '#7F1D1D', marginBottom: '0.5rem' }}>
                     Your details are preserved. Connect directly with our team on WhatsApp:
                   </p>
@@ -285,10 +290,13 @@ export default function ContactForm() {
                 value={formData.service}
                 onChange={(e) => setFormData({ ...formData, service: e.target.value })}
               >
-                <option value="all">Full Digital Growth Suite (All Six Pillars)</option>
-                {SERVICES.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
+                <option value="all">Full Suite (All 6 Pillars)</option>
+                <option value="websites">Websites Development</option>
+                <option value="gmb">GMB Management</option>
+                <option value="media">Media Management</option>
+                <option value="promotions">Digital Promotions</option>
+                <option value="apps">Application Development</option>
+                <option value="branding">Branding</option>
               </select>
             </div>
           </div>
@@ -298,8 +306,8 @@ export default function ContactForm() {
             <textarea
               id="formDetails"
               className="form-control form-textarea"
-              rows={3}
-              placeholder="Detail your monthly lead goals, current website status, or desired outcomes..."
+              rows={2}
+              placeholder="Monthly lead goals, current website, or target outcomes..."
               value={formData.details}
               onChange={(e) => setFormData({ ...formData, details: e.target.value })}
             ></textarea>
@@ -314,7 +322,7 @@ export default function ContactForm() {
               onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
               required
             />
-            <label htmlFor="formConsent">
+            <label htmlFor="formConsent" className="form-consent-label">
               I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="/privacy.html" target="_blank" style={{ color: 'var(--c-vermilion)', textDecoration: 'underline' }}>Privacy Policy</a>. *
             </label>
           </div>
@@ -322,7 +330,7 @@ export default function ContactForm() {
             <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '-0.25rem', marginBottom: '0.75rem', display: 'block' }}>{fieldErrors.consent}</span>
           )}
 
-          <div className="form-consent-row" style={{ marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+          <div className="form-consent-row form-consent-row-opt">
             <input
               type="checkbox"
               id="formMarketingConsent"
@@ -330,22 +338,20 @@ export default function ContactForm() {
               checked={formData.marketingConsent}
               onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
             />
-            <label htmlFor="formMarketingConsent" style={{ fontSize: '0.8rem', color: 'var(--c-text-muted)' }}>
+            <label htmlFor="formMarketingConsent" className="form-consent-label muted">
               (Optional) Send me occasional growth engineering guides and benchmark updates.
             </label>
           </div>
 
           {/* Turnstile Bot Challenge Container */}
-          <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1.25rem' }}></div>
+          <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1rem' }}></div>
 
-          <button type="submit" className="btn btn-vermilion btn-lg btn-full" disabled={isSubmitting}>
+          <button type="submit" className="btn btn-vermilion btn-lg btn-full form-submit-btn" disabled={isSubmitting}>
             <span>{isSubmitting ? 'Submitting Request...' : 'Submit Audit Request'}</span>
-            <span>&rarr;</span>
+            <span aria-hidden="true">&rarr;</span>
           </button>
         </form>
       )}
-
-      <div id="formStatusPanel" className="form-status-panel"></div>
     </div>
   );
 }
