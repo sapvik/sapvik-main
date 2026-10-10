@@ -5,3 +5,4 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
+PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAAFTY0v25vZJ_wPCQ"
