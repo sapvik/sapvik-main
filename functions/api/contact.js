@@ -80,7 +80,13 @@ export async function onRequestPost(context) {
   let deliverySucceeded = false;
   const brevoKey = env ? env.BREVO_API_KEY : null;
   const webhookUrl = env ? env.LEAD_WEBHOOK_URL : null;
-  const teamEmail = (env && env.NOTIFICATION_EMAIL) || 'growth@sapvik.com';
+  const teamEmailRaw = (env && env.NOTIFICATION_EMAIL) || 'growth@sapvik.com';
+  const recipients = teamEmailRaw
+    .split(',')
+    .map(e => e.trim())
+    .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+    .map(email => ({ email }));
+  const teamRecipients = recipients.length > 0 ? recipients : [{ email: 'growth@sapvik.com' }];
   const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'alerts@sapvik.com';
 
   // A. Dispatch Transactional Alert Email to Team via Brevo SMTP API
@@ -114,7 +120,7 @@ export async function onRequestPost(context) {
         },
         body: JSON.stringify({
           sender: { name: 'SAPVIK Lead Gateway', email: senderEmail },
-          to: [{ email: teamEmail }],
+          to: teamRecipients,
           replyTo: { email: email, name: name },
           subject: `[Lead Alert] ${name} - ${business || service}`,
           htmlContent: emailHtml

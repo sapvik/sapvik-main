@@ -160,6 +160,49 @@ test('API /api/contact: Accepts aligned payload fields (details, marketing_conse
   assert.equal(json.error, 'delivery_offline');
 });
 
+test('API /api/contact: Dispatches to multiple recipients when NOTIFICATION_EMAIL has comma-separated addresses', async () => {
+  let capturedBody = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes('api.brevo.com')) {
+      capturedBody = JSON.parse(options.body);
+      return new Response(JSON.stringify({ messageId: '<msg123@smtp>' }), { status: 201 });
+    }
+    return originalFetch(url, options);
+  };
+
+  try {
+    const multiReq = new Request('http://localhost:8082/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Multi Recipient Test',
+        phone: '+91 98765 33333',
+        email: 'test@domain.com',
+        consent: true
+      })
+    });
+
+    const res = await contactHandler({
+      request: multiReq,
+      env: {
+        BREVO_API_KEY: 'test-key',
+        BREVO_SENDER_EMAIL: 'sender@sapvik.com',
+        NOTIFICATION_EMAIL: 'inbox1@sapvik.com, inbox2@gmail.com, invalid-email'
+      }
+    });
+
+    assert.equal(res.status, 200);
+    assert.ok(capturedBody !== null);
+    assert.deepEqual(capturedBody.to, [
+      { email: 'inbox1@sapvik.com' },
+      { email: 'inbox2@gmail.com' }
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('API /api/audit: Rejects payload exceeding 50KB with 413', async () => {
   const hugePayload = 'A'.repeat(52000);
   const hugeReq = new Request('http://localhost:8082/api/audit', {
