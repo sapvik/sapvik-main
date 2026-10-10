@@ -4,7 +4,7 @@
  * Brevo SMTP dispatch, webhook streaming, and delivery guarantee.
  */
 
-import { escapeHtml, validateOrigin, verifyTurnstileToken, validateContactPayload } from '../lib/security.js';
+import { escapeHtml, validateOrigin, verifyTurnstileToken, validateContactPayload, readBoundedJson } from '../lib/security.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -17,27 +17,22 @@ export async function onRequestPost(context) {
     });
   }
 
-  // 2. Body Size Enforcement (<50KB)
-  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
-  if (contentLength > 50000) {
-    return new Response(JSON.stringify({ ok: false, message: 'Request payload exceeds allowable limit.' }), {
-      status: 413,
+  // 2. Body Size Enforcement (<50KB) & Parsing
+  const bodyResult = await readBoundedJson(request, 51200);
+  if (!bodyResult.ok) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: bodyResult.error,
+      message: bodyResult.message
+    }), {
+      status: bodyResult.status,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  let data;
-  try {
-    data = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ ok: false, message: 'Malformed JSON payload.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  const data = bodyResult.data;
 
   // 3. Honeypot check (silently drop bot submissions)
-  if (data.website_url_hp) {
+  if (data.website_url_hp || data.contact_ref_code) {
     return new Response(JSON.stringify({ ok: true, lead_id: 'SUB-BOT-DISCARD' }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -45,18 +40,17 @@ export async function onRequestPost(context) {
 
   // 4. Turnstile Bot Challenge Verification
   const clientIp = request.headers.get('CF-Connecting-IP') || '';
-  if (env && env.TURNSTILE_SECRET_KEY) {
-    const turnstileToken = data.turnstileToken || data['cf-turnstile-response'];
-    const turnstileResult = await verifyTurnstileToken(turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
-    if (!turnstileResult.success && !turnstileResult.bypassed) {
-      return new Response(JSON.stringify({
-        ok: false,
-        message: 'Captcha verification failed. Please refresh and try again.'
-      }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  const turnstileToken = data.turnstileToken || data['cf-turnstile-response'];
+  const turnstileSecret = env ? env.TURNSTILE_SECRET_KEY : undefined;
+  const turnstileResult = await verifyTurnstileToken(turnstileToken, turnstileSecret, clientIp);
+  if (!turnstileResult.success && !turnstileResult.bypassed) {
+    return new Response(JSON.stringify({
+      ok: false,
+      message: 'Captcha verification failed. Please refresh and try again.'
+    }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   // 5. Server-Side Input & Consent Validation
@@ -74,8 +68,8 @@ export async function onRequestPost(context) {
   const business = (data.business || '').trim();
   const website = (data.website || '').trim();
   const service = data.service || 'all';
-  const details = (data.details || '').trim();
-  const marketingConsent = data.marketing_consent === true;
+  const details = (data.details || data.notes || '').trim();
+  const marketingConsent = data.marketing_consent === true || data.marketingConsent === true;
   const utm = data.utm || {};
   const audit = data.audit || null;
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequest } from '../functions/_middleware.js';
+import { onRequest, sanitizeReturnTo, constantTimeCompare, resetSitePasswordWarnOnceForTests } from '../functions/_middleware.js';
 
 test('Middleware Gate: Blocks unauthenticated requests with HTTP 401 and lock screen', async () => {
   const request = new Request('http://localhost:8082/');
@@ -39,8 +39,12 @@ test('Middleware Gate: Rejects incorrect password on login attempt', async () =>
     next: async () => new Response('should not reach')
   };
 
+  const start = Date.now();
   const response = await onRequest(context);
+  const elapsed = Date.now() - start;
+
   assert.equal(response.status, 401);
+  assert.ok(elapsed >= 750, `Expected delay >= 750ms for brute force mitigation, got ${elapsed}ms`);
   const body = await response.text();
   assert.ok(body.includes('Incorrect access passcode'));
 });
@@ -68,6 +72,93 @@ test('Middleware Gate: Authenticates correct password, sets auth cookie, and red
   assert.ok(cookie && cookie.includes('sapvik_auth='));
   assert.ok(cookie.includes('HttpOnly'));
   assert.ok(cookie.includes('SameSite=Lax'));
+});
+
+test('Middleware Gate: sanitizeReturnTo strictly prevents open redirects and allows safe relative paths', () => {
+  assert.equal(sanitizeReturnTo('//evil.com'), '/');
+  assert.equal(sanitizeReturnTo('/\\evil.com'), '/');
+  assert.equal(sanitizeReturnTo('/%5Cevil.com'), '/');
+  assert.equal(sanitizeReturnTo('/%2Fevil.com'), '/');
+  assert.equal(sanitizeReturnTo('https://evil.com'), '/');
+  assert.equal(sanitizeReturnTo('//attacker.com'), '/');
+  assert.equal(sanitizeReturnTo('///attacker.com'), '/');
+  assert.equal(sanitizeReturnTo('/\\attacker.com'), '/');
+  assert.equal(sanitizeReturnTo('\\attacker.com'), '/');
+  assert.equal(sanitizeReturnTo('javascript:alert(1)'), '/');
+  assert.equal(sanitizeReturnTo(''), '/');
+  assert.equal(sanitizeReturnTo(null), '/');
+  assert.equal(sanitizeReturnTo('/'), '/');
+
+  assert.equal(sanitizeReturnTo('/services/websites-development.html'), '/services/websites-development.html');
+  assert.equal(sanitizeReturnTo('/terms.html?tab=privacy'), '/terms.html?tab=privacy');
+});
+
+test('Middleware Gate: Prevents open redirect attacks via return_to in login submission', async () => {
+  const evilPayloads = ['//evil.com', '/\\evil.com', 'https://evil.com', '//attacker.com/evil', '/%5Cevil.com'];
+
+  for (const evil of evilPayloads) {
+    const formData = new FormData();
+    formData.append('password', 'secretpass123');
+    formData.append('return_to', evil);
+
+    const request = new Request('http://localhost:8082/_auth_login', {
+      method: 'POST',
+      body: formData
+    });
+
+    const context = {
+      request,
+      env: { SITE_PASSWORD: 'secretpass123' },
+      next: async () => new Response()
+    };
+
+    const response = await onRequest(context);
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('Location'), '/', `Expected evil payload "${evil}" to be sanitized to /`);
+  }
+});
+
+test('Middleware Gate: constantTimeCompare correctly compares strings in constant time', () => {
+  assert.equal(constantTimeCompare('abc', 'abc'), true);
+  assert.equal(constantTimeCompare('abc', 'abd'), false);
+  assert.equal(constantTimeCompare('abc', 'ab'), false);
+  assert.equal(constantTimeCompare('', ''), true);
+  assert.equal(constantTimeCompare('', 'a'), false);
+});
+
+test('Middleware Gate: Logs console.warn once when falling back to default password', async () => {
+  resetSitePasswordWarnOnceForTests();
+  let warned = false;
+  const originalWarn = console.warn;
+  console.warn = (msg) => {
+    if (String(msg).includes('SITE_PASSWORD environment variable not set; using temporary default password')) {
+      warned = true;
+    }
+  };
+
+  try {
+    const request1 = new Request('http://localhost:8082/');
+    const res1 = await onRequest({
+      request: request1,
+      env: {}, // No SITE_PASSWORD
+      next: async () => new Response('ok')
+    });
+    assert.equal(res1.status, 401);
+    assert.equal(warned, true);
+
+    // Second request should not duplicate warning
+    let warnedSecondTime = false;
+    console.warn = () => { warnedSecondTime = true; };
+    const request2 = new Request('http://localhost:8082/');
+    await onRequest({
+      request: request2,
+      env: {},
+      next: async () => new Response('ok')
+    });
+    assert.equal(warnedSecondTime, false);
+  } finally {
+    console.warn = originalWarn;
+  }
 });
 
 test('Middleware Gate: Allows authenticated requests with valid cookie', async () => {
@@ -118,3 +209,4 @@ test('Middleware Gate: Bypasses gate when SITE_PASSWORD is "DISABLE" or empty', 
   assert.equal(nextCalled, true);
   assert.equal(await response.text(), 'public site');
 });
+

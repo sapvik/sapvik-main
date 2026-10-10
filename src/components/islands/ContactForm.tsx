@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SERVICES } from '../../config/services';
 import { SITE } from '../../config/site';
 import { trackEvent } from '../../lib/analytics';
+import { renderTurnstile, getTurnstileToken, resetTurnstile, isTurnstileConfigured } from '../../lib/turnstile';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export default function ContactForm() {
   const [deliveryOffline, setDeliveryOffline] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const [honeypot, setHoneypot] = useState<string>('');
 
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -35,14 +37,9 @@ export default function ContactForm() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.turnstile && turnstileContainerRef.current) {
-      try {
-        const id = window.turnstile.render(turnstileContainerRef.current, {
-          sitekey: '1x00000000000000000000AA',
-          callback: (token: string) => setTurnstileToken(token)
-        });
-        widgetIdRef.current = id;
-      } catch {}
+    const id = renderTurnstile(turnstileContainerRef.current, (token: string) => setTurnstileToken(token));
+    if (id) {
+      widgetIdRef.current = id;
     }
 
     const handleBlueprint = (e: any) => {
@@ -95,9 +92,37 @@ export default function ContactForm() {
     setIsSubmitting(true);
 
     let token = turnstileToken;
-    if (!token && window.turnstile && widgetIdRef.current) {
+    if (!token && widgetIdRef.current) {
+      token = getTurnstileToken(widgetIdRef.current);
+    }
+
+    let utm: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
       try {
-        token = window.turnstile.getResponse(widgetIdRef.current) || '';
+        const searchParams = new URLSearchParams(window.location.search);
+        for (const [k, v] of searchParams.entries()) {
+          if (k.startsWith('utm_')) {
+            utm[k] = v;
+          }
+        }
+      } catch {}
+    }
+
+    let audit: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('sapvik_latest_audit');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.score !== undefined || parsed.domain)) {
+            audit = {
+              domain: parsed.domain,
+              score: parsed.score,
+              latency: parsed.latency,
+              has_ssl: parsed.has_ssl
+            };
+          }
+        }
       } catch {}
     }
 
@@ -112,10 +137,15 @@ export default function ContactForm() {
           business: formData.business,
           website: formData.website,
           service: formData.service,
+          details: formData.details,
           notes: formData.details,
           consent: formData.consent,
+          marketing_consent: formData.marketingConsent,
           marketingConsent: formData.marketingConsent,
-          turnstileToken: token
+          contact_ref_code: honeypot,
+          turnstileToken: token,
+          utm,
+          audit
         })
       });
 
@@ -139,9 +169,7 @@ export default function ContactForm() {
       setDeliveryOffline(true);
     } finally {
       setIsSubmitting(false);
-      if (widgetIdRef.current && window.turnstile) {
-        try { window.turnstile.reset(widgetIdRef.current); } catch {}
-      }
+      resetTurnstile(widgetIdRef.current);
     }
   };
 
@@ -173,26 +201,45 @@ export default function ContactForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} onFocus={handleFormFocus} id="auditForm" noValidate>
-          {/* Honeypot anti-spam field */}
-          <input type="text" id="formHp" name="website_url_hp" style={{ display: 'none !important' }} tabIndex={-1} autoComplete="off" />
+          {/* Honeypot anti-spam field (hidden offscreen from human visitors) */}
+          <div className="hp-field" aria-hidden="true">
+            <label htmlFor="contact_ref_code">Leave this reference field blank</label>
+            <input
+              type="text"
+              id="contact_ref_code"
+              name="contact_ref_code"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
 
           {errorMessage && (
             <div style={{ padding: '0.85rem 1rem', background: '#FEE2E2', borderLeft: '3px solid var(--c-vermilion)', color: '#991B1B', fontSize: '0.85rem', marginBottom: '1.25rem' }} role="alert">
               <p>⚠ {errorMessage}</p>
               {deliveryOffline && (
                 <div className="whatsapp-fallback-action" style={{ marginTop: '0.75rem' }}>
-                  <p style={{ fontSize: '0.8rem', color: '#7F1D1D', marginBottom: '0.5rem' }}>
-                    Your details are preserved. Connect directly with our team on WhatsApp:
+                  <p style={{ fontSize: '0.8rem', color: '#7F1D1D', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+                    Direct message gateway is currently offline. Your request has been preserved — connect directly via WhatsApp or call our team:
                   </p>
-                  <a
-                    href={getWhatsAppFallbackUrl()}
-                    target="_blank"
-                    rel="noopener"
-                    className="btn btn-primary btn-sm"
-                    onClick={() => trackEvent('click_whatsapp', { location: 'contact_fallback' })}
-                  >
-                    Connect via WhatsApp Direct &rarr;
-                  </a>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <a
+                      href={getWhatsAppFallbackUrl()}
+                      target="_blank"
+                      rel="noopener"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => trackEvent('click_whatsapp', { location: 'contact_fallback' })}
+                    >
+                      Connect via WhatsApp Direct &rarr;
+                    </a>
+                    <a
+                      href={`tel:${SITE.brand.phone.replace(/\s+/g, '')}`}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      Call {SITE.brand.phoneDisplay}
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
@@ -343,8 +390,10 @@ export default function ContactForm() {
             </label>
           </div>
 
-          {/* Turnstile Bot Challenge Container */}
-          <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1rem' }}></div>
+          {/* Turnstile Bot Challenge Container (only if configured) */}
+          {isTurnstileConfigured() && (
+            <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1rem' }}></div>
+          )}
 
           <button type="submit" className="btn btn-vermilion btn-lg btn-full form-submit-btn" disabled={isSubmitting}>
             <span>{isSubmitting ? 'Submitting Request...' : 'Submit Audit Request'}</span>

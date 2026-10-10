@@ -206,12 +206,59 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+let sitePasswordWarnedOnce = false;
+
+export function resetSitePasswordWarnOnceForTests() {
+  sitePasswordWarnedOnce = false;
+}
+
+export function sanitizeReturnTo(rawReturnTo) {
+  if (!rawReturnTo || typeof rawReturnTo !== 'string') {
+    return '/';
+  }
+  let decoded = rawReturnTo;
+  try {
+    decoded = decodeURIComponent(rawReturnTo);
+  } catch {
+    return '/';
+  }
+  const trimmed = decoded.trim();
+  if (trimmed === '/') {
+    return '/';
+  }
+  // Must match ^/(?![/\\]), after URL-decoding; reject //, /\ and anything with a scheme or host
+  if (/^\/(?![/\\])/.test(trimmed) && !trimmed.includes('\\') && !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+    return trimmed;
+  }
+  return '/';
+}
+
+export function constantTimeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < aBytes.length; i++) {
+    mismatch |= aBytes[i] ^ bBytes[i];
+  }
+  return mismatch === 0;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
   // If SITE_PASSWORD is explicitly set to 'DISABLE' or '', allow open public access
-  const sitePassword = (env && env.SITE_PASSWORD) ? env.SITE_PASSWORD.trim() : 'sapvik2026';
+  let sitePassword = 'sapvik2026';
+  if (env && env.SITE_PASSWORD) {
+    sitePassword = env.SITE_PASSWORD.trim();
+  } else {
+    if (!sitePasswordWarnedOnce) {
+      console.warn('SITE_PASSWORD environment variable not set; using temporary default password. Set SITE_PASSWORD in Cloudflare dashboard.');
+      sitePasswordWarnedOnce = true;
+    }
+  }
 
   if (!sitePassword || sitePassword.toLowerCase() === 'disable') {
     return await context.next();
@@ -224,23 +271,29 @@ export async function onRequest(context) {
     try {
       const formData = await request.formData();
       const enteredPass = (formData.get('password') || '').trim();
-      const returnTo = formData.get('return_to') || '/';
+      const rawReturnTo = formData.get('return_to') || '/';
+      const safeReturnTo = sanitizeReturnTo(rawReturnTo);
 
-      if (enteredPass === sitePassword) {
-        const dest = returnTo.startsWith('/') ? returnTo : '/';
+      const enteredToken = await getAuthToken(enteredPass);
+
+      if (constantTimeCompare(enteredToken, expectedToken)) {
         const headers = new Headers();
-        headers.set('Location', dest);
+        headers.set('Location', safeReturnTo);
         const isSecure = url.protocol === 'https:';
         headers.set('Set-Cookie', `sapvik_auth=${expectedToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${isSecure ? '; Secure' : ''}`);
         return new Response(null, { status: 302, headers });
       }
 
+      // Brute-force mitigation: deliberate delay before responding with 401
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       // Incorrect password entered
-      return new Response(renderLockScreen('Incorrect access passcode. Please try again.', returnTo), {
+      return new Response(renderLockScreen('Incorrect access passcode. Please try again.', safeReturnTo), {
         status: 401,
         headers: { 'Content-Type': 'text/html; charset=utf-8' }
       });
     } catch {
+      await new Promise(resolve => setTimeout(resolve, 800));
       return new Response(renderLockScreen('Invalid login submission.', '/'), {
         status: 400,
         headers: { 'Content-Type': 'text/html; charset=utf-8' }
@@ -250,13 +303,14 @@ export async function onRequest(context) {
 
   // 2. Check for Valid Auth Cookie
   const userToken = getCookie(request, 'sapvik_auth');
-  if (userToken && userToken === expectedToken) {
+  if (userToken && constantTimeCompare(userToken, expectedToken)) {
     return await context.next();
   }
 
   // 3. User is not authenticated: Render Lock Screen
   // Return HTTP 401 so search engine bots immediately drop indexing
-  return new Response(renderLockScreen('', url.pathname + url.search), {
+  const safeCurrentPath = sanitizeReturnTo(url.pathname + url.search);
+  return new Response(renderLockScreen('', safeCurrentPath), {
     status: 401,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

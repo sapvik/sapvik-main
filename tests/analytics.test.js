@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizePayload, trackEvent } from '../src/lib/analytics.ts';
+import { sanitizePayload, trackEvent, getScoreBucket, getLatencyBucket } from '../src/lib/analytics.ts';
 
 test('Analytics: sanitizePayload strips banned PII keys', () => {
   const dirty = {
@@ -22,6 +22,21 @@ test('Analytics: sanitizePayload strips banned PII keys', () => {
   assert.equal(clean.details, undefined, 'Field "details" must be stripped');
 });
 
+test('Analytics: sanitizePayload strips target and domain fields to preserve client domain privacy', () => {
+  const dirty = {
+    target: 'kailashclinic.in',
+    domain: 'kailashclinic.in',
+    mode: 'audited',
+    has_domain: true
+  };
+
+  const clean = sanitizePayload(dirty);
+  assert.equal(clean.target, undefined, 'Field "target" must be stripped');
+  assert.equal(clean.domain, undefined, 'Field "domain" must be stripped');
+  assert.equal(clean.mode, 'audited');
+  assert.equal(clean.has_domain, true);
+});
+
 test('Analytics: sanitizePayload scrubs embedded email and phone patterns in text values', () => {
   const dirty = {
     context: 'User requested contact at test@sample.in with phone 9820012345',
@@ -33,6 +48,32 @@ test('Analytics: sanitizePayload scrubs embedded email and phone patterns in tex
   assert.ok(!clean.context.includes('9820012345'), 'Phone should not appear in sanitized value');
   assert.ok(clean.context.includes('[REDACTED_EMAIL]'));
   assert.ok(clean.context.includes('[REDACTED_PHONE]'));
+});
+
+test('Analytics: getScoreBucket maps numeric scores into privacy-safe buckets', () => {
+  assert.equal(getScoreBucket(0), '0-49');
+  assert.equal(getScoreBucket(35), '0-49');
+  assert.equal(getScoreBucket(49), '0-49');
+  assert.equal(getScoreBucket(50), '50-79');
+  assert.equal(getScoreBucket(65), '50-79');
+  assert.equal(getScoreBucket(79), '50-79');
+  assert.equal(getScoreBucket(80), '80-100');
+  assert.equal(getScoreBucket(95), '80-100');
+  assert.equal(getScoreBucket(100), '80-100');
+  assert.equal(getScoreBucket(null), '0-49');
+  assert.equal(getScoreBucket(undefined), '0-49');
+});
+
+test('Analytics: getLatencyBucket maps response times into privacy-safe buckets', () => {
+  assert.equal(getLatencyBucket(120), '<500ms');
+  assert.equal(getLatencyBucket(499), '<500ms');
+  assert.equal(getLatencyBucket(500), '500-1499ms');
+  assert.equal(getLatencyBucket(1200), '500-1499ms');
+  assert.equal(getLatencyBucket(1499), '500-1499ms');
+  assert.equal(getLatencyBucket(1500), '1500ms+');
+  assert.equal(getLatencyBucket(3500), '1500ms+');
+  assert.equal(getLatencyBucket(null), '<500ms');
+  assert.equal(getLatencyBucket(undefined), '<500ms');
 });
 
 test('Analytics: trackEvent pushes sanitized event to window.dataLayer', () => {
@@ -59,5 +100,56 @@ test('Analytics: trackEvent pushes sanitized event to window.dataLayer', () => {
   assert.ok(typeof pushed.event_timestamp === 'number');
 
   // Clean up global mock
+  delete globalThis.window;
+});
+
+test('Analytics: scan_start sends no target or domain parameter', () => {
+  globalThis.window = { dataLayer: [] };
+
+  trackEvent('scan_start');
+
+  assert.equal(globalThis.window.dataLayer.length, 1);
+  const event = globalThis.window.dataLayer[0];
+  assert.equal(event.event, 'scan_start');
+  assert.equal(event.target, undefined, 'scan_start must not include target');
+  assert.equal(event.domain, undefined, 'scan_start must not include domain');
+
+  delete globalThis.window;
+});
+
+test('Analytics: scan_complete sends score_bucket and latency_bucket without target', () => {
+  globalThis.window = { dataLayer: [] };
+
+  trackEvent('scan_complete', {
+    score_bucket: getScoreBucket(85),
+    latency_bucket: getLatencyBucket(320)
+  });
+
+  assert.equal(globalThis.window.dataLayer.length, 1);
+  const event = globalThis.window.dataLayer[0];
+  assert.equal(event.event, 'scan_complete');
+  assert.equal(event.score_bucket, '80-100');
+  assert.equal(event.latency_bucket, '<500ms');
+  assert.equal(event.target, undefined);
+  assert.equal(event.domain, undefined);
+  assert.equal(event.score, undefined, 'Raw score should not be sent');
+
+  delete globalThis.window;
+});
+
+test('Analytics: scan_error sends error_code only', () => {
+  globalThis.window = { dataLayer: [] };
+
+  trackEvent('scan_error', {
+    error_code: 'dns_unavailable'
+  });
+
+  assert.equal(globalThis.window.dataLayer.length, 1);
+  const event = globalThis.window.dataLayer[0];
+  assert.equal(event.event, 'scan_error');
+  assert.equal(event.error_code, 'dns_unavailable');
+  assert.equal(event.target, undefined);
+  assert.equal(event.domain, undefined);
+
   delete globalThis.window;
 });

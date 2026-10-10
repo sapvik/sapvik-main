@@ -252,3 +252,17 @@ img, svg, video {
     scroll-behavior: auto !important;
   }
 }
+
+/* Honeypot field (hidden offscreen from human visitors, zero layout presence) */
+.hp-field {
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  clip: rect(0, 0, 0, 0) !important;
+  overflow: hidden !important;
+}
+

@@ -95,7 +95,7 @@ export default function Heatmap() {
   const handleModeChange = (newMode: 'audited' | 'unoptimized' | 'optimized') => {
     setMode(newMode);
     setInspectedNode(null);
-    trackEvent('heatmap_toggle', { mode: newMode, domain: auditedDomain || 'generic' });
+    trackEvent('heatmap_toggle', { mode: newMode, has_domain: Boolean(auditedDomain) });
   };
 
   // Generate data based on current mode

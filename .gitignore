@@ -27,3 +27,7 @@ Thumbs.db
 .wrangler/
 test-results/
 playwright-report/
+
+# Local testing screenshots
+mobile_*.png
+contact_section_*.png

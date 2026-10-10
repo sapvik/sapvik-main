@@ -116,3 +116,77 @@ test('API /api/contact: Returns delivery_offline and WhatsApp fallback when no d
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   assert.ok(uuidRegex.test(json.lead_id));
 });
+
+test('API /api/contact: Silently discards contact_ref_code honeypot bots', async () => {
+  const botReq = new Request('http://localhost:8082/api/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Bot User',
+      contact_ref_code: 'spam-bot-value',
+      phone: '+91 98765 00000',
+      email: 'bot@spam.org',
+      consent: true
+    })
+  });
+  const res = await contactHandler({ request: botReq, env: {} });
+  assert.equal(res.status, 200);
+  const json = await res.json();
+  assert.equal(json.lead_id, 'SUB-BOT-DISCARD');
+});
+
+test('API /api/contact: Accepts aligned payload fields (details, marketing_consent, utm, audit)', async () => {
+  const fullReq = new Request('http://localhost:8082/api/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Real Lead',
+      phone: '+91 98765 22222',
+      email: 'real@company.com',
+      business: 'Enterprise Corp',
+      website: 'enterprise.com',
+      service: 'websites',
+      details: 'Needs redesign and faster TTFB',
+      consent: true,
+      marketing_consent: true,
+      utm: { utm_source: 'google', utm_campaign: 'spring' },
+      audit: { domain: 'enterprise.com', score: 72 }
+    })
+  });
+  // Should process without validation error, returning 503 only because zero delivery env is wired
+  const res = await contactHandler({ request: fullReq, env: {} });
+  assert.equal(res.status, 503);
+  const json = await res.json();
+  assert.equal(json.error, 'delivery_offline');
+});
+
+test('API /api/audit: Rejects payload exceeding 50KB with 413', async () => {
+  const hugePayload = 'A'.repeat(52000);
+  const hugeReq = new Request('http://localhost:8082/api/audit', {
+    method: 'POST',
+    headers: {
+      'Content-Length': '53000',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url: 'https://example.com', padding: hugePayload })
+  });
+  const res = await auditHandler({ request: hugeReq, env: {} });
+  assert.equal(res.status, 413);
+});
+
+test('API /api/audit: Rejects cross-origin requests with 403', async () => {
+  const evilReq = new Request('http://localhost:8082/api/audit', {
+    method: 'POST',
+    headers: {
+      'Origin': 'https://attacker.evil.com',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url: 'https://example.com' })
+  });
+  const res = await auditHandler({ request: evilReq, env: {} });
+  assert.equal(res.status, 403);
+  const json = await res.json();
+  assert.equal(json.error, 'cross_origin_blocked');
+});
+
+

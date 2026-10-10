@@ -93,7 +93,7 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
   // Local Search Readiness Signals (for Heatmap connection)
   const hasPhone = /(?:\+?91[\s-]?)?[6-9]\d{9}|\b\d{3,5}[-\s]\d{6,8}\b|tel:/i.test(html);
   const hasMapsLink = /maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl|<iframe[^>]*google\.com\/maps/i.test(html);
-  let localReadiness = 30;
+  let localReadiness = 0;
   if (hasLocalSchema) localReadiness += 35;
   if (hasPhone) localReadiness += 20;
   if (hasMapsLink) localReadiness += 15;
@@ -266,29 +266,25 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
 }
 
 /**
- * Executes a live site inspection with manual redirect validation.
+ * Executes a network fetch through a manual redirect loop with SSRF checks on every hop.
  */
-export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
-  let currentUrl = targetUrl;
+export async function fetchWithValidatedRedirects(initialUrl, { timeoutMs = 3500 } = {}) {
+  let currentUrl = initialUrl;
   let hops = 0;
-  const startTime = Date.now();
 
   while (hops <= MAX_REDIRECTS) {
-    // Re-validate SSRF on redirects without slow DNS wait
-    if (hops > 0) {
-      const check = await validateTargetUrl(currentUrl, false);
-      if (!check.valid) {
-        return {
-          success: false,
-          error: "ssrf_blocked",
-          message: check.error || "Destination blocked by network security policy.",
-          has_ssl: null
-        };
-      }
+    // Validate target URL on EVERY hop (hop 0 and redirects)
+    const check = await validateTargetUrl(currentUrl, false);
+    if (!check.valid) {
+      return {
+        ok: false,
+        error: 'ssrf_blocked',
+        message: check.error || 'Destination blocked by network security policy.'
+      };
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     let resp;
     try {
@@ -305,146 +301,172 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
     } catch (err) {
       clearTimeout(timeoutId);
 
-      // If HTTPS failed or timed out, attempt plain HTTP fallback if we haven't tried yet
-      if (currentUrl.startsWith('https://') && hops === 0) {
-        try {
-          const httpUrl = currentUrl.replace('https://', 'http://');
-          const httpController = new AbortController();
-          const httpTimeout = setTimeout(() => httpController.abort(), 2000);
-          const httpResp = await fetch(httpUrl, {
-            method: 'GET',
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-            },
-            signal: httpController.signal
-          });
-          clearTimeout(httpTimeout);
-          if (httpResp.ok) {
-            const elapsed = Date.now() - startTime;
-            const html = await readBoundedStream(httpResp, MAX_STREAM_BYTES);
-            return analyzeHtmlSnippet(html, httpUrl, elapsed, false, false);
-          }
-        } catch {}
+      const errName = err ? err.name : '';
+      const errMsg = err && err.message ? err.message.toLowerCase() : '';
+
+      if (errName === 'AbortError' || errMsg.includes('abort') || errMsg.includes('timeout')) {
+        return {
+          ok: false,
+          error: 'timeout',
+          message: 'Target server timed out while waiting for a response.'
+        };
       }
 
-      // If server blocks automated probes or is slow, return structured perimeter SEO diagnosis
-      let domain = 'target';
-      try { domain = new URL(targetUrl).hostname; } catch {}
-      const elapsed = Date.now() - startTime;
-      const isHttps = targetUrl.startsWith('https');
-
-      const perimeterFindings = [
-        {
-          id: "server_slow_or_protected",
-          severity: "warning",
-          title: "Slow Origin TTFB or Crawler Shield Active",
-          evidence: `Origin server at ${domain} took >3s to respond or filtered cloud crawler probes.`,
-          fix: "Ensure web server is equipped with CDN edge caching (Cloudflare) and rapid time-to-first-byte."
-        },
-        {
-          id: "ssl_status_perimeter",
-          severity: isHttps ? "good" : "warning",
-          title: isHttps ? "SSL/TLS Protocol Active" : "Insecure HTTP Protocol",
-          evidence: `Inbound connection requested over ${isHttps ? 'HTTPS (Port 443)' : 'HTTP (Port 80)'}.`,
-          fix: isHttps ? "SSL encryption is configured on domain." : "Install SSL certificate and enforce HTTPS redirect."
-        },
-        {
-          id: "seo_viewport_perimeter",
-          severity: "info",
-          title: "Mobile Responsiveness Check Recommended",
-          evidence: `Domain ${domain} should be validated for Google Mobile-First Indexing standards.`,
-          fix: "Audit responsive viewport meta tag and CSS touch targets across handheld devices."
-        },
-        {
-          id: "seo_local_visibility",
-          severity: "info",
-          title: "Local Search Presence Verification Required",
-          evidence: `Verified local citations and Google Maps 3-Pack geo-ranking required for ${domain}.`,
-          fix: "Claim Google Business Profile categories, NAP consistency, and local schema."
-        }
-      ];
+      if (
+        errMsg.includes('enotfound') ||
+        errMsg.includes('eai_again') ||
+        errMsg.includes('dns') ||
+        errMsg.includes('getaddrinfo')
+      ) {
+        return {
+          ok: false,
+          error: 'dns_unavailable',
+          message: 'Domain name could not be resolved.'
+        };
+      }
 
       return {
-        success: true,
-        url: targetUrl,
-        score: isHttps ? 62 : 45,
-        response_time_ms: Math.min(elapsed, 2800),
-        measured_latency_ms: Math.min(elapsed, 2800),
-        has_ssl: isHttps,
-        has_hsts: isHttps,
-        has_schema: false,
-        has_pixel: false,
-        has_analytics: false,
-        has_viewport: true,
-        has_canonical: false,
-        has_title: true,
-        has_description: false,
-        breakdown: {
-          meta: { score: 15, max: 30, label: "Meta & Indexability" },
-          content: { score: 15, max: 25, label: "Content Structure" },
-          technical: { score: isHttps ? 20 : 8, max: 25, label: "Speed & Security" },
-          rich_data: { score: 12, max: 20, label: "Rich Snippets & Social" }
-        },
-        local_signals: {
-          has_local_schema: false,
-          has_phone: true,
-          has_maps_link: false,
-          local_readiness: 40
-        },
-        findings: perimeterFindings
+        ok: false,
+        error: 'unreachable',
+        message: err && err.message ? err.message : 'Target server could not be reached.'
       };
     } finally {
       clearTimeout(timeoutId);
     }
 
-    // Handle Redirects (manual hops)
+    // Check redirect status codes (manual hops)
     if ([301, 302, 303, 307, 308].includes(resp.status)) {
       const location = resp.headers.get('location');
       if (!location) {
         return {
-          success: false,
-          error: "invalid_redirect",
-          message: "Target server issued redirect without a Location header.",
-          has_ssl: null
+          ok: false,
+          error: 'unreachable',
+          message: 'Target server issued a redirect without a Location header.'
         };
       }
+
       hops++;
       if (hops > MAX_REDIRECTS) {
         return {
-          success: false,
-          error: "too_many_redirects",
-          message: `Target exceeded maximum allowed redirect hops (${MAX_REDIRECTS}).`,
-          has_ssl: null
+          ok: false,
+          error: 'too_many_redirects',
+          message: `Target exceeded maximum allowed redirect hops (${MAX_REDIRECTS}).`
         };
       }
+
       try {
         currentUrl = new URL(location, currentUrl).toString();
       } catch {
         return {
-          success: false,
-          error: "invalid_redirect_url",
-          message: "Target server issued an unparseable redirect URL.",
-          has_ssl: null
+          ok: false,
+          error: 'unreachable',
+          message: 'Target server issued an unparseable redirect URL.'
         };
       }
+
       continue;
     }
 
-    // Success response reached
-    const elapsedMs = Date.now() - startTime;
-    const finalUrl = resp.url || currentUrl;
-    const hasSsl = finalUrl.startsWith('https://');
-    const hasHsts = Boolean(resp.headers.get('strict-transport-security'));
+    // Target returned error status
+    if ([403, 429, 503].includes(resp.status)) {
+      return {
+        ok: false,
+        error: 'blocked_by_target',
+        status: resp.status,
+        message: `Target server returned HTTP ${resp.status} (automated probes may be blocked).`
+      };
+    }
 
-    const html = await readBoundedStream(resp, MAX_STREAM_BYTES);
+    if (resp.status >= 400) {
+      return {
+        ok: false,
+        error: 'unreachable',
+        status: resp.status,
+        message: `Target server returned HTTP ${resp.status}.`
+      };
+    }
+
+    // Success response reached
+    return {
+      ok: true,
+      response: resp,
+      finalUrl: resp.url || currentUrl,
+      hops
+    };
+  }
+
+  return {
+    ok: false,
+    error: 'too_many_redirects',
+    message: `Target exceeded maximum allowed redirect hops (${MAX_REDIRECTS}).`
+  };
+}
+
+/**
+ * Executes a live site inspection using fetchWithValidatedRedirects.
+ */
+export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
+  const startTime = Date.now();
+  const isHttps = targetUrl.toLowerCase().startsWith('https://');
+
+  if (isHttps) {
+    const httpsResult = await fetchWithValidatedRedirects(targetUrl, { timeoutMs: timeoutSeconds * 1000 });
+
+    if (httpsResult.ok) {
+      const elapsedMs = Date.now() - startTime;
+      const finalUrl = httpsResult.finalUrl;
+      const hasSsl = finalUrl.toLowerCase().startsWith('https://');
+      const hasHsts = Boolean(httpsResult.response.headers.get('strict-transport-security'));
+      const html = await readBoundedStream(httpsResult.response, MAX_STREAM_BYTES);
+      return analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts);
+    }
+
+    // If SSRF blocked or too many redirects, do not attempt HTTP fallback
+    if (httpsResult.error === 'ssrf_blocked' || httpsResult.error === 'too_many_redirects') {
+      return {
+        success: false,
+        error: httpsResult.error,
+        message: httpsResult.message,
+        has_ssl: null
+      };
+    }
+
+    // Attempt plain HTTP fallback via the same fetchWithValidatedRedirects function
+    const httpUrl = targetUrl.replace(/^https:\/\//i, 'http://');
+    const httpResult = await fetchWithValidatedRedirects(httpUrl, { timeoutMs: 2000 });
+
+    if (httpResult.ok) {
+      const elapsedMs = Date.now() - startTime;
+      const finalUrl = httpResult.finalUrl;
+      const html = await readBoundedStream(httpResult.response, MAX_STREAM_BYTES);
+      // HTTPS failed and plain HTTP succeeded => has_ssl: false
+      return analyzeHtmlSnippet(html, finalUrl, elapsedMs, false, false);
+    }
+
+    // Both HTTPS and HTTP failed: return honest failure
+    return {
+      success: false,
+      error: httpsResult.error || 'unreachable',
+      message: httpsResult.message || 'Target website took too long or refused connection.',
+      has_ssl: null
+    };
+  }
+
+  // Plain HTTP requested directly
+  const httpResult = await fetchWithValidatedRedirects(targetUrl, { timeoutMs: timeoutSeconds * 1000 });
+  if (httpResult.ok) {
+    const elapsedMs = Date.now() - startTime;
+    const finalUrl = httpResult.finalUrl;
+    const hasSsl = finalUrl.toLowerCase().startsWith('https://');
+    const hasHsts = Boolean(httpResult.response.headers.get('strict-transport-security'));
+    const html = await readBoundedStream(httpResult.response, MAX_STREAM_BYTES);
     return analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts);
   }
 
   return {
     success: false,
-    error: "too_many_redirects",
-    message: "Exceeded redirect limit.",
+    error: httpResult.error || 'unreachable',
+    message: httpResult.message || 'Target website took too long or refused connection.',
     has_ssl: null
   };
 }

@@ -6,24 +6,41 @@
 
 import { validateTargetUrl } from '../lib/ssrf.js';
 import { executeLiveScan } from '../lib/scanner.js';
-import { verifyTurnstileToken } from '../lib/security.js';
+import { verifyTurnstileToken, readBoundedJson, validateOrigin } from '../lib/security.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  let targetUrl = '';
-  let turnstileToken = '';
-
-  try {
-    const body = await request.json();
-    targetUrl = (body.url || '').trim();
-    turnstileToken = body.turnstileToken || body['cf-turnstile-response'] || '';
-  } catch {
-    return new Response(JSON.stringify({ success: false, error: 'invalid_json', message: 'Malformed JSON payload.' }), {
-      status: 400,
+  // 1. Origin Protection (same-origin only)
+  if (!validateOrigin(request, ['sapvik.com', 'localhost', '127.0.0.1'])) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'cross_origin_blocked',
+      message: 'Cross-origin request blocked.'
+    }), {
+      status: 403,
       headers: { 'Content-Type': 'application/json' }
     });
   }
+
+  let targetUrl = '';
+  let turnstileToken = '';
+
+  const bodyResult = await readBoundedJson(request, 51200);
+  if (!bodyResult.ok) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: bodyResult.error,
+      message: bodyResult.message
+    }), {
+      status: bodyResult.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const body = bodyResult.data;
+  targetUrl = (body.url || '').trim();
+  turnstileToken = body.turnstileToken || body['cf-turnstile-response'] || '';
 
   if (!targetUrl) {
     return new Response(JSON.stringify({ success: false, error: 'missing_url', message: 'Target website URL is required.' }), {
@@ -34,18 +51,17 @@ export async function onRequestPost(context) {
 
   // 1. Turnstile Bot Challenge Verification
   const clientIp = request.headers.get('CF-Connecting-IP') || '';
-  if (env && env.TURNSTILE_SECRET_KEY) {
-    const turnstileResult = await verifyTurnstileToken(turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
-    if (!turnstileResult.success && !turnstileResult.bypassed) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'turnstile_failed',
-        message: 'Security verification failed. Please complete the captcha verification.'
-      }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  const turnstileSecret = env ? env.TURNSTILE_SECRET_KEY : undefined;
+  const turnstileResult = await verifyTurnstileToken(turnstileToken, turnstileSecret, clientIp);
+  if (!turnstileResult.success && !turnstileResult.bypassed) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'turnstile_failed',
+      message: 'Security verification failed. Please complete the captcha verification.'
+    }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   // 2. Validate URL & Initial SSRF Pre-check
@@ -115,10 +131,14 @@ export async function onRequest(context) {
     return await onRequestPost(context);
   }
   if (context.request.method === 'OPTIONS') {
+    if (!validateOrigin(context.request, ['sapvik.com', 'localhost', '127.0.0.1'])) {
+      return new Response(null, { status: 403 });
+    }
+    const origin = context.request.headers.get('Origin') || 'https://sapvik.com';
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       }

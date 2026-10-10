@@ -18,16 +18,45 @@ export function validateOrigin(request, allowedOrigins = ['sapvik.com', 'localho
   if (!origin) return true; // Direct non-browser or same-origin without header
 
   try {
-    const url = new URL(origin);
-    const host = url.hostname.toLowerCase();
-    return allowedOrigins.some(allowed => host === allowed || host.endsWith('.' + allowed));
+    const originUrl = new URL(origin);
+    const host = originUrl.hostname.toLowerCase();
+
+    // 1. Check against explicit allowedOrigins whitelist
+    if (allowedOrigins.some(allowed => host === allowed || host.endsWith('.' + allowed))) {
+      return true;
+    }
+
+    // 2. Allow same-origin / self-host requests (e.g. *.pages.dev staging URLs)
+    if (request && request.url) {
+      try {
+        const reqUrl = new URL(request.url);
+        const reqHost = reqUrl.hostname.toLowerCase();
+        if (host === reqHost) {
+          return true;
+        }
+      } catch {}
+    }
+
+    return false;
   } catch {
     return false;
   }
 }
 
+let turnstileWarnedOnce = false;
+
+export function resetTurnstileWarnOnceForTests() {
+  turnstileWarnedOnce = false;
+}
+
 export async function verifyTurnstileToken(token, secretKey, remoteIp) {
-  if (!secretKey) return { success: true, bypassed: true }; // Allowed in local dev without secret
+  if (!secretKey) {
+    if (!turnstileWarnedOnce) {
+      console.warn('Turnstile secret key not configured; skipping challenge verification (zero-env mode).');
+      turnstileWarnedOnce = true;
+    }
+    return { success: true, bypassed: true };
+  }
   if (!token) return { success: false, error: 'missing_turnstile_token' };
 
   try {
@@ -78,3 +107,65 @@ export function validateContactPayload(data) {
 
   return { valid: true };
 }
+
+/**
+ * Reads and parses JSON from a request body stream, strictly bounding total bytes to maxBytes (default 50KB = 51200 bytes).
+ * Protects against large payloads and unbounded streaming attacks.
+ */
+export async function readBoundedJson(request, maxBytes = 51200) {
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  if (contentLength > maxBytes) {
+    return { ok: false, status: 413, error: 'payload_too_large', message: 'Request payload exceeds allowable limit.' };
+  }
+
+  let text = '';
+  if (request.body && typeof request.body.getReader === 'function') {
+    const reader = request.body.getReader();
+    const chunks = [];
+    let totalBytes = 0;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.length;
+        if (totalBytes > maxBytes) {
+          try { await reader.cancel(); } catch {}
+          return { ok: false, status: 413, error: 'payload_too_large', message: 'Request payload exceeds allowable limit.' };
+        }
+        chunks.push(value);
+      }
+    } catch {
+      return { ok: false, status: 400, error: 'stream_read_error', message: 'Error reading request stream.' };
+    }
+
+    const allBytes = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      allBytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    text = new TextDecoder('utf-8').decode(allBytes);
+  } else {
+    try {
+      text = await request.text();
+      if (new TextEncoder().encode(text).length > maxBytes) {
+        return { ok: false, status: 413, error: 'payload_too_large', message: 'Request payload exceeds allowable limit.' };
+      }
+    } catch {
+      return { ok: false, status: 400, error: 'malformed_json', message: 'Malformed JSON payload.' };
+    }
+  }
+
+  if (!text || !text.trim()) {
+    return { ok: false, status: 400, error: 'missing_body', message: 'Empty request payload.' };
+  }
+
+  try {
+    const data = JSON.parse(text);
+    return { ok: true, data };
+  } catch {
+    return { ok: false, status: 400, error: 'malformed_json', message: 'Malformed JSON payload.' };
+  }
+}
+

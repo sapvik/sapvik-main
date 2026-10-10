@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeHtmlSnippet } from '../functions/lib/scanner.js';
+import { analyzeHtmlSnippet, executeLiveScan } from '../functions/lib/scanner.js';
 
 test('Scanner: GA4 detection does NOT match bare g-recaptcha class or padding CSS', () => {
   const htmlWithoutGa = '<html><head></head><body><div class="g-recaptcha" data-sitekey="xyz"></div><p style="padding-top: 10px; margin-left: 5px;">Hello</p></body></html>';
@@ -42,5 +42,109 @@ test('Scanner: Every finding object contains { id, severity, title, evidence, fi
     assert.ok(f.title, 'Finding missing title');
     assert.ok(f.evidence, 'Finding missing evidence');
     assert.ok(f.fix, 'Finding missing fix');
+  }
+});
+
+test('Scanner: executeLiveScan returns honest timeout error on abort', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      const err = new Error('The operation was aborted');
+      err.name = 'AbortError';
+      throw err;
+    };
+    const result = await executeLiveScan('https://timeout-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'timeout');
+    assert.equal(result.has_ssl, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Scanner: executeLiveScan returns honest dns_unavailable error', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      throw new Error('getaddrinfo ENOTFOUND non-existent-domain-xyz.com');
+    };
+    const result = await executeLiveScan('https://non-existent-domain-xyz.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'dns_unavailable');
+    assert.equal(result.has_ssl, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Scanner: executeLiveScan returns blocked_by_target on HTTP 403', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response('Forbidden', { status: 403 });
+    };
+    const result = await executeLiveScan('https://protected-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'blocked_by_target');
+    assert.equal(result.has_ssl, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Scanner: executeLiveScan returns unreachable on thrown network error', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      throw new Error('Connection refused by peer');
+    };
+    const result = await executeLiveScan('https://unreachable-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'unreachable');
+    assert.equal(result.has_ssl, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Scanner: executeLiveScan blocks redirect to loopback 127.0.0.1 with ssrf_blocked', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: 'http://127.0.0.1/admin' }
+      });
+    };
+    const result = await executeLiveScan('http://redirector-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'ssrf_blocked');
+    assert.equal(result.has_ssl, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Scanner: executeLiveScan falls back to HTTP and marks has_ssl false if HTTPS fails', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      const targetStr = String(url);
+      if (targetStr.startsWith('https://')) {
+        throw new Error('SSL connection failed');
+      }
+      return new Response('<html><head><title>Plain HTTP Site</title></head><body><h1>Welcome</h1></body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      });
+    };
+    const result = await executeLiveScan('https://plain-http-domain.com');
+    assert.equal(result.success, true);
+    assert.equal(result.has_ssl, false);
+    const sslFinding = result.findings.find(f => f.id === 'ssl_missing');
+    assert.ok(sslFinding, 'Expected ssl_missing finding when has_ssl is false');
+    assert.equal(sslFinding.severity, 'critical');
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });

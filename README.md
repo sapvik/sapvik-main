@@ -36,7 +36,7 @@ The official web platform and digital acquisition engine for **SAPVIK** (India),
   - `functions/lib/scanner.js`: Manual redirect hops (max 3), 500 KB stream limits, regex heuristics.
   - `functions/api/contact.js`: Origin checks, RFC 4122 v4 UUID tracking, Brevo SMTP delivery with zero-lead-loss fallback.
   - `functions/_middleware.js`: Edge SHA-256 access gate for private staging environments.
-- **Privacy & Analytics**: Google Consent Mode v2 (denied by default), GTM container schema (`public/config/gtm-container-plan.json`), and automated PII scrubbing on all `dataLayer.push` events.
+- **Privacy & Analytics**: Google Consent Mode v2 (denied by default), GTM container schema (`docs/gtm-container-plan.json`), and automated PII scrubbing on all `dataLayer.push` events.
 
 ---
 
@@ -45,6 +45,7 @@ The official web platform and digital acquisition engine for **SAPVIK** (India),
 ```
 ├── .github/workflows/ci.yml       # Automated CI (TypeScript, build, unit tests, Playwright)
 ├── astro.config.mjs               # Astro static configuration
+├── docs/                          # Architecture checklists, launch operations, and GTM container schema
 ├── functions/                     # Cloudflare Pages Functions
 │   ├── _middleware.js             # Edge preview gate
 │   ├── api/audit.js               # Diagnostic scanner API
@@ -54,7 +55,7 @@ The official web platform and digital acquisition engine for **SAPVIK** (India),
 │   ├── _headers                   # Cloudflare security headers & caching policies
 │   ├── assets/fonts/              # Self-hosted Archivo & IBM Plex Sans .woff2 fonts
 │   ├── assets/logo.svg            # Vector brand identity
-│   ├── config/                    # Public assumptions, claims, and GTM container schema
+│   ├── config/                    # Public assumptions, claims, and site config
 │   ├── robots.txt                 # Search engine directives
 │   └── sitemap.xml                # Canonical XML sitemap (10 routes)
 ├── src/

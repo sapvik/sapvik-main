@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, validateContactPayload, validateOrigin } from '../functions/lib/security.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { escapeHtml, validateContactPayload, validateOrigin, verifyTurnstileToken, resetTurnstileWarnOnceForTests } from '../functions/lib/security.js';
 
 test('Security: escapeHtml properly neutralizes markup injection', () => {
   const unsafe = '<script>alert("XSS & danger")</script>\'test\'';
@@ -60,8 +62,85 @@ test('Security: validateOrigin permits allowed hosts and rejects foreign origins
   assert.equal(validateOrigin(mockReqNoOrigin, ['sapvik.com', 'localhost']), true);
 });
 
+test('Security: validateOrigin permits requests from own host (pages.dev preview deployments)', () => {
+  const mockPagesDevReq = {
+    url: 'https://sapvik-website-preview.pages.dev/api/contact',
+    headers: new Headers({ 'Origin': 'https://sapvik-website-preview.pages.dev' })
+  };
+  assert.equal(validateOrigin(mockPagesDevReq, ['sapvik.com', 'localhost']), true);
+});
+
+test('Security: validateOrigin blocks foreign origins even when request.url is set', () => {
+  const mockAttackerReq = {
+    url: 'https://sapvik-website-preview.pages.dev/api/contact',
+    headers: new Headers({ 'Origin': 'https://malicious-spammer.com' })
+  };
+  assert.equal(validateOrigin(mockAttackerReq, ['sapvik.com', 'localhost']), false);
+});
+
 test('Security: crypto.randomUUID produces standard RFC 4122 v4 UUID format', () => {
   const uuid = crypto.randomUUID();
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   assert.ok(uuidRegex.test(uuid), `Generated UUID ${uuid} did not match standard format`);
 });
+
+test('Security: verifyTurnstileToken skips and returns bypassed: true in zero-env mode', async () => {
+  resetTurnstileWarnOnceForTests();
+  let warned = false;
+  const originalWarn = console.warn;
+  console.warn = (msg) => {
+    if (String(msg).includes('Turnstile secret key not configured')) {
+      warned = true;
+    }
+  };
+
+  try {
+    const res = await verifyTurnstileToken('', undefined, '127.0.0.1');
+    assert.equal(res.success, true);
+    assert.equal(res.bypassed, true);
+    assert.equal(warned, true);
+
+    // Verify warn-once: second call should not warn again
+    let warnedSecondTime = false;
+    console.warn = () => { warnedSecondTime = true; };
+    const res2 = await verifyTurnstileToken('', undefined, '127.0.0.1');
+    assert.equal(res2.success, true);
+    assert.equal(res2.bypassed, true);
+    assert.equal(warnedSecondTime, false);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('Security: verifyTurnstileToken rejects missing token when secretKey is present', async () => {
+  const res = await verifyTurnstileToken('', 'real-secret-key-123', '127.0.0.1');
+  assert.equal(res.success, false);
+  assert.equal(res.error, 'missing_turnstile_token');
+});
+
+test('Security: Zero occurrences of dummy Turnstile key 1x00000000000000000000AA in src/ and functions/', () => {
+  const dummyKey = '1x00000000000000000000AA';
+  const dirsToCheck = ['src', 'functions'];
+
+  function checkDir(dir) {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        checkDir(fullPath);
+      } else if (entry.isFile() && /\.(js|jsx|ts|tsx|astro|html|json)$/.test(entry.name)) {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        assert.ok(
+          !content.includes(dummyKey),
+          `Found dummy Turnstile test key ${dummyKey} in file: ${fullPath}`
+        );
+      }
+    }
+  }
+
+  for (const dir of dirsToCheck) {
+    checkDir(dir);
+  }
+});
+

@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-// Banned keys that could contain PII
+// Banned keys that could contain PII or scanned client domains
 const BANNED_PII_KEYS = new Set([
   'name',
   'fullname',
@@ -28,7 +28,9 @@ const BANNED_PII_KEYS = new Set([
   'message',
   'token',
   'turnstiletoken',
-  'turnstile_token'
+  'turnstile_token',
+  'target',
+  'domain'
 ]);
 
 const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
@@ -60,6 +62,21 @@ export function sanitizePayload(payload: Record<string, unknown>): Record<string
   }
 
   return clean;
+}
+
+export type ScoreBucket = '0-49' | '50-79' | '80-100';
+export type LatencyBucket = '<500ms' | '500-1499ms' | '1500ms+';
+
+export function getScoreBucket(score: number | null | undefined): ScoreBucket {
+  if (typeof score !== 'number' || isNaN(score) || score < 50) return '0-49';
+  if (score < 80) return '50-79';
+  return '80-100';
+}
+
+export function getLatencyBucket(latencyMs: number | null | undefined): LatencyBucket {
+  if (typeof latencyMs !== 'number' || isNaN(latencyMs) || latencyMs < 500) return '<500ms';
+  if (latencyMs < 1500) return '500-1499ms';
+  return '1500ms+';
 }
 
 export type AnalyticsEventName =

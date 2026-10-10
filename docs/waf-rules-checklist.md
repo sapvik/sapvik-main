@@ -10,7 +10,7 @@ This checklist documents the exact Cloudflare WAF and security rules to activate
 
 ---
 
-## 2. Rule 1: Priority Lead Capture Rate Limit (Launch Checklist Item)
+## 2. Rule 1: Priority Lead Capture Rate Limit (`/api/contact`)
 In the Cloudflare Dashboard under **Security > WAF > Rate limiting rules**:
 
 - **Rule Name**: `Protect Contact Endpoint against Spam & Enumeration`
@@ -30,7 +30,43 @@ In the Cloudflare Dashboard under **Security > WAF > Rate limiting rules**:
 
 ---
 
-## 3. Rule 2: Free Scan Proxy & SSRF Protection
+## 3. Rule 2: Edge Password Gate Brute-Force Rate Limit (`/_auth_login`)
+To defend against automated password guessing and credential stuffing on preview/staging deployments:
+
+- **Rule Name**: `Mitigate Password Gate Brute Force`
+- **When incoming requests match**:
+  ```text
+  (http.request.uri.path eq "/_auth_login" and http.request.method eq "POST")
+  ```
+- **Characteristics**: `IP`
+- **Period**: `1 minute` (60 seconds)
+- **Requests**: `5`
+- **Action**: `Block`
+- **Duration**: `15 minutes`
+- **Response Type**: Custom HTML or HTTP 429
+  ```json
+  {"ok": false, "error": "too_many_attempts", "message": "Too many login attempts. Please wait 15 minutes."}
+  ```
+
+---
+
+## 4. Rule 3: General API Endpoint Rate Limit (`/api/*`)
+To protect Edge functions from resource exhaustion, scanner proxy abuse, and DoS:
+
+- **Rule Name**: `General API Rate Limit`
+- **When incoming requests match**:
+  ```text
+  (starts_with(http.request.uri.path, "/api/"))
+  ```
+- **Characteristics**: `IP`
+- **Period**: `1 minute` (60 seconds)
+- **Requests**: `30`
+- **Action**: `Managed Challenge` (or `Block` if automated abuse)
+- **Duration**: `5 minutes`
+
+---
+
+## 5. Rule 4: Free Scan Proxy & SSRF Protection (`/api/audit`)
 Because `/api/audit` can be invoked to probe external domains, prevent users from turning the worker into an open scanner proxy:
 
 - **Turnstile Managed Challenge**:

@@ -144,6 +144,7 @@ export function isPrivateIpv6(ipStr) {
 export async function resolveDnsOverHttps(hostname) {
   const ips = [];
   const recordTypes = ['A', 'AAAA'];
+  let anyQuerySucceeded = false;
 
   const lookups = recordTypes.map(async (rtype) => {
     const controller = new AbortController();
@@ -155,6 +156,7 @@ export async function resolveDnsOverHttps(hostname) {
         signal: controller.signal
       });
       if (resp.ok) {
+        anyQuerySucceeded = true;
         const data = await resp.json();
         if (Array.isArray(data.Answer)) {
           for (const ans of data.Answer) {
@@ -172,7 +174,7 @@ export async function resolveDnsOverHttps(hostname) {
   });
 
   await Promise.all(lookups);
-  return ips;
+  return { ok: anyQuerySucceeded, ips };
 }
 
 /**
@@ -248,14 +250,16 @@ export async function validateTargetUrl(rawUrl, checkDns = true) {
     return { valid: false, error: `Direct IPv6 ${hostname} belongs to a private or loopback network.` };
   }
 
-  // DNS Rebinding / Private Domain check
+  // DNS Rebinding / Private Domain check (FAIL-CLOSED)
   if (checkDns && !numericIpv4 && !/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && !hostname.includes(':')) {
-    const resolvedIps = await resolveDnsOverHttps(hostname);
-    if (resolvedIps.length > 0) {
-      for (const ip of resolvedIps) {
-        if (isPrivateIpv4(ip) || isPrivateIpv6(ip)) {
-          return { valid: false, error: `Domain resolves to a restricted or private network address (${ip}).` };
-        }
+    const { ok, ips } = await resolveDnsOverHttps(hostname);
+    if (!ok || ips.length === 0) {
+      return { valid: false, error: 'Target domain could not be resolved or DNS query failed.' };
+    }
+
+    for (const ip of ips) {
+      if (isPrivateIpv4(ip) || isPrivateIpv6(ip)) {
+        return { valid: false, error: `Domain resolves to a restricted or private network address (${ip}).` };
       }
     }
   }

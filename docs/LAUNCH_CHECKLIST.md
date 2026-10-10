@@ -65,7 +65,7 @@ To ensure lead alerts never land in spam:
 
 ## 6. Analytics, Tag Manager & Consent Mode v2
 - [ ] **Google Tag Manager**: Container ID `TODO_GTM_ID` linked.
-  - To import pre-mapped container: Go to **GTM Admin > Import Container**, select `public/config/gtm-container-plan.json`.
+  - To import pre-mapped container: Go to **GTM Admin > Import Container**, select `docs/gtm-container-plan.json`.
   - Overwrite or merge into workspace to automatically provision all 14 custom event tags and Consent Mode v2 triggers.
 - [ ] **Google Analytics 4**: Measurement ID `TODO_GA4_ID` configured via GTM `{{GA4 Measurement ID}}` variable.
 - [ ] **Consent Mode v2**: Initialized in `src/layouts/Base.astro` with default `denied` for `ad_storage`, `analytics_storage`, `ad_user_data`, and `ad_personalization`. Updates dynamically via `ConsentBanner.astro` upon user selection and persists to `localStorage.getItem('sapvik_consent')`.
@@ -98,3 +98,17 @@ If a production issue occurs after DNS switchover:
 2. Locate the previous stable deployment hash.
 3. Click **Deployments > Actions > Rollback to this deployment**.
 4. Rollback applies instantly at the edge worldwide without code recompilation.
+
+---
+
+## 9. Verify after env is wired
+
+Items that require live Cloudflare, Brevo, or Turnstile credentials and cannot be validated in zero-env development:
+
+- [ ] **Turnstile Challenge Enforcement**: With `TURNSTILE_SECRET_KEY` set, verify a request with no token to `/api/audit` or `/api/contact` returns `403`, and a valid token passes.
+- [ ] **Brevo Email Dispatch**: With `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, and `NOTIFICATION_EMAIL` set, verify contact form submissions deliver email to the recipient inbox.
+- [ ] **Brevo Contact Attributes**: Ensure custom contact attributes `COMPANY` (text), `WEBSITE` (text), `SERVICE` (text), and `MARKETING_CONSENT` (boolean) are created in Brevo contacts schema before activating `BREVO_MARKETING_LIST_ID` contact sync.
+- [ ] **Edge Password Gate Custom Passcode**: With `SITE_PASSWORD` configured in Pages environment variables, confirm the custom passcode unlocks the site and default fallback `sapvik2026` is rejected.
+- [ ] **Cloudflare WAF Rules**: Confirm priority rate-limiting on `/api/contact` and managed challenge rules from `docs/waf-rules-checklist.md` are active in Cloudflare dashboard.
+- [ ] **Analytics Consent Mode Update**: Verify that accepting the consent banner dynamically updates GTM / GA4 consent signals from `denied` to `granted`.
+- [ ] **Content Security Policy Enforcement**: Verify browser console displays zero CSP violations in `Report-Only` mode before switching `_headers` to enforced CSP.

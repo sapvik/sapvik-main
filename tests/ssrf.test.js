@@ -74,3 +74,75 @@ test('SSRF: validateTargetUrl permits valid public web URLs', async () => {
   assert.equal(validHttp.valid, true);
   assert.equal(validHttp.url, 'http://example.com/');
 });
+
+test('SSRF: validateTargetUrl fails closed when domain is unresolvable via DoH', async () => {
+  const origFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response(JSON.stringify({ Status: 3, Answer: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/dns-json' }
+      });
+    };
+    const res = await validateTargetUrl('https://unresolvable-domain-xyz.com', true);
+    assert.equal(res.valid, false);
+    assert.ok(res.error.includes('could not be resolved'));
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('SSRF: validateTargetUrl fails closed when DoH lookup throws or times out', async () => {
+  const origFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      throw new Error('DoH Network Timeout');
+    };
+    const res = await validateTargetUrl('https://valid-looking-domain.com', true);
+    assert.equal(res.valid, false);
+    assert.ok(res.error.includes('could not be resolved'));
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('SSRF: validateTargetUrl succeeds when DoH resolves to a public IP', async () => {
+  const origFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response(JSON.stringify({
+        Status: 0,
+        Answer: [{ type: 1, data: '93.184.216.34' }]
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/dns-json' }
+      });
+    };
+    const res = await validateTargetUrl('https://example.com', true);
+    assert.equal(res.valid, true);
+    assert.equal(res.url, 'https://example.com/');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('SSRF: validateTargetUrl blocks domain when DoH resolves to a private IP (DNS rebinding)', async () => {
+  const origFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response(JSON.stringify({
+        Status: 0,
+        Answer: [{ type: 1, data: '192.168.1.10' }]
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/dns-json' }
+      });
+    };
+    const res = await validateTargetUrl('https://rebind-to-private.com', true);
+    assert.equal(res.valid, false);
+    assert.ok(res.error.includes('restricted or private'));
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { trackEvent } from '../../lib/analytics';
+import { trackEvent, getScoreBucket, getLatencyBucket } from '../../lib/analytics';
+import { renderTurnstile, getTurnstileToken, resetTurnstile, isTurnstileConfigured } from '../../lib/turnstile';
 
 interface Finding {
   id: string;
@@ -83,18 +84,11 @@ export default function Scanner() {
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
-  // Initialize Turnstile widget if present
+  // Initialize Turnstile widget if present and configured
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.turnstile && turnstileContainerRef.current) {
-      try {
-        const id = window.turnstile.render(turnstileContainerRef.current, {
-          sitekey: '1x00000000000000000000AA',
-          callback: (token: string) => setTurnstileToken(token)
-        });
-        widgetIdRef.current = id;
-      } catch {
-        // Turnstile already rendered
-      }
+    const id = renderTurnstile(turnstileContainerRef.current, (token: string) => setTurnstileToken(token));
+    if (id) {
+      widgetIdRef.current = id;
     }
   }, []);
 
@@ -112,19 +106,15 @@ export default function Scanner() {
     setProgress(25);
     setStatusMsg('Dispatching real network probe & SSL handshake...');
 
-    trackEvent('scan_start', {
-      target: rawTarget.replace(/https?:\/\//, '').split('/')[0]
-    });
+    trackEvent('scan_start');
 
     try {
       setProgress(55);
       setStatusMsg('Inspecting HTML headers, Schema entity, & tracking pixels...');
 
       let token = turnstileToken;
-      if (!token && window.turnstile && widgetIdRef.current) {
-        try {
-          token = window.turnstile.getResponse(widgetIdRef.current) || '';
-        } catch {}
+      if (!token && widgetIdRef.current) {
+        token = getTurnstileToken(widgetIdRef.current);
       }
 
       const controller = new AbortController();
@@ -144,12 +134,21 @@ export default function Scanner() {
 
       if (resp.ok && data.success) {
         setStatusMsg(`Live Probe Complete for ${data.url || rawTarget}`);
-        const computedScore = data.score !== undefined ? data.score : 85;
-        setScoreVal(`${computedScore}/100`);
-        setScoreColor(computedScore >= 80 ? 'var(--c-success)' : (computedScore >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)'));
+        const computedScore = typeof data.score === 'number' ? data.score : null;
+        if (computedScore !== null) {
+          setScoreVal(`${computedScore}/100`);
+          setScoreColor(computedScore >= 80 ? 'var(--c-success)' : (computedScore >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)'));
+        } else {
+          setScoreVal('—');
+          setScoreColor('var(--c-text-muted)');
+        }
 
-        const latency = data.measured_latency_ms || data.response_time_ms || 240;
-        setTtfbVal(`${latency}ms`);
+        const latency = data.measured_latency_ms ?? data.response_time_ms;
+        if (typeof latency === 'number') {
+          setTtfbVal(`${latency}ms`);
+        } else {
+          setTtfbVal('—');
+        }
 
         if (data.has_ssl === true) {
           setSslVal('VALID');
@@ -175,8 +174,8 @@ export default function Scanner() {
         }
 
         trackEvent('scan_complete', {
-          score: computedScore,
-          latency
+          score_bucket: getScoreBucket(computedScore),
+          latency_bucket: getLatencyBucket(latency)
         });
 
         if (data.breakdown) {
@@ -188,7 +187,7 @@ export default function Scanner() {
         const auditPayload = {
           domain: domainClean,
           score: computedScore,
-          latency,
+          latency: latency ?? null,
           has_ssl: data.has_ssl,
           breakdown: data.breakdown || null,
           local_signals: data.local_signals || null
@@ -200,7 +199,7 @@ export default function Scanner() {
           detail: auditPayload
         }));
       } else {
-        const errorMsg = data.message || 'Target website took too long or refused connection.';
+        const errorMsg = data.message || "Couldn't complete the check. Please try again.";
         setScanError(errorMsg);
         setStatusMsg(`Probe halted: ${errorMsg}`);
         setScoreVal('N/A');
@@ -208,6 +207,7 @@ export default function Scanner() {
         setTtfbVal('—');
         setSslVal(data.has_ssl === false ? 'FAILED' : '—');
         setSslColor(data.has_ssl === false ? 'var(--c-vermilion)' : 'var(--c-text-muted)');
+        setBreakdown(null);
         setFindings([
           {
             severity: 'critical',
@@ -216,79 +216,30 @@ export default function Scanner() {
           }
         ]);
 
-        trackEvent('scan_error', { error: data.error || 'scan_failed' });
+        trackEvent('scan_error', { error_code: data.error || 'scan_failed' });
       }
     } catch (err: any) {
-      // Graceful fallback to perimeter audit so the user ALWAYS receives a real SEO score and actionable analysis
-      const cleanDomain = rawTarget.replace(/^https?:\/\//, '').split('/')[0] || 'your-business.com';
-      const isHttps = rawTarget.startsWith('https://') || !rawTarget.startsWith('http://');
-      const fallbackScore = isHttps ? 62 : 45;
-
-      setStatusMsg(`Perimeter SEO Diagnosis for ${cleanDomain}`);
-      setScoreVal(`${fallbackScore}/100`);
-      setScoreColor('var(--c-warning)');
-      setTtfbVal('480ms');
-      setSslVal(isHttps ? 'VALID' : 'FAILED');
-      setSslColor(isHttps ? 'var(--c-success)' : 'var(--c-vermilion)');
-      
-      const fallbackBreakdown: ScoreBreakdown = {
-        meta: { score: 18, max: 30, label: "Meta & Indexing" },
-        content: { score: 18, max: 25, label: "Content Structure" },
-        technical: { score: isHttps ? 20 : 8, max: 25, label: "Speed & Security" },
-        rich_data: { score: 10, max: 20, label: "Schema & Social" }
-      };
-      setBreakdown(fallbackBreakdown);
-
+      const errorMsg = "Couldn't complete the check. Please try again.";
+      setScanError(errorMsg);
+      setStatusMsg(errorMsg);
+      setScoreVal('N/A');
+      setScoreColor('var(--c-text-muted)');
+      setTtfbVal('—');
+      setSslVal('—');
+      setSslColor('var(--c-text-muted)');
+      setBreakdown(null);
       setFindings([
         {
-          severity: isHttps ? 'good' : 'warning',
-          title: isHttps ? 'SSL/TLS Protocol Active' : 'Unencrypted HTTP Connection',
-          evidence: `Connection evaluated for ${cleanDomain}.`,
-          fix: isHttps ? 'SSL certificate active on domain.' : 'Deploy SSL certificate and enforce HTTPS.'
-        },
-        {
-          severity: 'warning',
-          title: 'Origin CDN Edge Caching Recommended',
-          evidence: `Domain ${cleanDomain} took >3s to respond to automated crawler probes.`,
-          fix: 'Configure global edge CDN caching (Cloudflare) to achieve sub-second TTFB.'
-        },
-        {
-          severity: 'info',
-          title: 'Mobile-First Indexing & Schema Entities',
-          evidence: `Validate responsive viewport and LocalBusiness Schema on ${cleanDomain}.`,
-          fix: 'Deploy Schema.org JSON-LD to qualify for Google rich search results and local 3-pack relevance.'
+          severity: 'critical',
+          title: "Couldn't complete the check",
+          fix: 'The target website may be unreachable or blocking automated checks. Request a manual audit below.'
         }
       ]);
 
-      // Persist and broadcast to Heatmap
-      const fallbackPayload = {
-        domain: cleanDomain,
-        score: fallbackScore,
-        latency: 480,
-        has_ssl: isHttps,
-        breakdown: fallbackBreakdown,
-        local_signals: {
-          has_local_schema: false,
-          has_phone: true,
-          has_maps_link: false,
-          local_readiness: 40
-        }
-      };
-      try {
-        sessionStorage.setItem('sapvik_latest_audit', JSON.stringify(fallbackPayload));
-      } catch {}
-      window.dispatchEvent(new CustomEvent('sapvik:audit-complete', {
-        detail: fallbackPayload
-      }));
-
-      trackEvent('scan_complete', { domain: cleanDomain, score: fallbackScore, is_fallback: true });
+      trackEvent('scan_error', { error_code: err?.name === 'AbortError' ? 'timeout' : 'client_fetch_error' });
     } finally {
       setIsLoading(false);
-      if (window.turnstile && widgetIdRef.current) {
-        try {
-          window.turnstile.reset(widgetIdRef.current);
-        } catch {}
-      }
+      resetTurnstile(widgetIdRef.current);
       setTimeout(() => {
         setProgress(0);
       }, 1200);
@@ -335,13 +286,15 @@ export default function Scanner() {
         </button>
       </form>
 
-      {/* Turnstile Bot Challenge */}
-      <div
-        ref={turnstileContainerRef}
-        id="scannerTurnstile"
-        className="cf-turnstile"
-        style={{ marginTop: '0.75rem' }}
-      ></div>
+      {/* Turnstile Bot Challenge (only if configured) */}
+      {isTurnstileConfigured() && (
+        <div
+          ref={turnstileContainerRef}
+          id="scannerTurnstile"
+          className="cf-turnstile"
+          style={{ marginTop: '0.75rem' }}
+        ></div>
+      )}
 
       {/* Progress Bar */}
       <div
@@ -406,12 +359,12 @@ export default function Scanner() {
       {/* Defensible Category Breakdown */}
       {breakdown && (
         <div style={{ margin: '1rem 0', padding: '0.85rem 1rem', background: 'var(--c-surface-subdued)', border: '1px solid var(--c-border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.35rem' }}>
             <span className="mono-label" style={{ color: 'var(--c-vermilion)', fontSize: '0.72rem' }}>
-              DEFENSIBLE SCORING RUBRIC (OUT OF 100)
+              How this score is calculated
             </span>
             <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>
-              Weighted Google Audit
+              A rule-based check of on-page signals found in the page&apos;s initial HTML. It is not a Google score.
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.6rem' }}>
