@@ -26,8 +26,14 @@ const {
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://sapvik.com';
 const ogImageUrl = `${siteUrl}/assets/og-image.png`;
 
+const socialProfiles = [
+  SITE.brand.social?.linkedin,
+  SITE.brand.social?.instagram,
+  SITE.brand.social?.twitter
+].filter((url): url is string => Boolean(url && url.trim().length > 0));
+
 // Organization / ProfessionalService Schema
-const organizationSchema = {
+const organizationSchema: Record<string, any> = {
   "@type": ["Organization", "ProfessionalService"],
   "@id": "https://sapvik.com/#organization",
   "name": SITE.brand.name,
@@ -43,10 +49,7 @@ const organizationSchema = {
   "description": "Website development, Google Business Profile management, paid advertising, and commercial digital marketing partner in India.",
   "telephone": SITE.brand.phone,
   "email": SITE.brand.email,
-  "sameAs": [
-    SITE.brand.social.linkedin,
-    SITE.brand.social.instagram
-  ],
+  ...(socialProfiles.length > 0 ? { "sameAs": socialProfiles } : {}),
   "address": {
     "@type": "PostalAddress",
     "streetAddress": SITE.brand.streetAddress,

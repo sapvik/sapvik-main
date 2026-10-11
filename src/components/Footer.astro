@@ -52,8 +52,12 @@ import { SERVICES } from '../config/services';
         <ul class="footer-nav-list">
           <li><a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} target="_blank" rel="noopener">WhatsApp Direct</a></li>
           <li><a href={`mailto:${SITE.brand.email}`}>{SITE.brand.email}</a></li>
-          <li><a href={SITE.brand.social.linkedin} target="_blank" rel="noopener">LinkedIn</a></li>
-          <li><a href={SITE.brand.social.instagram} target="_blank" rel="noopener">Instagram</a></li>
+          {SITE.brand.social?.linkedin && (
+            <li><a href={SITE.brand.social.linkedin} target="_blank" rel="noopener">LinkedIn</a></li>
+          )}
+          {SITE.brand.social?.instagram && (
+            <li><a href={SITE.brand.social.instagram} target="_blank" rel="noopener">Instagram</a></li>
+          )}
           <li><a href="/sitemap.xml">XML Sitemap</a></li>
         </ul>
       </div>

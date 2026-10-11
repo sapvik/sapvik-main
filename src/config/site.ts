@@ -19,8 +19,8 @@ export interface SiteConfig {
     slaHours: number;
     slaStatement: string;
     social: {
-      linkedin: string;
-      instagram: string;
+      linkedin?: string;
+      instagram?: string;
       twitter?: string;
     };
     address: string;
@@ -48,8 +48,8 @@ export const SITE: SiteConfig = {
     slaHours: 24,
     slaStatement: "We review and respond to discovery inquiries within 24 business hours.",
     social: {
-      linkedin: "https://www.linkedin.com/company/sapvik",
-      instagram: "https://www.instagram.com/sapviktech"
+      linkedin: "",
+      instagram: ""
     },
     address: "Colosseo Ventures, #77, 2nd Cross, Chowdeshwari Temple Rd, HAL Central Township, Marathahalli, Bengaluru, Karnataka 560037",
     streetAddress: "Colosseo Ventures, #77, 2nd Cross, Chowdeshwari Temple Rd, HAL Central Township, Marathahalli",
