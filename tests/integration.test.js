@@ -13,25 +13,26 @@ test('Integration: Static files and critical assets exist in dist/ directory wit
 
   const criticalFiles = [
     'index.html',
-    'privacy/index.html',
-    'terms/index.html',
-    'cookies/index.html',
+    'privacy.html',
+    'terms.html',
+    'cookies.html',
     'sitemap.xml',
     'robots.txt',
     '_headers',
+    '_routes.json',
     'favicon.ico',
     'apple-touch-icon.png',
     'favicon-32x32.png',
     'favicon-16x16.png',
     'config/assumptions.json',
     'assets/og-image.png',
-    'services/website-development/index.html',
-    'services/google-business-profile-management/index.html',
-    'services/search-engine-optimization/index.html',
-    'services/google-ads-meta-ads/index.html',
-    'services/social-media-management/index.html',
-    'services/application-development/index.html',
-    'services/branding/index.html'
+    'services/website-development.html',
+    'services/google-business-profile-management.html',
+    'services/search-engine-optimization.html',
+    'services/google-ads-meta-ads.html',
+    'services/social-media-management.html',
+    'services/application-development.html',
+    'services/branding.html'
   ];
 
   for (const file of criticalFiles) {
@@ -78,14 +79,14 @@ test('Integration: assumptions.json strictly marks every industry source as plac
   }
 });
 
-test('Integration: terms/index.html contains legal anchors for operational claims', () => {
-  const termsPath = path.join(distDir, 'terms', 'index.html');
-  assert.ok(fs.existsSync(termsPath), 'dist/terms/index.html must exist');
+test('Integration: terms.html contains legal anchors for operational claims', () => {
+  const termsPath = path.join(distDir, 'terms.html');
+  assert.ok(fs.existsSync(termsPath), 'dist/terms.html must exist');
   const termsHtml = fs.readFileSync(termsPath, 'utf8');
 
-  assert.ok(termsHtml.includes('id="asset-ownership"'), 'dist/terms/index.html must contain #asset-ownership');
-  assert.ok(termsHtml.includes('id="ad-billing"'), 'dist/terms/index.html must contain #ad-billing');
-  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'dist/terms/index.html must contain #onboarding-sla');
+  assert.ok(termsHtml.includes('id="asset-ownership"'), 'dist/terms.html must contain #asset-ownership');
+  assert.ok(termsHtml.includes('id="ad-billing"'), 'dist/terms.html must contain #ad-billing');
+  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'dist/terms.html must contain #onboarding-sla');
 });
 
 test('Integration: robots.txt disallows /api/ and /config/ and specifies sitemap', () => {

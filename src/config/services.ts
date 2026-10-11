@@ -218,7 +218,7 @@ export const SERVICES: ServiceItem[] = [
       },
       {
         question: "Do you guarantee #1 rankings on Google?",
-        answer: "No ethical SEO specialist guarantees #1 rankings, as Google's algorithms change constantly and competitors also optimize. What we do guarantee is meticulous technical standards, white-hat execution, transparent tracking, and measurable organic inquiry growth."
+        answer: "No ethical SEO specialist guarantees #1 rankings, as Google's algorithms change constantly and competitors also optimize. What we commit to is meticulous technical standards, white-hat execution, transparent tracking, and driving measurable organic inquiry growth."
       },
       {
         question: "How do you choose which keywords to target?",

@@ -284,29 +284,10 @@ export async function onRequest(context) {
     return res;
   };
 
-  // 3. Drop .html extensions and normalize legacy service slugs (301 Permanent Redirect)
-  const legacySlugMap = {
-    '/services/websites-development': '/services/website-development',
-    '/services/gmb-management': '/services/google-business-profile-management',
-    '/services/media-management': '/services/social-media-management',
-    '/services/digital-promotions': '/services/google-ads-meta-ads'
-  };
-
+  // 3. Drop .html extensions (301 Permanent Redirect)
   let cleanPath = url.pathname;
-  let redirected = false;
-
-  // Drop .html extension if present (unless it's an asset or API call)
   if (cleanPath.endsWith('.html') && !cleanPath.startsWith('/_')) {
     cleanPath = cleanPath.slice(0, -5);
-    redirected = true;
-  }
-
-  if (legacySlugMap[cleanPath]) {
-    cleanPath = legacySlugMap[cleanPath];
-    redirected = true;
-  }
-
-  if (redirected && cleanPath !== url.pathname) {
     const targetUrl = new URL(cleanPath + url.search, url.origin);
     return Response.redirect(targetUrl.toString(), 301);
   }

@@ -47,6 +47,19 @@ const organizationSchema = {
     SITE.brand.social.linkedin,
     SITE.brand.social.instagram
   ],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": SITE.brand.streetAddress,
+    "addressLocality": SITE.brand.locality,
+    "addressRegion": SITE.brand.region,
+    "postalCode": SITE.brand.postalCode,
+    "addressCountry": "IN"
+  },
+  "founder": {
+    "@type": "Person",
+    "name": SITE.brand.founder,
+    "email": SITE.brand.founderEmail
+  },
   "areaServed": {
     "@type": "Country",
     "name": "India"

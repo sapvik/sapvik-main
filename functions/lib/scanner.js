@@ -13,6 +13,28 @@ const MAX_REDIRECTS = 3;
  */
 async function readBoundedStream(response, byteLimit = MAX_STREAM_BYTES) {
   try {
+    if (response.body && typeof response.body.getReader === 'function') {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
+      let bytesReceived = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytesReceived += value.length;
+        if (bytesReceived > byteLimit) {
+          const excess = bytesReceived - byteLimit;
+          const allowed = value.length - excess;
+          if (allowed > 0) {
+            result += decoder.decode(value.subarray(0, allowed));
+          }
+          try { await reader.cancel(); } catch {}
+          break;
+        }
+        result += decoder.decode(value, { stream: true });
+      }
+      return result;
+    }
     const text = await response.text();
     return text.length > byteLimit ? text.slice(0, byteLimit) : text;
   } catch {

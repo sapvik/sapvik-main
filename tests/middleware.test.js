@@ -254,14 +254,12 @@ test('Middleware: Does NOT redirect *.pages.dev hosts when REDIRECT_ALLOW is abs
   assert.equal(await response.text(), 'site on pages.dev');
 });
 
-test('Middleware: Redirects .html URLs and legacy service slugs to clean URLs with 301', async () => {
+test('Middleware: Redirects .html URLs to clean URLs with 301', async () => {
   const testCases = [
     { from: 'https://sapvik.com/privacy.html', to: 'https://sapvik.com/privacy' },
     { from: 'https://sapvik.com/terms.html', to: 'https://sapvik.com/terms' },
-    { from: 'https://sapvik.com/services/websites-development.html', to: 'https://sapvik.com/services/website-development' },
-    { from: 'https://sapvik.com/services/gmb-management', to: 'https://sapvik.com/services/google-business-profile-management' },
-    { from: 'https://sapvik.com/services/media-management.html', to: 'https://sapvik.com/services/social-media-management' },
-    { from: 'https://sapvik.com/services/digital-promotions', to: 'https://sapvik.com/services/google-ads-meta-ads' }
+    { from: 'https://sapvik.com/services/website-development.html', to: 'https://sapvik.com/services/website-development' },
+    { from: 'https://sapvik.com/services/social-media-management.html', to: 'https://sapvik.com/services/social-media-management' }
   ];
 
   for (const tc of testCases) {

@@ -100,8 +100,7 @@ export async function onRequestPost(context) {
   const scanResult = await executeLiveScan(normalizedTarget, 3.5);
 
   const responseHeaders = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Content-Type': 'application/json'
   };
 
   if (scanResult.success) {

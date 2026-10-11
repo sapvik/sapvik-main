@@ -1,34 +1,17 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { SERVICES, type ServiceItem } from '../../config/services';
+import { SITE } from '../../config/site';
 
 export function getStaticPaths() {
-  const paths: Array<{ params: { slug: string }; props: { service: ServiceItem; isLegacy?: boolean } }> = [];
-
-  for (const service of SERVICES) {
-    // Primary canonical route
-    paths.push({
-      params: { slug: service.slug },
-      props: { service, isLegacy: false }
-    });
-
-    // Legacy slug routes (to prevent 404s on static hosts)
-    if (service.legacySlugs) {
-      for (const legacy of service.legacySlugs) {
-        paths.push({
-          params: { slug: legacy },
-          props: { service, isLegacy: true }
-        });
-      }
-    }
-  }
-
-  return paths;
+  return SERVICES.map(service => ({
+    params: { slug: service.slug },
+    props: { service }
+  }));
 }
 
 interface Props {
   service: ServiceItem;
-  isLegacy?: boolean;
 }
 
 const { service } = Astro.props;
@@ -259,7 +242,7 @@ const pageSchemas = [breadcrumbSchema, serviceSchema, faqSchema];
                 <span>Request Growth Diagnostic</span>
                 <span>&rarr;</span>
               </a>
-              <a href={`https://wa.me/918800592147?text=${encodeURIComponent(`Hi SAPVIK, I'd like to discuss ${service.name}.`)}`} target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              <a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(`Hi SAPVIK, I'd like to discuss ${service.name}.`)}`} target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
                 <span>WhatsApp Direct</span>
               </a>
             </div>

@@ -247,7 +247,7 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await expect(fallbackContainer).toBeVisible();
     const waLink = fallbackContainer.locator('a[href*="wa.me"]');
     await expect(waLink).toBeVisible();
-    await expect(waLink).toHaveAttribute('href', /wa\.me\/918800592147/);
+    await expect(waLink).toHaveAttribute('href', /wa\.me\/919599928526/);
   });
 
   test('Website Scanner: Empty state renders dashes and failed probe renders honest error panel', async ({ page }) => {

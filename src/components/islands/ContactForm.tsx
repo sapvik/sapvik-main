@@ -269,7 +269,7 @@ export default function ContactForm() {
                 type="tel"
                 id="formPhone"
                 className={`form-control ${fieldErrors.phone ? 'error' : ''}`}
-                placeholder="+91 88005 92147"
+                placeholder="+91 95999 28526"
                 inputMode="tel"
                 autoComplete="tel"
                 value={formData.phone}

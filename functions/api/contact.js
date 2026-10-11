@@ -87,7 +87,7 @@ export async function onRequestPost(context) {
     .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
     .map(email => ({ email }));
   const teamRecipients = recipients.length > 0 ? recipients : [{ email: 'growth@sapvik.com' }];
-  const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'alerts@sapvik.com';
+  const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'growth@sapvik.com';
 
   // A. Dispatch Transactional Alert Email to Team via Brevo SMTP API
   if (brevoKey) {
@@ -106,7 +106,7 @@ export async function onRequestPost(context) {
           </table>
           <h3>Inquiry Notes:</h3>
           <p style="background: #F4F5F6; padding: 12px; border-left: 3px solid #C93A22;">${escapeHtml(details || 'No additional notes provided.')}</p>
-          ${audit ? `<h3>Attached Scanner Finding:</h3><p>Status: ${escapeHtml(String(audit.url || ''))} | Response Time: ${escapeHtml(String(audit.response_time_ms || ''))}ms</p>` : ''}
+          ${audit ? `<h3>Attached Scanner Finding:</h3><p>Domain: ${escapeHtml(String(audit.domain || audit.url || 'N/A'))} | Score: ${escapeHtml(String(audit.score !== undefined ? audit.score : 'N/A'))}/100 | Latency: ${escapeHtml(String(audit.latency !== undefined ? audit.latency : (audit.response_time_ms || 'N/A')))}ms | SSL: ${audit.has_ssl ? 'Active' : 'Unverified'}</p>` : ''}
           <p style="font-size: 12px; color: #718096; margin-top: 24px;">Captured at ${new Date().toISOString()} | Client IP: ${escapeHtml(clientIp)}</p>
         </div>
       `;
