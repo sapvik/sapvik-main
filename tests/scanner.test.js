@@ -148,3 +148,22 @@ test('Scanner: executeLiveScan falls back to HTTP and marks has_ssl false if HTT
     globalThis.fetch = originalFetch;
   }
 });
+
+test('Scanner: executeLiveScan returns empty_response error when server returns empty body', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response('', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      });
+    };
+    const result = await executeLiveScan('https://empty-parked-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'empty_response');
+    assert.ok(result.message.includes('empty or unparseable response'));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+

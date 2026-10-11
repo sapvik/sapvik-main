@@ -440,6 +440,16 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
       const hasSsl = finalUrl.toLowerCase().startsWith('https://');
       const hasHsts = Boolean(httpsResult.response.headers.get('strict-transport-security'));
       const html = await readBoundedStream(httpsResult.response, MAX_STREAM_BYTES);
+
+      if (!html || html.trim().length < 30 || (!html.includes('<') && !html.includes('>'))) {
+        return {
+          success: false,
+          error: 'empty_response',
+          message: 'The target server returned an empty or unparseable response (no HTML found). The domain may be parked, inactive, or down.',
+          has_ssl: hasSsl
+        };
+      }
+
       return analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts);
     }
 
@@ -461,6 +471,16 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
       const elapsedMs = Date.now() - startTime;
       const finalUrl = httpResult.finalUrl;
       const html = await readBoundedStream(httpResult.response, MAX_STREAM_BYTES);
+
+      if (!html || html.trim().length < 30 || (!html.includes('<') && !html.includes('>'))) {
+        return {
+          success: false,
+          error: 'empty_response',
+          message: 'The target server returned an empty or unparseable response (no HTML found). The domain may be parked, inactive, or down.',
+          has_ssl: false
+        };
+      }
+
       // HTTPS failed and plain HTTP succeeded => has_ssl: false
       return analyzeHtmlSnippet(html, finalUrl, elapsedMs, false, false);
     }
@@ -482,6 +502,16 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
     const hasSsl = finalUrl.toLowerCase().startsWith('https://');
     const hasHsts = Boolean(httpResult.response.headers.get('strict-transport-security'));
     const html = await readBoundedStream(httpResult.response, MAX_STREAM_BYTES);
+
+    if (!html || html.trim().length < 30 || (!html.includes('<') && !html.includes('>'))) {
+      return {
+        success: false,
+        error: 'empty_response',
+        message: 'The target server returned an empty or unparseable response (no HTML found). The domain may be parked, inactive, or down.',
+        has_ssl: hasSsl
+      };
+    }
+
     return analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts);
   }
 
