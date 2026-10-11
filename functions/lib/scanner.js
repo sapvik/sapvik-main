@@ -450,6 +450,23 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
         };
       }
 
+      // Detect parked / ghost domains with no recognizable web content
+      const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(html);
+      const hasH1 = /<h1\b[^>]*>/i.test(html);
+      const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
+      const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(html);
+      const textWithoutTags = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const hasSubstantialText = textWithoutTags.length >= 80;
+
+      if (!hasTitle && !hasH1 && !hasViewport && !hasDescription && !hasSubstantialText) {
+        return {
+          success: false,
+          error: 'parked_or_empty_domain',
+          message: 'Target server is reachable, but no active website content was found (missing title, headings, and body text). The domain appears parked, inactive, or un-deployed.',
+          has_ssl: hasSsl
+        };
+      }
+
       return analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts);
     }
 
@@ -508,6 +525,22 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
         success: false,
         error: 'empty_response',
         message: 'The target server returned an empty or unparseable response (no HTML found). The domain may be parked, inactive, or down.',
+        has_ssl: hasSsl
+      };
+    }
+
+    const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(html);
+    const hasH1 = /<h1\b[^>]*>/i.test(html);
+    const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
+    const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(html);
+    const textWithoutTags = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const hasSubstantialText = textWithoutTags.length >= 80;
+
+    if (!hasTitle && !hasH1 && !hasViewport && !hasDescription && !hasSubstantialText) {
+      return {
+        success: false,
+        error: 'parked_or_empty_domain',
+        message: 'Target server is reachable, but no active website content was found (missing title, headings, and body text). The domain appears parked, inactive, or un-deployed.',
         has_ssl: hasSsl
       };
     }

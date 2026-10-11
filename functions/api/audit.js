@@ -88,7 +88,7 @@ export async function onRequestPost(context) {
   const normalizedTarget = validation.url;
 
   // 3. Edge Cache API Lookup (Keyed by Normalized Target URL, 5 min TTL)
-  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit?url=${encodeURIComponent(normalizedTarget)}`);
+  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit/v2?url=${encodeURIComponent(normalizedTarget)}`);
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   let cache;
   try {

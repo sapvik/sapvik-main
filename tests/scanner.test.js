@@ -167,3 +167,22 @@ test('Scanner: executeLiveScan returns empty_response error when server returns 
   }
 });
 
+test('Scanner: executeLiveScan returns parked_or_empty_domain when server returns HTML with no title, h1, or text', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => {
+      return new Response('<html><head></head><body><script src="tracking.js"></script></body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      });
+    };
+    const result = await executeLiveScan('https://parked-gateway-domain.com');
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'parked_or_empty_domain');
+    assert.ok(result.message.includes('no active website content was found'));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+
