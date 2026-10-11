@@ -86,7 +86,11 @@ export default function Scanner() {
 
   // Initialize Turnstile widget if present and configured
   useEffect(() => {
-    const id = renderTurnstile(turnstileContainerRef.current, (token: string) => setTurnstileToken(token));
+    const id = renderTurnstile(
+      turnstileContainerRef.current,
+      (token: string) => setTurnstileToken(token),
+      (id: string) => { widgetIdRef.current = id; }
+    );
     if (id) {
       widgetIdRef.current = id;
     }

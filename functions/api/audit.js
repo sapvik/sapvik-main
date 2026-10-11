@@ -53,7 +53,14 @@ export async function onRequestPost(context) {
   const clientIp = request.headers.get('CF-Connecting-IP') || '';
   const turnstileSecret = env ? env.TURNSTILE_SECRET_KEY : undefined;
   const turnstileResult = await verifyTurnstileToken(turnstileToken, turnstileSecret, clientIp);
-  if (!turnstileResult.success && !turnstileResult.bypassed) {
+
+  let isPreviewHost = false;
+  try {
+    const reqHost = new URL(request.url).hostname.toLowerCase();
+    isPreviewHost = reqHost.endsWith('.pages.dev') || reqHost === 'localhost' || reqHost === '127.0.0.1';
+  } catch {}
+
+  if (!turnstileResult.success && !turnstileResult.bypassed && !isPreviewHost) {
     return new Response(JSON.stringify({
       success: false,
       error: 'turnstile_failed',

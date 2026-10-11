@@ -1,17 +1,17 @@
 /**
  * Turnstile Client Helper
  * Provides safe site key resolution and graceful zero-env degradation.
- * If PUBLIC_TURNSTILE_SITE_KEY is not set or empty, Turnstile is marked unconfigured
- * and no challenge widget is mounted.
+ * Bakes in DEFAULT_SITE_KEY and supports async script loading.
  */
 
+const DEFAULT_SITE_KEY = '0x4AAAAAAFTY0v25vZJ_wPCQ';
+
 export function getTurnstileSiteKey(): string | null {
-  const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
-  const key = meta?.env?.PUBLIC_TURNSTILE_SITE_KEY;
-  if (!key || typeof key !== 'string' || !key.trim()) {
-    return null;
+  const envKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+  if (typeof envKey === 'string' && envKey.trim()) {
+    return envKey.trim();
   }
-  return key.trim();
+  return DEFAULT_SITE_KEY;
 }
 
 export function isTurnstileConfigured(): boolean {
@@ -20,7 +20,8 @@ export function isTurnstileConfigured(): boolean {
 
 export function renderTurnstile(
   container: HTMLElement | null,
-  callback: (token: string) => void
+  callback: (token: string) => void,
+  onWidgetId?: (widgetId: string) => void
 ): string | null {
   if (typeof window === 'undefined' || !container) {
     return null;
@@ -29,17 +30,42 @@ export function renderTurnstile(
   if (!sitekey) {
     return null;
   }
-  if (!window.turnstile) {
-    return null;
+
+  const doRender = (): string | null => {
+    if (!window.turnstile || !container) return null;
+    try {
+      container.innerHTML = '';
+      const id = window.turnstile.render(container, {
+        sitekey,
+        callback,
+        'refresh-expired': 'auto'
+      });
+      if (id && onWidgetId) {
+        onWidgetId(id);
+      }
+      return id;
+    } catch {
+      return null;
+    }
+  };
+
+  if (window.turnstile) {
+    return doRender();
   }
-  try {
-    return window.turnstile.render(container, {
-      sitekey,
-      callback
-    });
-  } catch {
-    return null;
-  }
+
+  // If Turnstile script tag is still downloading/executing (async/defer)
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    if (window.turnstile) {
+      clearInterval(poll);
+      doRender();
+    } else if (attempts >= 40) {
+      clearInterval(poll);
+    }
+  }, 100);
+
+  return null;
 }
 
 export function getTurnstileToken(widgetId: string | null): string {
@@ -61,3 +87,4 @@ export function resetTurnstile(widgetId: string | null): void {
     window.turnstile.reset(widgetId);
   } catch {}
 }
+

@@ -37,7 +37,11 @@ export default function ContactForm() {
   };
 
   useEffect(() => {
-    const id = renderTurnstile(turnstileContainerRef.current, (token: string) => setTurnstileToken(token));
+    const id = renderTurnstile(
+      turnstileContainerRef.current,
+      (token: string) => setTurnstileToken(token),
+      (id: string) => { widgetIdRef.current = id; }
+    );
     if (id) {
       widgetIdRef.current = id;
     }
