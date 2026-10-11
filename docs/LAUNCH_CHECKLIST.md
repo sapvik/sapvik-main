@@ -21,8 +21,9 @@ Configure these in **Cloudflare Dashboard > Pages > Settings > Environment varia
 | Variable Name | Scope | Description | Status |
 | :--- | :--- | :--- | :--- |
 | `SITE_PASSWORD` | Preview | Password for edge preview gate (default: `sapvik2026`). Set to `DISABLE` for public production. | Configured |
-| `BREVO_API_KEY` | Encrypted Secret | API key for Brevo transactional email (`POST /v3/smtp/email`). | Pending user input (`TODO_BREVO_KEY`) |
-| `NOTIFICATION_EMAIL`| Production / Preview | Destination inbox for team lead alerts (e.g. `growth@sapvik.com`). | Configured default |
+| `BREVO_API_KEY` | Encrypted Secret | API key for Brevo transactional email (`POST /v3/smtp/email`). | Configured |
+| `BREVO_SENDER_EMAIL`| Production / Preview | Verified sender in Brevo (`growth@sapvik.com`). | Configured |
+| `NOTIFICATION_EMAIL`| Production / Preview | Destination inbox for team lead alerts (`leads@sapvik.com`). | Configured |
 | `TURNSTILE_SECRET_KEY` | Encrypted Secret | Cloudflare Turnstile secret key for server-side token validation. | Pending user input (`TODO_TURNSTILE_SECRET`) |
 | `PUBLIC_TURNSTILE_SITE_KEY` | Environment Variable | Public client widget site key for contact and scanner forms. | Pending user input (`TODO_TURNSTILE_SITEKEY`) |
 | `LEAD_WEBHOOK_URL` | Optional Secret | External CRM/Discord/Slack webhook endpoint for redundant lead streaming. | Optional (`TODO_WEBHOOK_URL`) |

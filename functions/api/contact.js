@@ -80,13 +80,13 @@ export async function onRequestPost(context) {
   let deliverySucceeded = false;
   const brevoKey = env ? env.BREVO_API_KEY : null;
   const webhookUrl = env ? env.LEAD_WEBHOOK_URL : null;
-  const teamEmailRaw = (env && env.NOTIFICATION_EMAIL) || 'growth@sapvik.com';
+  const teamEmailRaw = (env && env.NOTIFICATION_EMAIL) || 'leads@sapvik.com';
   const recipients = teamEmailRaw
     .split(',')
     .map(e => e.trim())
     .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
     .map(email => ({ email }));
-  const teamRecipients = recipients.length > 0 ? recipients : [{ email: 'growth@sapvik.com' }];
+  const teamRecipients = recipients.length > 0 ? recipients : [{ email: 'leads@sapvik.com' }];
   const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'growth@sapvik.com';
 
   // A. Dispatch Transactional Alert Email to Team via Brevo SMTP API
