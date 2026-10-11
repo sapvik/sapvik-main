@@ -6,7 +6,8 @@
  */
 
 export function getTurnstileSiteKey(): string | null {
-  const key = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+  const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
+  const key = meta?.env?.PUBLIC_TURNSTILE_SITE_KEY;
   if (!key || typeof key !== 'string' || !key.trim()) {
     return null;
   }

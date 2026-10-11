@@ -10,7 +10,7 @@
     "dev": "npx wrangler pages dev dist --port 8082",
     "dev:python": "python server.py",
     "test": "node --experimental-strip-types --test tests/*.test.js && node scripts/verify-claims.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "astro sync && tsc --noEmit",
     "test:smoke": "npx playwright test"
   },
   "keywords": [
