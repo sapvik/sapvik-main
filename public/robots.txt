@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /config/
 
 Sitemap: https://sapvik.com/sitemap.xml

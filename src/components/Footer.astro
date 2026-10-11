@@ -1,5 +1,6 @@
 ---
 import { SITE } from '../config/site';
+import { SERVICES } from '../config/services';
 ---
 
 <!-- SITE FOOTER -->
@@ -11,10 +12,10 @@ import { SITE } from '../config/site';
       <!-- Brand Info -->
       <div class="footer-meta-block">
         <a href="/#home" aria-label="SAPVIK Homepage">
-          <img src="/assets/logo.svg?v=3" alt="SAPVIK Logo" class="brand-logo-img">
+          <img src="/assets/logo.svg?v=3" alt="SAPVIK Logo - Build. Be Seen. Grow." class="brand-logo-img" width="180" height="42">
         </a>
         <p style="margin-top: 1rem; color: var(--c-text-secondary); line-height: 1.6; font-size: 0.95rem;">
-          Precision digital growth partner for ambitious businesses. Websites, GMB Management, Media, Promotions, Apps, and Branding.
+          Precision digital growth partner for ambitious businesses. Website Development, Google Business Profile Management, SEO, Google & Meta Ads, Social Media, Applications, and Branding.
         </p>
         <div style="margin-top: 1.25rem;">
           <span class="mono-label" style="color: var(--c-vermilion); font-weight: 700;">Sharper digital. Stronger business.</span>
@@ -23,14 +24,11 @@ import { SITE } from '../config/site';
 
       <!-- Services -->
       <div>
-        <h4 class="footer-nav-title">Services</h4>
+        <h4 class="footer-nav-title">Growth Services</h4>
         <ul class="footer-nav-list">
-          <li><a href="/services/websites-development.html">Websites Development</a></li>
-          <li><a href="/services/gmb-management.html">GMB Management</a></li>
-          <li><a href="/services/media-management.html">Media Management</a></li>
-          <li><a href="/services/digital-promotions.html">Digital Promotions</a></li>
-          <li><a href="/services/application-development.html">Application Development</a></li>
-          <li><a href="/services/branding.html">Branding</a></li>
+          {SERVICES.map((s) => (
+            <li><a href={`/services/${s.slug}`}>{s.name}</a></li>
+          ))}
         </ul>
       </div>
 
@@ -38,12 +36,13 @@ import { SITE } from '../config/site';
       <div>
         <h4 class="footer-nav-title">Explore</h4>
         <ul class="footer-nav-list">
+          <li><a href="/#services">All Services</a></li>
           <li><a href="/#heatmap">Local Heatmap Simulator</a></li>
           <li><a href="/#calculator">Growth Simulator</a></li>
           <li><a href="/#process">4-Stage Process</a></li>
-          <li><a href="/#proof">Client Proof</a></li>
+          <li><a href="/#proof">Client Proof & SLAs</a></li>
           <li><a href="/#faq">FAQ</a></li>
-          <li><a href="/#contact">Request Audit</a></li>
+          <li><a href="/#contact">Request Growth Audit</a></li>
         </ul>
       </div>
 
@@ -64,12 +63,12 @@ import { SITE } from '../config/site';
     <!-- Legal Compliance Bottom Bar -->
     <div class="footer-bottom-bar">
       <div>
-        &copy; 2026 SAPVIK Tech. All rights reserved. Precision digital systems for commercial scale.
+        &copy; 2026 SAPVIK Tech. All rights reserved. Precision digital systems for commercial scale across India.
       </div>
       <div class="footer-legal-links">
-        <a href="/privacy.html">Privacy Policy</a>
-        <a href="/terms.html">Terms of Service</a>
-        <a href="/cookies.html">Cookie Disclosure</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="/cookies">Cookie Disclosure</a>
         <button type="button" id="footerConsentReset" class="consent-reset-link" style="background: none; border: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; padding: 0;">Cookie Settings</button>
       </div>
     </div>

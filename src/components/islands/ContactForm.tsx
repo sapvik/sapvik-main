@@ -337,13 +337,10 @@ export default function ContactForm() {
                 value={formData.service}
                 onChange={(e) => setFormData({ ...formData, service: e.target.value })}
               >
-                <option value="all">Full Suite (All 6 Pillars)</option>
-                <option value="websites">Websites Development</option>
-                <option value="gmb">GMB Management</option>
-                <option value="media">Media Management</option>
-                <option value="promotions">Digital Promotions</option>
-                <option value="apps">Application Development</option>
-                <option value="branding">Branding</option>
+                <option value="all">Full Growth Engine (All Capabilities)</option>
+                {SERVICES.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -370,7 +367,7 @@ export default function ContactForm() {
               required
             />
             <label htmlFor="formConsent" className="form-consent-label">
-              I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="/privacy.html" target="_blank" style={{ color: 'var(--c-vermilion)', textDecoration: 'underline' }}>Privacy Policy</a>. *
+              I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="/privacy" target="_blank" style={{ color: 'var(--c-vermilion)', textDecoration: 'underline' }}>Privacy Policy</a>. *
             </label>
           </div>
           {fieldErrors.consent && (

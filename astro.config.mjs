@@ -6,7 +6,8 @@ export default defineConfig({
   site: 'https://sapvik.com',
   integrations: [react()],
   output: 'static',
+  trailingSlash: 'never',
   build: {
-    format: 'file'
+    format: 'directory'
   }
 });

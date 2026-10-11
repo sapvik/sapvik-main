@@ -8,12 +8,13 @@ interface Props {
 const { service } = Astro.props;
 
 const outcomeMap: Record<string, string> = {
-  'websites': 'Higher Conversion Rate',
-  'gmb': 'Inbound Local Calls',
-  'media': 'Brand Trust & Reach',
+  'websites': 'Higher Conversion Rate & Speed',
+  'gmb': 'Inbound Local Calls & Discovery',
+  'seo': 'Organic Search Impressions & Rankings',
   'promotions': 'Qualified Commercial Leads',
-  'apps': 'Workflow Efficiency',
-  'branding': 'Market Credibility'
+  'media': 'Brand Trust & Audience Reach',
+  'apps': 'Workflow Efficiency & Hours Saved',
+  'branding': 'Market Credibility & Recall'
 };
 ---
 
@@ -32,6 +33,12 @@ const outcomeMap: Record<string, string> = {
         <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
           <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      )}
+      {service.id === 'seo' && (
+        <svg class="service-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       )}
       {service.id === 'media' && (
@@ -62,7 +69,7 @@ const outcomeMap: Record<string, string> = {
       )}
     </div>
     <h3 class="service-title">
-      <a href={`/services/${service.slug}.html`} style="color: inherit; text-decoration: none;">
+      <a href={`/services/${service.slug}`} style="color: inherit; text-decoration: none;">
         {service.name}
       </a>
     </h3>
@@ -83,7 +90,7 @@ const outcomeMap: Record<string, string> = {
       <span class="mono-label">PRIMARY OUTCOME: </span>
       <span class="service-kpi-val">{outcomeMap[service.id] || service.metricsFocus}</span>
     </div>
-    <a href={`/services/${service.slug}.html`} class="btn btn-orange btn-vermilion btn-sm service-explore-btn">
+    <a href={`/services/${service.slug}`} class="btn btn-orange btn-vermilion btn-sm service-explore-btn">
       <span>Explore</span>
       <span>&rarr;</span>
     </a>

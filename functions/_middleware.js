@@ -249,6 +249,48 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
+  // 1. Canonical Host Enforcement: Redirect www to apex domain
+  if (url.hostname === 'www.sapvik.com') {
+    url.hostname = 'sapvik.com';
+    return Response.redirect(url.toString(), 301);
+  }
+
+  // 2. Prevent Indexing & Duplicate Content on Cloudflare Pages (*.pages.dev)
+  if (url.hostname.endsWith('.pages.dev')) {
+    const targetUrl = new URL(url.pathname + url.search, 'https://sapvik.com');
+    const headers = new Headers();
+    headers.set('Location', targetUrl.toString());
+    headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return new Response(null, { status: 301, headers });
+  }
+
+  // 3. Drop .html extensions and normalize legacy service slugs (301 Permanent Redirect)
+  const legacySlugMap = {
+    '/services/websites-development': '/services/website-development',
+    '/services/gmb-management': '/services/google-business-profile-management',
+    '/services/media-management': '/services/social-media-management',
+    '/services/digital-promotions': '/services/google-ads-meta-ads'
+  };
+
+  let cleanPath = url.pathname;
+  let redirected = false;
+
+  // Drop .html extension if present (unless it's an asset or API call)
+  if (cleanPath.endsWith('.html') && !cleanPath.startsWith('/_')) {
+    cleanPath = cleanPath.slice(0, -5);
+    redirected = true;
+  }
+
+  if (legacySlugMap[cleanPath]) {
+    cleanPath = legacySlugMap[cleanPath];
+    redirected = true;
+  }
+
+  if (redirected && cleanPath !== url.pathname) {
+    const targetUrl = new URL(cleanPath + url.search, url.origin);
+    return Response.redirect(targetUrl.toString(), 301);
+  }
+
   // If SITE_PASSWORD is explicitly set to 'DISABLE' or '', allow open public access
   let sitePassword = 'sapvik2026';
   if (env && env.SITE_PASSWORD) {

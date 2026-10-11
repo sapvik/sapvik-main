@@ -6,12 +6,13 @@ import { trackEvent } from '../../lib/analytics';
 const assumptions = (assumptionsData.industries as Record<string, IndustryAssumption>) || {};
 
 const AVAILABLE_SERVICES = [
-  { id: 'websites', label: 'Websites Development' },
-  { id: 'gmb', label: 'GMB Management' },
-  { id: 'promotions', label: 'Digital Promotions (Ads)' },
-  { id: 'media', label: 'Media Management' },
+  { id: 'websites', label: 'Website Development' },
+  { id: 'gmb', label: 'Google Business Profile' },
+  { id: 'seo', label: 'Search Engine Optimization (SEO)' },
+  { id: 'promotions', label: 'Google Ads & Meta Ads' },
+  { id: 'media', label: 'Social Media Management' },
   { id: 'apps', label: 'Application Development' },
-  { id: 'branding', label: 'Branding' }
+  { id: 'branding', label: 'Brand Identity' }
 ];
 
 export default function Calculator() {

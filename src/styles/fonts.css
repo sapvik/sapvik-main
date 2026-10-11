@@ -1,12 +1,4 @@
-/* Self-Hosted Fonts: Archivo (Display) and IBM Plex Sans (Body) */
-
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/assets/fonts/archivo-600-normal.woff2') format('woff2');
-}
+/* Optimized Self-Hosted Fonts: Archivo (Display/Headings) and IBM Plex Sans (Body) */
 
 @font-face {
   font-family: 'Archivo';
@@ -27,9 +19,17 @@
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/archivo-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url('/assets/fonts/archivo-900-normal.woff2') format('woff2');
+  src: url('/assets/fonts/archivo-800-normal.woff2') format('woff2');
 }
 
 @font-face {
@@ -45,7 +45,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/assets/fonts/ibm-plex-sans-500-normal.woff2') format('woff2');
+  src: url('/assets/fonts/ibm-plex-sans-400-normal.woff2') format('woff2');
 }
 
 @font-face {
@@ -61,5 +61,5 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/assets/fonts/ibm-plex-sans-700-normal.woff2') format('woff2');
+  src: url('/assets/fonts/ibm-plex-sans-600-normal.woff2') format('woff2');
 }

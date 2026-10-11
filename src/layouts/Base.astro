@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
+import { SITE } from '../config/site';
 import '../styles/styles.css';
 
 interface Props {
@@ -9,21 +10,68 @@ interface Props {
   description?: string;
   canonical?: string;
   ogType?: string;
+  loadTurnstile?: boolean;
+  schema?: Record<string, any> | Array<Record<string, any>>;
 }
 
 const {
-  title = "SAPVIK | Precision Digital Growth & Acquisition Partner",
-  description = "Custom sub-second web platforms, local visibility, and commercial paid acquisition campaigns engineered for verified business growth.",
+  title = "SAPVIK | Website Development, Google Business Profile & Digital Marketing in India",
+  description = "Custom high-speed web platforms, local Google Business Profile visibility, and commercial ad campaigns engineered for verified business growth.",
   canonical = Astro.url.href,
-  ogType = "website"
+  ogType = "website",
+  loadTurnstile = false,
+  schema
 } = Astro.props;
 
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://sapvik.com';
 const ogImageUrl = `${siteUrl}/assets/og-image.png`;
+
+// Organization / ProfessionalService Schema
+const organizationSchema = {
+  "@type": ["Organization", "ProfessionalService"],
+  "@id": "https://sapvik.com/#organization",
+  "name": SITE.brand.name,
+  "url": "https://sapvik.com",
+  "logo": {
+    "@type": "ImageObject",
+    "@id": "https://sapvik.com/#logo",
+    "url": "https://sapvik.com/assets/logo.png",
+    "contentUrl": "https://sapvik.com/assets/logo.png",
+    "caption": "SAPVIK - Precision Digital Growth Partner"
+  },
+  "image": ogImageUrl,
+  "description": "Website development, Google Business Profile management, paid advertising, and commercial digital marketing partner in India.",
+  "telephone": SITE.brand.phone,
+  "email": SITE.brand.email,
+  "sameAs": [
+    SITE.brand.social.linkedin,
+    SITE.brand.social.instagram
+  ],
+  "areaServed": {
+    "@type": "Country",
+    "name": "India"
+  },
+  "priceRange": "$$"
+};
+
+// Combine organization schema with page-specific schema
+const graphItems = [organizationSchema];
+if (schema) {
+  if (Array.isArray(schema)) {
+    graphItems.push(...schema);
+  } else {
+    graphItems.push(schema);
+  }
+}
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": graphItems
+};
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -35,10 +83,16 @@ const ogImageUrl = `${siteUrl}/assets/og-image.png`;
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content={ogType} />
+  <meta property="og:site_name" content="SAPVIK" />
+  <meta property="og:locale" content="en_IN" />
   <meta property="og:url" content={canonical} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageUrl} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="SAPVIK - Website Development & Digital Marketing in India" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -47,8 +101,15 @@ const ogImageUrl = `${siteUrl}/assets/og-image.png`;
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImageUrl} />
 
-  <!-- Favicons -->
+  <!-- Favicons & App Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)}></script>
 
   <!-- Google Consent Mode v2 Default (denied for non-essential storage) -->
   <script is:inline>
@@ -62,8 +123,10 @@ const ogImageUrl = `${siteUrl}/assets/og-image.png`;
     });
   </script>
 
-  <!-- Cloudflare Turnstile explicit rendering -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <!-- Cloudflare Turnstile: only loaded on pages containing interactive forms/scanner -->
+  {loadTurnstile && (
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  )}
 </head>
 <body>
   <!-- Accessible Skip to Main Content Link -->

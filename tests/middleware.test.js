@@ -210,3 +210,51 @@ test('Middleware Gate: Bypasses gate when SITE_PASSWORD is "DISABLE" or empty', 
   assert.equal(await response.text(), 'public site');
 });
 
+test('Middleware: Redirects www.sapvik.com to apex domain sapvik.com with 301', async () => {
+  const request = new Request('https://www.sapvik.com/services/website-development?ref=test');
+  const response = await onRequest({
+    request,
+    env: { SITE_PASSWORD: 'DISABLE' },
+    next: async () => new Response('should not reach')
+  });
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get('Location'), 'https://sapvik.com/services/website-development?ref=test');
+});
+
+test('Middleware: Redirects *.pages.dev hosts to apex domain sapvik.com with 301 and X-Robots-Tag: noindex', async () => {
+  const request = new Request('https://sapvik-main.pages.dev/services/website-development');
+  const response = await onRequest({
+    request,
+    env: { SITE_PASSWORD: 'DISABLE' },
+    next: async () => new Response('should not reach')
+  });
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get('Location'), 'https://sapvik.com/services/website-development');
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow, noarchive');
+});
+
+test('Middleware: Redirects .html URLs and legacy service slugs to clean URLs with 301', async () => {
+  const testCases = [
+    { from: 'https://sapvik.com/privacy.html', to: 'https://sapvik.com/privacy' },
+    { from: 'https://sapvik.com/terms.html', to: 'https://sapvik.com/terms' },
+    { from: 'https://sapvik.com/services/websites-development.html', to: 'https://sapvik.com/services/website-development' },
+    { from: 'https://sapvik.com/services/gmb-management', to: 'https://sapvik.com/services/google-business-profile-management' },
+    { from: 'https://sapvik.com/services/media-management.html', to: 'https://sapvik.com/services/social-media-management' },
+    { from: 'https://sapvik.com/services/digital-promotions', to: 'https://sapvik.com/services/google-ads-meta-ads' }
+  ];
+
+  for (const tc of testCases) {
+    const request = new Request(tc.from);
+    const response = await onRequest({
+      request,
+      env: { SITE_PASSWORD: 'DISABLE' },
+      next: async () => new Response('should not reach')
+    });
+
+    assert.equal(response.status, 301, `Expected 301 redirect for ${tc.from}`);
+    assert.equal(response.headers.get('Location'), tc.to, `Expected redirect to ${tc.to} for ${tc.from}`);
+  }
+});
+

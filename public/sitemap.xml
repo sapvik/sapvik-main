@@ -2,61 +2,67 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://sapvik.com/</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/websites-development.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/website-development</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/gmb-management.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/google-business-profile-management</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/media-management.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/search-engine-optimization</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/digital-promotions.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/google-ads-meta-ads</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/application-development.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/social-media-management</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/services/branding.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/application-development</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/privacy.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/services/branding</loc>
+    <lastmod>2026-10-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://sapvik.com/privacy</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/terms.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/terms</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://sapvik.com/cookies.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <loc>https://sapvik.com/cookies</loc>
+    <lastmod>2026-10-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

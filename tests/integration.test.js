@@ -8,27 +8,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, '..', 'dist');
 
-test('Integration: Static files and critical assets exist in dist/ directory', () => {
+test('Integration: Static files and critical assets exist in dist/ directory with directory format', () => {
   assert.ok(fs.existsSync(distDir), 'dist/ directory must exist after build.');
 
   const criticalFiles = [
     'index.html',
-    'privacy.html',
-    'terms.html',
-    'cookies.html',
+    'privacy/index.html',
+    'terms/index.html',
+    'cookies/index.html',
     'sitemap.xml',
     'robots.txt',
     '_headers',
+    'favicon.ico',
+    'apple-touch-icon.png',
+    'favicon-32x32.png',
+    'favicon-16x16.png',
     'config/assumptions.json',
-    'config/claims.json',
-    'config/site-config.json',
     'assets/og-image.png',
-    'services/websites-development.html',
-    'services/gmb-management.html',
-    'services/media-management.html',
-    'services/digital-promotions.html',
-    'services/application-development.html',
-    'services/branding.html'
+    'services/website-development/index.html',
+    'services/google-business-profile-management/index.html',
+    'services/search-engine-optimization/index.html',
+    'services/google-ads-meta-ads/index.html',
+    'services/social-media-management/index.html',
+    'services/application-development/index.html',
+    'services/branding/index.html'
   ];
 
   for (const file of criticalFiles) {
@@ -37,6 +40,10 @@ test('Integration: Static files and critical assets exist in dist/ directory', (
     const stats = fs.statSync(fullPath);
     assert.ok(stats.size > 0, `File "${file}" must not be empty.`);
   }
+
+  // Ensure internal files are strictly removed from public deployment
+  assert.ok(!fs.existsSync(path.join(distDir, 'config', 'claims.json')), 'Internal claims.json must NOT be public in dist/config');
+  assert.ok(!fs.existsSync(path.join(distDir, 'config', 'site-config.json')), 'Internal site-config.json must NOT be public in dist/config');
 
   // Verify compiled assets in _astro/
   const astroDir = path.join(distDir, '_astro');
@@ -71,13 +78,22 @@ test('Integration: assumptions.json strictly marks every industry source as plac
   }
 });
 
-test('Integration: terms.html contains legal anchors for operational claims', () => {
-  const termsPath = path.join(distDir, 'terms.html');
+test('Integration: terms/index.html contains legal anchors for operational claims', () => {
+  const termsPath = path.join(distDir, 'terms', 'index.html');
+  assert.ok(fs.existsSync(termsPath), 'dist/terms/index.html must exist');
   const termsHtml = fs.readFileSync(termsPath, 'utf8');
 
-  assert.ok(termsHtml.includes('id="asset-ownership"'), 'dist/terms.html must contain #asset-ownership');
-  assert.ok(termsHtml.includes('id="ad-billing"'), 'dist/terms.html must contain #ad-billing');
-  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'dist/terms.html must contain #onboarding-sla');
+  assert.ok(termsHtml.includes('id="asset-ownership"'), 'dist/terms/index.html must contain #asset-ownership');
+  assert.ok(termsHtml.includes('id="ad-billing"'), 'dist/terms/index.html must contain #ad-billing');
+  assert.ok(termsHtml.includes('id="onboarding-sla"'), 'dist/terms/index.html must contain #onboarding-sla');
+});
+
+test('Integration: robots.txt disallows /api/ and /config/ and specifies sitemap', () => {
+  const robotsPath = path.join(distDir, 'robots.txt');
+  const robotsContent = fs.readFileSync(robotsPath, 'utf8');
+  assert.ok(robotsContent.includes('Disallow: /api/'), 'robots.txt must disallow /api/');
+  assert.ok(robotsContent.includes('Disallow: /config/'), 'robots.txt must disallow /config/');
+  assert.ok(robotsContent.includes('Sitemap: https://sapvik.com/sitemap.xml'), 'robots.txt must specify sitemap');
 });
 
 test('Integration: _headers enforces strict HTTP security and caching directives', () => {
