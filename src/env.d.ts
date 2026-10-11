@@ -4,6 +4,7 @@
 interface ImportMetaEnv {
   readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
   readonly SITE_PASSWORD?: string;
+  readonly REDIRECT_ALLOW?: string;
 }
 
 interface ImportMeta {

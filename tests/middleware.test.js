@@ -222,17 +222,36 @@ test('Middleware: Redirects www.sapvik.com to apex domain sapvik.com with 301', 
   assert.equal(response.headers.get('Location'), 'https://sapvik.com/services/website-development?ref=test');
 });
 
-test('Middleware: Redirects *.pages.dev hosts to apex domain sapvik.com with 301 and X-Robots-Tag: noindex', async () => {
+test('Middleware: Redirects *.pages.dev hosts to apex domain sapvik.com when REDIRECT_ALLOW is "true"', async () => {
   const request = new Request('https://sapvik-main.pages.dev/services/website-development');
   const response = await onRequest({
     request,
-    env: { SITE_PASSWORD: 'DISABLE' },
+    env: { SITE_PASSWORD: 'DISABLE', REDIRECT_ALLOW: 'true' },
     next: async () => new Response('should not reach')
   });
 
   assert.equal(response.status, 301);
   assert.equal(response.headers.get('Location'), 'https://sapvik.com/services/website-development');
   assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow, noarchive');
+});
+
+test('Middleware: Does NOT redirect *.pages.dev hosts when REDIRECT_ALLOW is absent, but sets X-Robots-Tag: noindex', async () => {
+  let nextCalled = false;
+  const request = new Request('https://sapvik-main.pages.dev/services/website-development');
+  const response = await onRequest({
+    request,
+    env: { SITE_PASSWORD: 'DISABLE' },
+    next: async () => {
+      nextCalled = true;
+      return new Response('site on pages.dev');
+    }
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Location'), null);
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow, noarchive');
+  assert.equal(await response.text(), 'site on pages.dev');
 });
 
 test('Middleware: Redirects .html URLs and legacy service slugs to clean URLs with 301', async () => {

@@ -256,13 +256,33 @@ export async function onRequest(context) {
   }
 
   // 2. Prevent Indexing & Duplicate Content on Cloudflare Pages (*.pages.dev)
-  if (url.hostname.endsWith('.pages.dev')) {
+  // Only redirect if REDIRECT_ALLOW / redirect_allow is explicitly set to 'true'.
+  // If not present or not true, do not redirect, but attach X-Robots-Tag to avoid duplicate indexing.
+  const rawRedirectAllow = env && (env.REDIRECT_ALLOW ?? env.redirect_allow);
+  const redirectAllow = typeof rawRedirectAllow === 'string'
+    ? rawRedirectAllow.trim().toLowerCase() === 'true'
+    : Boolean(rawRedirectAllow);
+
+  if (url.hostname.endsWith('.pages.dev') && redirectAllow) {
     const targetUrl = new URL(url.pathname + url.search, 'https://sapvik.com');
     const headers = new Headers();
     headers.set('Location', targetUrl.toString());
     headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     return new Response(null, { status: 301, headers });
   }
+
+  const finalizeResponse = (res) => {
+    if (url.hostname.endsWith('.pages.dev')) {
+      const headers = new Headers(res.headers);
+      headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      return new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers
+      });
+    }
+    return res;
+  };
 
   // 3. Drop .html extensions and normalize legacy service slugs (301 Permanent Redirect)
   const legacySlugMap = {
@@ -303,7 +323,7 @@ export async function onRequest(context) {
   }
 
   if (!sitePassword || sitePassword.toLowerCase() === 'disable') {
-    return await context.next();
+    return finalizeResponse(await context.next());
   }
 
   const expectedToken = await getAuthToken(sitePassword);
@@ -346,7 +366,7 @@ export async function onRequest(context) {
   // 2. Check for Valid Auth Cookie
   const userToken = getCookie(request, 'sapvik_auth');
   if (userToken && constantTimeCompare(userToken, expectedToken)) {
-    return await context.next();
+    return finalizeResponse(await context.next());
   }
 
   // 3. User is not authenticated: Render Lock Screen
