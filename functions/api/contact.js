@@ -80,58 +80,63 @@ export async function onRequestPost(context) {
   let deliverySucceeded = false;
   const brevoKey = env ? env.BREVO_API_KEY : null;
   const webhookUrl = env ? env.LEAD_WEBHOOK_URL : null;
-  const teamEmailRaw = (env && env.NOTIFICATION_EMAIL) || 'leads@sapvik.com';
-  const recipients = teamEmailRaw
-    .split(',')
-    .map(e => e.trim())
-    .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
-    .map(email => ({ email }));
-  const teamRecipients = recipients.length > 0 ? recipients : [{ email: 'leads@sapvik.com' }];
-  const senderEmail = (env && env.BREVO_SENDER_EMAIL) || 'growth@sapvik.com';
+  const teamEmailRaw = (env && env.NOTIFICATION_EMAIL ? env.NOTIFICATION_EMAIL.trim() : '');
+  const teamRecipients = teamEmailRaw
+    ? teamEmailRaw
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+        .map(email => ({ email }))
+    : [];
+  const senderEmail = (env && env.BREVO_SENDER_EMAIL ? env.BREVO_SENDER_EMAIL.trim() : '');
 
   // A. Dispatch Transactional Alert Email to Team via Brevo SMTP API
   if (brevoKey) {
-    try {
-      const emailHtml = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #12161C;">
-          <h2 style="color: #C93A22;">[NEW DISCOVERY LEAD] Ref: ${escapeHtml(leadId)}</h2>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold; width: 140px;">Name:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(name)}</td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Phone:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Email:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Company:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(business || 'N/A')}</td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Website:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(website || 'N/A')}</td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Service Focus:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(service)}</td></tr>
-            <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Marketing Updates:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${marketingConsent ? 'Opted In' : 'Declined'}</td></tr>
-          </table>
-          <h3>Inquiry Notes:</h3>
-          <p style="background: #F4F5F6; padding: 12px; border-left: 3px solid #C93A22;">${escapeHtml(details || 'No additional notes provided.')}</p>
-          ${audit ? `<h3>Attached Scanner Finding:</h3><p>Domain: ${escapeHtml(String(audit.domain || audit.url || 'N/A'))} | Score: ${escapeHtml(String(audit.score !== undefined ? audit.score : 'N/A'))}/100 | Latency: ${escapeHtml(String(audit.latency !== undefined ? audit.latency : (audit.response_time_ms || 'N/A')))}ms | SSL: ${audit.has_ssl ? 'Active' : 'Unverified'}</p>` : ''}
-          <p style="font-size: 12px; color: #718096; margin-top: 24px;">Captured at ${new Date().toISOString()} | Client IP: ${escapeHtml(clientIp)}</p>
-        </div>
-      `;
+    if (!senderEmail || teamRecipients.length === 0) {
+      console.warn('Brevo alert dispatch skipped: BREVO_SENDER_EMAIL and NOTIFICATION_EMAIL must be explicitly configured in environment variables.');
+    } else {
+      try {
+        const emailHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #12161C;">
+            <h2 style="color: #C93A22;">[NEW DISCOVERY LEAD] Ref: ${escapeHtml(leadId)}</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold; width: 140px;">Name:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(name)}</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Phone:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Email:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Company:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(business || 'N/A')}</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Website:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(website || 'N/A')}</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Service Focus:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${escapeHtml(service)}</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #DDE2E7; font-weight: bold;">Marketing Updates:</td><td style="padding: 8px; border-bottom: 1px solid #DDE2E7;">${marketingConsent ? 'Opted In' : 'Declined'}</td></tr>
+            </table>
+            <h3>Inquiry Notes:</h3>
+            <p style="background: #F4F5F6; padding: 12px; border-left: 3px solid #C93A22;">${escapeHtml(details || 'No additional notes provided.')}</p>
+            ${audit ? `<h3>Attached Scanner Finding:</h3><p>Domain: ${escapeHtml(String(audit.domain || audit.url || 'N/A'))} | Score: ${escapeHtml(String(audit.score !== undefined ? audit.score : 'N/A'))}/100 | Latency: ${escapeHtml(String(audit.latency !== undefined ? audit.latency : (audit.response_time_ms || 'N/A')))}ms | SSL: ${audit.has_ssl ? 'Active' : 'Unverified'}</p>` : ''}
+            <p style="font-size: 12px; color: #718096; margin-top: 24px;">Captured at ${new Date().toISOString()} | Client IP: ${escapeHtml(clientIp)}</p>
+          </div>
+        `;
 
-      const mailResp = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'api-key': brevoKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          sender: { name: 'SAPVIK Lead Gateway', email: senderEmail },
-          to: teamRecipients,
-          replyTo: { email: email, name: name },
-          subject: `[Lead Alert] ${name} - ${business || service}`,
-          htmlContent: emailHtml
-        })
-      });
+        const mailResp = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'api-key': brevoKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            sender: { name: 'SAPVIK Lead Gateway', email: senderEmail },
+            to: teamRecipients,
+            replyTo: { email: email, name: name },
+            subject: `[Lead Alert] ${name} - ${business || service}`,
+            htmlContent: emailHtml
+          })
+        });
 
-      if (mailResp.ok) {
-        deliverySucceeded = true;
+        if (mailResp.ok) {
+          deliverySucceeded = true;
+        }
+      } catch (mailErr) {
+        console.error('Brevo SMTP alert delivery error:', mailErr);
       }
-    } catch (mailErr) {
-      console.error('Brevo SMTP alert delivery error:', mailErr);
     }
   }
 

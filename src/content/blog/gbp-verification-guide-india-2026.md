@@ -8,6 +8,7 @@ tags: ["Google Business Profile", "Local SEO", "Google Maps", "India Local Searc
 readingTime: "7 min read"
 featured: true
 relatedServiceSlug: "google-business-profile-management"
+image: "https://sapvik.com/assets/og-image.png"
 ---
 
 For commercial businesses across India—from healthcare clinics in Bangalore to commercial service providers in Delhi NCR and Mumbai—a Google Business Profile (GBP) is often the single highest-converting customer acquisition asset. For many high-intent smartphone searches, users initiate a direct phone call or driving direction request directly from map listings without browsing a separate website.
@@ -37,7 +38,7 @@ Modifying your primary category in high-trust verticals (healthcare, legal, emer
 
 ## 2. Passing Video Verification on the First Attempt
 
-Google now mandates interactive video verification for the vast majority of new profiles and re-instatements in India. Video submissions are frequently rejected because business owners film incomplete or unverified evidence.
+Google frequently requests video verification for new listings and re-instatements in commercial categories across India. Video submissions are often rejected because business owners film incomplete or unverified evidence.
 
 A successful video verification requires a continuous, unedited 60-to-90 second shot covering three non-negotiable proof pillars:
 
@@ -79,7 +80,7 @@ Once verified, ranking in the top 3 spots ("The Local Pack") for high-intent loc
 ```
 
 ### Pillar 1: Category Density & Service Attribute Mapping
-Your primary category determines ~60% of foundational keyword matching. Choose the most specific option available (e.g., `"Orthopedic Surgeon"` rather than generic `"Doctor"`). Then populate secondary categories for peripheral procedures.
+Your primary category serves as the foundational anchor for keyword matching and query relevance. Choose the most specific option available (e.g., `"Orthopedic Surgeon"` rather than generic `"Doctor"`). Then populate secondary categories for peripheral procedures.
 * Ensure every specific procedure or offering is entered into the **Custom Services** section with concise, descriptive text.
 
 ### Pillar 2: Review Velocity & Keyword-Rich Sentiment

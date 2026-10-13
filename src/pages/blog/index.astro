@@ -21,6 +21,7 @@ const collectionSchema = {
     "@type": "BlogPosting",
     "headline": post.data.title,
     "description": post.data.description,
+    "image": post.data.image || "https://sapvik.com/assets/og-image.png",
     "datePublished": post.data.pubDate.toISOString(),
     "url": `https://sapvik.com/blog/${post.id}`
   }))

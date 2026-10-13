@@ -8,6 +8,7 @@ tags: ["Meta Ads", "Google Ads", "Conversion Rate", "CAPI", "Lead Quality"]
 readingTime: "6 min read"
 featured: false
 relatedServiceSlug: "google-ads-meta-ads"
+image: "https://sapvik.com/assets/og-image.png"
 ---
 
 One of the most pervasive traps in Indian performance marketing is celebrating an artificially low **Cost Per Lead (CPL)**.

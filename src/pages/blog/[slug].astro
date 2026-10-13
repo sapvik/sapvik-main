@@ -33,7 +33,7 @@ const articleSchema = {
   "@id": `${canonicalUrl}#article`,
   "headline": post.data.title,
   "description": post.data.description,
-  "image": "https://sapvik.com/assets/og-image.png",
+  "image": post.data.image || "https://sapvik.com/assets/og-image.png",
   "datePublished": post.data.pubDate.toISOString(),
   "dateModified": (post.data.updatedDate || post.data.pubDate).toISOString(),
   "author": {

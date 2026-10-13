@@ -126,39 +126,20 @@ test('Middleware Gate: constantTimeCompare correctly compares strings in constan
   assert.equal(constantTimeCompare('', 'a'), false);
 });
 
-test('Middleware Gate: Logs console.warn once when falling back to default password', async () => {
-  resetSitePasswordWarnOnceForTests();
-  let warned = false;
-  const originalWarn = console.warn;
-  console.warn = (msg) => {
-    if (String(msg).includes('SITE_PASSWORD environment variable not set; using temporary default password')) {
-      warned = true;
+test('Middleware Gate: Unset or empty SITE_PASSWORD allows direct public access without locking', async () => {
+  const request1 = new Request('http://localhost:8082/');
+  let nextCalled = false;
+  const res1 = await onRequest({
+    request: request1,
+    env: {}, // No SITE_PASSWORD
+    next: async () => {
+      nextCalled = true;
+      return new Response('open public content');
     }
-  };
-
-  try {
-    const request1 = new Request('http://localhost:8082/');
-    const res1 = await onRequest({
-      request: request1,
-      env: {}, // No SITE_PASSWORD
-      next: async () => new Response('ok')
-    });
-    assert.equal(res1.status, 401);
-    assert.equal(warned, true);
-
-    // Second request should not duplicate warning
-    let warnedSecondTime = false;
-    console.warn = () => { warnedSecondTime = true; };
-    const request2 = new Request('http://localhost:8082/');
-    await onRequest({
-      request: request2,
-      env: {},
-      next: async () => new Response('ok')
-    });
-    assert.equal(warnedSecondTime, false);
-  } finally {
-    console.warn = originalWarn;
-  }
+  });
+  assert.equal(nextCalled, true);
+  assert.equal(res1.status, 200);
+  assert.equal(await res1.text(), 'open public content');
 });
 
 test('Middleware Gate: Allows authenticated requests with valid cookie', async () => {
@@ -194,20 +175,31 @@ test('Middleware Gate: Allows authenticated requests with valid cookie', async (
   assert.equal(await response.text(), 'protected data');
 });
 
-test('Middleware Gate: Bypasses gate when SITE_PASSWORD is "DISABLE" or empty', async () => {
-  let nextCalled = false;
-  const request = new Request('http://localhost:8082/');
-  const response = await onRequest({
-    request,
-    env: { SITE_PASSWORD: 'DISABLE' },
-    next: async () => {
-      nextCalled = true;
-      return new Response('public site');
-    }
-  });
+test('Middleware Gate: Bypasses gate when SITE_PASSWORD is "DISABLE", empty, whitespace, or unset', async () => {
+  const disableCases = [
+    { SITE_PASSWORD: 'DISABLE' },
+    { SITE_PASSWORD: 'disable' },
+    { SITE_PASSWORD: '' },
+    { SITE_PASSWORD: '   ' },
+    {},
+    null
+  ];
 
-  assert.equal(nextCalled, true);
-  assert.equal(await response.text(), 'public site');
+  for (const envObj of disableCases) {
+    let nextCalled = false;
+    const request = new Request('http://localhost:8082/');
+    const response = await onRequest({
+      request,
+      env: envObj,
+      next: async () => {
+        nextCalled = true;
+        return new Response('public site');
+      }
+    });
+
+    assert.equal(nextCalled, true, `Expected open access for env ${JSON.stringify(envObj)}`);
+    assert.equal(await response.text(), 'public site');
+  }
 });
 
 test('Middleware: Redirects www.sapvik.com to apex domain sapvik.com with 301', async () => {

@@ -1,5 +1,5 @@
 ---
-title: "Why Websites Bleed Revenue on Indian Mobile Networks: Core Web Vitals, Latency & The 280ms Edge Architecture"
+title: "Why Websites Bleed Revenue on Indian Mobile Networks: Core Web Vitals, Latency & Edge Architecture"
 description: "An engineering teardown of mobile 4G latency in India, JavaScript hydration bloat, and how modern static-first edge architectures eliminate bounce rates."
 pubDate: 2026-10-13
 updatedDate: 2026-10-14
@@ -8,6 +8,7 @@ tags: ["Web Performance", "Core Web Vitals", "Astro", "Mobile Speed", "Frontend 
 readingTime: "6 min read"
 featured: false
 relatedServiceSlug: "website-development"
+image: "https://sapvik.com/assets/og-image.png"
 ---
 
 In digital commerce and commercial B2B services, speed is rarely considered an engineering luxury—it is the single largest determinant of user bounce rates and ad campaign return on investment.
@@ -63,17 +64,17 @@ When all three metrics remain within the "Good" green threshold on real mobile C
 
 Most digital agencies in India deploy websites using WordPress paired with visual page builders like Elementor or Divi, or use client-heavy Single Page Application (SPA) templates.
 
-Here is what typical page builders inject into your visitor's browser:
+Here is an illustrative example of what typical page builders inject into your visitor's browser:
 
 ```
-Traditional Builder Payload:
+Illustrative Builder Payload (Typical bloated WordPress/page-builder footprint):
 ├── jQuery Core + jQuery Migrate (90KB)
 ├── Slider Revolution Script (180KB)
 ├── 14 Plugin-Specific CSS Files (240KB)
 ├── Google Fonts (4 weights downloaded over external CDN) (120KB)
 ├── Un-optimized Hero Image (1.8MB JPEG)
 └── 6 Tag Manager & Social Tracking Pixels (380KB)
-Total: ~2.8MB of blocking assets before first paint.
+Total: ~2.8MB of blocking assets before first paint (illustrative breakdown).
 ```
 
 The browser must halt rendering, make dozens of DNS lookups to third-party domains, and process redundant code before displaying your contact number.

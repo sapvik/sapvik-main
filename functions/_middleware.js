@@ -298,16 +298,10 @@ export async function onRequest(context) {
     return Response.redirect(targetUrl.toString(), 301);
   }
 
-  // If SITE_PASSWORD is explicitly set to 'DISABLE' or '', allow open public access
-  let sitePassword = 'sapvik2026';
-  if (env && env.SITE_PASSWORD) {
-    sitePassword = env.SITE_PASSWORD.trim();
-  } else {
-    if (!sitePasswordWarnedOnce) {
-      console.warn('SITE_PASSWORD environment variable not set; using temporary default password. Set SITE_PASSWORD in Cloudflare dashboard.');
-      sitePasswordWarnedOnce = true;
-    }
-  }
+  // Edge Password Gate:
+  // If SITE_PASSWORD is empty, unset, or set to 'DISABLE', allow open public access without any lock gate.
+  const rawSitePassword = env ? (env.SITE_PASSWORD ?? '') : '';
+  const sitePassword = typeof rawSitePassword === 'string' ? rawSitePassword.trim() : String(rawSitePassword).trim();
 
   if (!sitePassword || sitePassword.toLowerCase() === 'disable') {
     return finalizeResponse(await context.next());

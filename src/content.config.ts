@@ -13,7 +13,8 @@ const blog = defineCollection({
     tags: z.array(z.string()),
     readingTime: z.string(),
     featured: z.boolean().default(false),
-    relatedServiceSlug: z.string().optional()
+    relatedServiceSlug: z.string().optional(),
+    image: z.string().default('https://sapvik.com/assets/og-image.png')
   })
 });
 
