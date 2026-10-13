@@ -299,12 +299,18 @@ export async function onRequest(context) {
   }
 
   // Edge Password Gate:
-  // If SITE_PASSWORD is empty, unset, or set to 'DISABLE', allow open public access without any lock gate.
-  const rawSitePassword = env ? (env.SITE_PASSWORD ?? '') : '';
-  const sitePassword = typeof rawSitePassword === 'string' ? rawSitePassword.trim() : String(rawSitePassword).trim();
-
-  if (!sitePassword || sitePassword.toLowerCase() === 'disable') {
-    return finalizeResponse(await context.next());
+  // The gate is LOCKED by default to protect the site.
+  // Falls back to default password 'sapvik2026' if SITE_PASSWORD is unset.
+  // ONLY if SITE_PASSWORD is set to 'DISABLE' (or 'disabled'), allow open public access.
+  let sitePassword = 'sapvik2026';
+  if (env && env.SITE_PASSWORD !== undefined && env.SITE_PASSWORD !== null) {
+    const rawStr = String(env.SITE_PASSWORD).trim();
+    if (rawStr.toLowerCase() === 'disable' || rawStr.toLowerCase() === 'disabled') {
+      return finalizeResponse(await context.next());
+    }
+    if (rawStr.length > 0) {
+      sitePassword = rawStr;
+    }
   }
 
   const expectedToken = await getAuthToken(sitePassword);

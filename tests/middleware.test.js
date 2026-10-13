@@ -126,7 +126,7 @@ test('Middleware Gate: constantTimeCompare correctly compares strings in constan
   assert.equal(constantTimeCompare('', 'a'), false);
 });
 
-test('Middleware Gate: Unset or empty SITE_PASSWORD allows direct public access without locking', async () => {
+test('Middleware Gate: Unset SITE_PASSWORD locks with default password sapvik2026', async () => {
   const request1 = new Request('http://localhost:8082/');
   let nextCalled = false;
   const res1 = await onRequest({
@@ -137,9 +137,10 @@ test('Middleware Gate: Unset or empty SITE_PASSWORD allows direct public access 
       return new Response('open public content');
     }
   });
-  assert.equal(nextCalled, true);
-  assert.equal(res1.status, 200);
-  assert.equal(await res1.text(), 'open public content');
+  assert.equal(nextCalled, false);
+  assert.equal(res1.status, 401);
+  const body = await res1.text();
+  assert.ok(body.includes('Preview Authorization'));
 });
 
 test('Middleware Gate: Allows authenticated requests with valid cookie', async () => {
@@ -175,14 +176,12 @@ test('Middleware Gate: Allows authenticated requests with valid cookie', async (
   assert.equal(await response.text(), 'protected data');
 });
 
-test('Middleware Gate: Bypasses gate when SITE_PASSWORD is "DISABLE", empty, whitespace, or unset', async () => {
+test('Middleware Gate: Bypasses gate ONLY when SITE_PASSWORD is "DISABLE" or "disabled"', async () => {
   const disableCases = [
     { SITE_PASSWORD: 'DISABLE' },
     { SITE_PASSWORD: 'disable' },
-    { SITE_PASSWORD: '' },
-    { SITE_PASSWORD: '   ' },
-    {},
-    null
+    { SITE_PASSWORD: 'disabled' },
+    { SITE_PASSWORD: '  DISABLE  ' }
   ];
 
   for (const envObj of disableCases) {
