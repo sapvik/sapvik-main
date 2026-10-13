@@ -344,7 +344,7 @@ test.describe('SAPVIK Production Smoke Tests', () => {
 
     const serviceItems = dropdownMenu.locator('.dropdown-item');
     const count = await serviceItems.count();
-    expect(count).toBe(7);
+    expect(count).toBe(6);
 
     // Click on a service link in dropdown
     const firstService = serviceItems.first();
@@ -374,7 +374,7 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await expect(mobileList).toBeVisible();
     const mobileSublinks = mobileList.locator('.mobile-sublink');
     const sublinkCount = await mobileSublinks.count();
-    expect(sublinkCount).toBe(8); // 1 overview + 7 services
+    expect(sublinkCount).toBe(7); // 1 overview + 6 services
   });
 
 });

@@ -292,6 +292,12 @@ export async function onRequest(context) {
     return Response.redirect(targetUrl.toString(), 301);
   }
 
+  // 3b. Legacy Service Redirect: /services/branding -> /services/website-development (301 Permanent Redirect)
+  if (cleanPath === '/services/branding' || cleanPath === '/services/branding/') {
+    const targetUrl = new URL('/services/website-development' + url.search, url.origin);
+    return Response.redirect(targetUrl.toString(), 301);
+  }
+
   // If SITE_PASSWORD is explicitly set to 'DISABLE' or '', allow open public access
   let sitePassword = 'sapvik2026';
   if (env && env.SITE_PASSWORD) {

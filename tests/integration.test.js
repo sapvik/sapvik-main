@@ -32,7 +32,8 @@ test('Integration: Static files and critical assets exist in dist/ directory wit
     'services/google-ads-meta-ads.html',
     'services/social-media-management.html',
     'services/application-development.html',
-    'services/branding.html'
+    'blog.html',
+    'rss.xml'
   ];
 
   for (const file of criticalFiles) {

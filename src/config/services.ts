@@ -41,21 +41,21 @@ export const SERVICES: ServiceItem[] = [
     name: "Website Development",
     shortName: "Websites",
     slug: "website-development",
-    legacySlugs: ["websites-development"],
-    headline: "High-speed, accessible websites engineered for customer conversion & search rankings",
-    metaDescription: "Custom website development in India engineered for speed, high conversion rates, Core Web Vitals compliance, and clean commercial lead generation.",
-    description: "Custom web development built for speed, clean mobile navigation, structured SEO metadata, and clear conversion paths. We write maintainable, semantic code that loads rapidly on all mobile networks without bloated page weight or unnecessary third-party scripts.",
+    legacySlugs: ["websites-development", "branding"],
+    headline: "High-speed platforms & brand design systems engineered for customer conversion",
+    metaDescription: "Custom website development in India engineered for speed, visual brand distinction, Core Web Vitals compliance, and clean commercial lead generation.",
+    description: "Custom web development built for speed, bespoke visual brand standards, clean mobile navigation, structured SEO metadata, and clear conversion paths. We integrate cohesive typography pairing, WCAG contrast-compliant color tokens, and vector identity assets into maintainable, semantic code that loads rapidly on all mobile networks.",
     whoItsFor: [
       "Clinics, diagnostic centers, and healthcare providers requiring frictionless patient booking pathways and local credibility.",
       "B2B service providers and industrial manufacturers seeking professional lead generation pipelines with direct inquiry routing.",
-      "High-growth regional brands transition from slow template-builder sites to custom, high-speed architectures.",
+      "High-growth regional brands transitioning from slow template-builder sites to custom, high-speed architectures.",
       "Commercial firms wanting complete administrative source ownership, self-hosting flexibility, and zero vendor lock-in."
     ],
     methodology: [
       {
         step: "01",
-        title: "Information Architecture & User Flows",
-        description: "We map navigation, conversion checkpoints, and service catalogs based on real customer search behavior and decision journeys."
+        title: "Brand Architecture & User Flows",
+        description: "We map brand typography, color palettes, conversion checkpoints, and service catalogs based on real customer search behavior and decision journeys."
       },
       {
         step: "02",
@@ -70,6 +70,7 @@ export const SERVICES: ServiceItem[] = [
     ],
     deliverables: [
       "Custom responsive interface architecture designed for viewports from 320px to 4K displays",
+      "Brand identity system & design tokens (vector mark pairing, WCAG accessible palettes, typography hierarchy)",
       "High-speed mobile performance with rigorous Core Web Vitals optimization and minimal Cumulative Layout Shift (CLS)",
       "Serverless contact pipelines with encrypted lead transmission, bot deterrence, and direct executive notifications",
       "Comprehensive Schema.org entity metadata (ProfessionalService, Service, WebPage, BreadcrumbList)",
@@ -81,6 +82,10 @@ export const SERVICES: ServiceItem[] = [
       {
         question: "How long does a custom website development project typically take?",
         answer: "Most production websites are planned, built, tested, and deployed within 2 to 4 weeks, depending on catalog complexity and custom integration requirements. We provide weekly visual progress previews and adhere to strict milestone turnaround commitments."
+      },
+      {
+        question: "Do you include brand identity and design guidelines with web development?",
+        answer: "Yes. Every custom website we engineer incorporates a disciplined visual identity system. We define typography scales, color contrast specifications, vector brand assets, and responsive UI components so your commercial presence looks cohesive, authoritative, and memorable across all devices."
       },
       {
         question: "Do you build on proprietary site builders like Wix or WordPress?",
@@ -266,6 +271,7 @@ export const SERVICES: ServiceItem[] = [
     deliverables: [
       "High-intent search campaigns on Google Ads (Search, Call-Only, and Local Service ads)",
       "Demographic and interest-targeted audience funnels across Meta (Instagram & Facebook)",
+      "Branded campaign creative assets and high-converting visual ad formats tailored for search & social feeds",
       "Full server-side conversion tracking setup with GA4 and Conversions API (CAPI) event verification",
       "Weekly negative keyword maintenance to eliminate wasted ad spend on irrelevant search traffic",
       "Direct platform invoicing: ad spend is paid directly to Google and Meta with zero agency percentage surcharge"
@@ -302,7 +308,7 @@ export const SERVICES: ServiceItem[] = [
     shortName: "Social Media",
     slug: "social-media-management",
     legacySlugs: ["media-management"],
-    headline: "Structured commercial content production and organic brand distribution across digital channels",
+    headline: "Structured commercial content production, brand visual standards & organic distribution",
     metaDescription: "Professional social media management in India. Short-form video production, educational visual explainers, content scheduling, and commercial brand trust.",
     description: "End-to-end social media management designed to build authority, explain complex services clearly, and turn social attention into commercial trust. We focus on structured short-form video, case explainers, and consistent channel scheduling without low-effort fluff.",
     whoItsFor: [
@@ -331,7 +337,8 @@ export const SERVICES: ServiceItem[] = [
     deliverables: [
       "Monthly editorial calendar with scripted content themes and commercial talking points",
       "Short-form product and service explainer videos formatted for Instagram Reels, YouTube Shorts, and LinkedIn",
-      "Educational visual carousels, infographics, and customer milestone announcements",
+      "Custom branded social templates, vector carousel designs, and typography guidelines aligned with brand identity",
+      "Educational visual infographics, case explainers, and customer milestone announcements",
       "Multi-channel scheduling and publishing across LinkedIn, Instagram, and Facebook",
       "Monthly engagement telemetry detailing video retention, audience reach, and profile click-throughs"
     ],
@@ -421,70 +428,6 @@ export const SERVICES: ServiceItem[] = [
       {
         question: "Do you provide post-launch maintenance and technical support?",
         answer: "Yes. Every application deployment includes post-launch operational support, security patching, uptime monitoring, and optional ongoing feature development retainers."
-      }
-    ]
-  },
-  {
-    id: "branding",
-    code: "SRV-07",
-    name: "Brand Identity & Strategy",
-    shortName: "Brand Identity",
-    slug: "branding",
-    headline: "Disciplined visual identity systems, typography guidelines, and commercial brand standards",
-    metaDescription: "Strategic brand identity design in India. Vector logos, color palettes, typography hierarchy, and comprehensive brand guidelines for ambitious businesses.",
-    description: "Disciplined brand design systems that establish visual consistency across websites, presentations, marketing collateral, and digital communications. We create timeless visual identities that convey immediate commercial credibility, market authority, and lasting customer recall.",
-    whoItsFor: [
-      "Emerging enterprises upgrading from generic, amateur visual branding to a credible market-leading identity.",
-      "Established businesses launching new divisions, product lines, or specialty services requiring cohesive brand architecture.",
-      "Organizations planning a major digital transformation that demands modern, accessible visual standards.",
-      "Companies wanting a structured design system with reusable digital assets for in-house teams and external vendors."
-    ],
-    methodology: [
-      {
-        step: "01",
-        title: "Market Positioning & Core Identity Pillars",
-        description: "We clarify your brand purpose, competitive differentiation, audience expectations, and core personality attributes."
-      },
-      {
-        step: "02",
-        title: "Visual System & Design Architecture",
-        description: "We design vector mark options, validate color contrast ratios, pair typography systems, and draft usage rules."
-      },
-      {
-        step: "03",
-        title: "Asset Kit Production & Brand Guidelines",
-        description: "We deliver vector production files, responsive logo lockups, digital social templates, and a comprehensive brand book."
-      }
-    ],
-    deliverables: [
-      "Vector master logo marks with responsive lockups (horizontal, stacked, icon-only, dark/light variations)",
-      "Curated color palette with strict WCAG accessibility contrast ratios and HEX/RGB/CMYK specifications",
-      "Typography pairing specifications with web font licensing guidance and hierarchy rules",
-      "Comprehensive digital brand guidelines manual covering clear space, misuse rules, and layout principles",
-      "Ready-to-use digital asset kit (SVG, high-res PNG, favicon set, email signatures, letterhead templates)"
-    ],
-    metricsFocus: "Visual consistency, design token reusability, brand recognition",
-    iconName: "palette",
-    faqs: [
-      {
-        question: "What files do we receive upon brand identity completion?",
-        answer: "You receive a complete master brand package containing vector files (.SVG, .AI, .EPS), high-resolution transparent PNGs, web-optimized assets, complete favicon packs, and a comprehensive PDF Brand Guidelines manual."
-      },
-      {
-        question: "How many design concepts do you present?",
-        answer: "We typically present 2 to 3 thoroughly developed, strategically distinct identity systems—complete with real-world applications (website headers, business cards, social media profiles)—rather than a dozen superficial sketches."
-      },
-      {
-        question: "How long does a brand identity project take?",
-        answer: "A complete brand identity and guideline project typically takes 2 to 3 weeks from initial positioning discovery to final asset pack delivery."
-      },
-      {
-        question: "Are the color palettes and typography tested for web accessibility?",
-        answer: "Yes. Every color pairing is validated against WCAG 2.1 AA/AAA contrast guidelines to ensure high readability on all digital screens and compliant accessibility standards."
-      },
-      {
-        question: "Can you design matching marketing collateral and pitch decks?",
-        answer: "Yes. Once your core brand identity is finalized, we can produce matching digital letterheads, presentation slide templates, social media kits, and corporate brochures."
       }
     ]
   }

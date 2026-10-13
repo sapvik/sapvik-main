@@ -275,3 +275,16 @@ test('Middleware: Redirects .html URLs to clean URLs with 301', async () => {
   }
 });
 
+test('Middleware: Redirects legacy /services/branding to /services/website-development with 301', async () => {
+  const request = new Request('https://sapvik.com/services/branding');
+  const response = await onRequest({
+    request,
+    env: { SITE_PASSWORD: 'DISABLE' },
+    next: async () => new Response('should not reach')
+  });
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get('Location'), 'https://sapvik.com/services/website-development');
+});
+
+

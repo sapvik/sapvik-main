@@ -10,7 +10,7 @@ test('Calculator Math: Promotions-only lead generation rule', () => {
   const noPromoState = {
     budget: 100000,
     industryKey: 'healthcare_wellness',
-    selectedServices: ['websites', 'gmb', 'media', 'apps', 'branding']
+    selectedServices: ['websites', 'gmb', 'media', 'apps', 'seo']
   };
 
   const outputNoPromo = computeProjections(noPromoState, assumptions);
@@ -29,7 +29,7 @@ test('Calculator Math: Promotions-only lead generation rule', () => {
   const promoPlusOtherState = {
     budget: 100000,
     industryKey: 'healthcare_wellness',
-    selectedServices: ['promotions', 'websites', 'branding']
+    selectedServices: ['promotions', 'websites', 'seo']
   };
 
   const outputPromoOnly = computeProjections(promoOnlyState, assumptions);

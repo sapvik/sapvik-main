@@ -11,8 +11,7 @@ const AVAILABLE_SERVICES = [
   { id: 'seo', label: 'Search Engine Optimization (SEO)' },
   { id: 'promotions', label: 'Google Ads & Meta Ads' },
   { id: 'media', label: 'Social Media Management' },
-  { id: 'apps', label: 'Application Development' },
-  { id: 'branding', label: 'Brand Identity' }
+  { id: 'apps', label: 'Application Development' }
 ];
 
 export default function Calculator() {
