@@ -291,4 +291,40 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await expect(manualCta).toBeVisible();
   });
 
+  test('Blog & Insights Engine: Renders articles, filters by category, loads post detail, and provides RSS feed', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/blog');
+
+    // Verify blog hero & cards
+    await expect(page.locator('.blog-hero-title')).toBeVisible();
+    const blogCards = page.locator('.blog-card');
+    await expect(blogCards.first()).toBeVisible();
+    const count = await blogCards.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+
+    // Verify category filtering works
+    const localSeoTab = page.locator('.category-tab-btn[data-category="Local SEO"]');
+    await localSeoTab.click();
+    await expect(localSeoTab).toHaveClass(/active/);
+
+    // Click on a blog post
+    const firstArticleLink = page.locator('.blog-card a.blog-card-link').first();
+    const articleHref = await firstArticleLink.getAttribute('href');
+    await firstArticleLink.click();
+
+    // Verify post page loaded
+    await page.waitForURL(`**${articleHref}`);
+    await expect(page.locator('.article-headline')).toBeVisible();
+    await expect(page.locator('.article-content-body')).toBeVisible();
+    await expect(page.locator('.service-bridge-box')).toBeVisible();
+
+    // Verify RSS feed returns valid XML
+    const rssRes = await page.goto('/rss.xml');
+    expect(rssRes.status()).toBe(200);
+    const rssText = await rssRes.text();
+    expect(rssText).toContain('<rss version="2.0"');
+    expect(rssText).toContain('SAPVIK Insights | Digital Growth &amp; Web Engineering');
+  });
+
 });
+

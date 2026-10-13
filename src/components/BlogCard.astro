@@ -1,0 +1,149 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+const formattedDate = new Date(post.data.pubDate).toLocaleDateString('en-IN', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+});
+---
+
+<article class={`blog-card frame-box ${featured ? 'blog-card-featured' : ''}`}>
+  <div class="blog-card-meta">
+    <span class="badge badge-subtle">{post.data.category}</span>
+    <span class="mono-label blog-card-date">{formattedDate}</span>
+    <span class="mono-label blog-card-readtime">• {post.data.readingTime}</span>
+  </div>
+
+  <h3 class="blog-card-title">
+    <a href={`/blog/${post.id}`} class="blog-card-link">
+      {post.data.title}
+    </a>
+  </h3>
+
+  <p class="blog-card-description">
+    {post.data.description}
+  </p>
+
+  <div class="blog-card-footer">
+    <div class="blog-card-tags">
+      {post.data.tags.slice(0, 3).map((tag) => (
+        <span class="tag-pill">#{tag}</span>
+      ))}
+    </div>
+    <a href={`/blog/${post.id}`} class="blog-read-cta" aria-label={`Read ${post.data.title}`}>
+      <span>Read Guide</span>
+      <span aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+</article>
+
+<style>
+  .blog-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+  }
+
+  .blog-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--c-vermilion);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .blog-card-featured {
+    border-left: 3px solid var(--c-vermilion);
+    background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-surface-subdued) 100%);
+  }
+
+  .blog-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .blog-card-date,
+  .blog-card-readtime {
+    font-size: 0.72rem;
+    color: var(--c-text-muted);
+  }
+
+  .blog-card-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-bottom: 0.75rem;
+  }
+
+  .blog-card-link {
+    color: var(--c-text-primary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .blog-card-link:hover {
+    color: var(--c-vermilion);
+  }
+
+  .blog-card-description {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--c-text-secondary);
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+  }
+
+  .blog-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid var(--c-border);
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .blog-card-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .tag-pill {
+    font-size: 0.68rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--c-text-muted);
+    background: var(--c-surface-subdued);
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--c-border);
+  }
+
+  .blog-read-cta {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--c-vermilion);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: transform 0.15s ease;
+  }
+
+  .blog-read-cta:hover {
+    transform: translateX(2px);
+  }
+</style>

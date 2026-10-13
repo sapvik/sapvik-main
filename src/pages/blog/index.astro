@@ -1,0 +1,225 @@
+---
+import Base from '../../layouts/Base.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog');
+const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const featuredPost = sortedPosts.find((p) => p.data.featured) || sortedPosts[0];
+const regularPosts = sortedPosts.filter((p) => p.id !== featuredPost?.id);
+
+const categories = ['All', 'Local SEO', 'Web Engineering', 'Paid Acquisition'];
+
+const collectionSchema = {
+  "@type": "CollectionPage",
+  "@id": "https://sapvik.com/blog/#collection",
+  "name": "SAPVIK Digital Growth Insights & Technical Teardowns",
+  "description": "Technical teardowns on Local SEO, Google Business Profile verification, Core Web Vitals, and conversion rate optimization for commercial businesses.",
+  "url": "https://sapvik.com/blog",
+  "hasPart": sortedPosts.map((post) => ({
+    "@type": "BlogPosting",
+    "headline": post.data.title,
+    "description": post.data.description,
+    "datePublished": post.data.pubDate.toISOString(),
+    "url": `https://sapvik.com/blog/${post.id}`
+  }))
+};
+---
+
+<Base
+  title="Digital Growth Insights & Engineering Guides | SAPVIK"
+  description="Technical breakdowns on Google Business Profile verification, local SEO dominance, Core Web Vitals optimization, and conversion marketing from SAPVIK."
+  canonical="https://sapvik.com/blog"
+  schema={collectionSchema}
+>
+  <section class="blog-hero-section" aria-label="Insights Header">
+    <div class="container">
+      <div class="blog-hero-header">
+        <div class="hero-meta-strip">
+          <span class="badge">GROWTH INSIGHTS</span>
+          <span class="mono-label">Technical Blueprints & Teardowns</span>
+        </div>
+        <h1 class="blog-hero-title">
+          Engineering Real Growth: Technical Guides for Indian Businesses<span class="vermilion-square" aria-hidden="true"></span>
+        </h1>
+        <p class="blog-hero-subtitle">
+          Factual, hype-free frameworks on Google Maps algorithms, edge web speed, paid customer acquisition economics, and conversion architecture.
+        </p>
+
+        <!-- Category Filter -->
+        <div class="category-filter-bar" role="tablist" aria-label="Article categories">
+          {categories.map((cat, i) => (
+            <button
+              type="button"
+              class={`category-tab-btn ${i === 0 ? 'active' : ''}`}
+              data-category={cat}
+              role="tab"
+              aria-selected={i === 0 ? 'true' : 'false'}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Featured Spotlight Post -->
+      {featuredPost && (
+        <div class="featured-spotlight-wrapper" data-category={featuredPost.data.category}>
+          <div class="mono-label featured-badge">★ FEATURED ANALYSIS</div>
+          <BlogCard post={featuredPost} featured={true} />
+        </div>
+      )}
+
+      <!-- Article Grid -->
+      <div class="blog-grid" id="blogPostsGrid">
+        {regularPosts.map((post) => (
+          <div class="blog-grid-item" data-category={post.data.category}>
+            <BlogCard post={post} />
+          </div>
+        ))}
+      </div>
+
+      <!-- Conversion Bridge Card -->
+      <div class="frame-box blog-cta-bridge" style="margin-top: 4rem; text-align: center; padding: 3rem 2rem; background: var(--c-surface-subdued);">
+        <div class="mono-label" style="color: var(--c-vermilion); margin-bottom: 0.5rem;">Need Hands-On Execution?</div>
+        <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.75rem;">
+          Turn Technical Insights into Verified Revenue
+        </h2>
+        <p style="max-width: 600px; margin: 0 auto 1.75rem auto; color: var(--c-text-secondary); font-size: 0.95rem; line-height: 1.6;">
+          Whether recovering a suspended Google Business Profile or engineering a sub-second web platform, our team deploys custom solutions with full SLA accountability.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="/#contact" class="btn btn-vermilion btn-md">Request Strategic Growth Audit</a>
+          <a href="/#scanner" class="btn btn-secondary btn-md">Run Live Website SEO Check &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .blog-hero-section {
+    padding: 7rem 0 5rem 0;
+  }
+
+  .blog-hero-header {
+    max-width: 840px;
+    margin-bottom: 3rem;
+  }
+
+  .blog-hero-title {
+    font-size: 2.75rem;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 1rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .blog-hero-title {
+      font-size: 2rem;
+    }
+  }
+
+  .blog-hero-subtitle {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--c-text-secondary);
+    margin-bottom: 2rem;
+  }
+
+  .category-filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  .category-tab-btn {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-secondary);
+    padding: 0.45rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .category-tab-btn:hover {
+    border-color: var(--c-text-primary);
+    color: var(--c-text-primary);
+  }
+
+  .category-tab-btn.active {
+    background: var(--c-text-primary);
+    color: #FFFFFF;
+    border-color: var(--c-text-primary);
+  }
+
+  .featured-spotlight-wrapper {
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+
+  .featured-badge {
+    color: var(--c-vermilion);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.75rem;
+  }
+
+  @media (max-width: 640px) {
+    .blog-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .blog-grid-item.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  function initCategoryFilter() {
+    const buttons = document.querySelectorAll('.category-tab-btn');
+    const items = document.querySelectorAll('.blog-grid-item, .featured-spotlight-wrapper');
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        buttons.forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+
+        const cat = btn.getAttribute('data-category') || 'All';
+
+        items.forEach((item) => {
+          const itemCat = item.getAttribute('data-category');
+          if (cat === 'All' || itemCat === cat) {
+            (item as HTMLElement).style.display = '';
+          } else {
+            (item as HTMLElement).style.display = 'none';
+          }
+        });
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCategoryFilter);
+  } else {
+    initCategoryFilter();
+  }
+</script>

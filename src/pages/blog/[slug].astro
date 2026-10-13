@@ -1,0 +1,390 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+import { SERVICES } from '../../config/services';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post }
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const formattedDate = new Date(post.data.pubDate).toLocaleDateString('en-IN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+
+// Lookup related service if defined
+const relatedService = post.data.relatedServiceSlug
+  ? SERVICES.find((s) => s.slug === post.data.relatedServiceSlug)
+  : null;
+
+// JSON-LD Schemas: BlogPosting + BreadcrumbList
+const canonicalUrl = `https://sapvik.com/blog/${post.id}`;
+
+const articleSchema = {
+  "@type": "BlogPosting",
+  "@id": `${canonicalUrl}#article`,
+  "headline": post.data.title,
+  "description": post.data.description,
+  "datePublished": post.data.pubDate.toISOString(),
+  "dateModified": (post.data.updatedDate || post.data.pubDate).toISOString(),
+  "author": {
+    "@type": "Organization",
+    "name": post.data.author,
+    "url": "https://sapvik.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "SAPVIK",
+    "url": "https://sapvik.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://sapvik.com/assets/logo.png"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": canonicalUrl
+  }
+};
+
+const breadcrumbSchema = {
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://sapvik.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog & Insights",
+      "item": "https://sapvik.com/blog"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": post.data.title,
+      "item": canonicalUrl
+    }
+  ]
+};
+---
+
+<Base
+  title={`${post.data.title} | SAPVIK Insights`}
+  description={post.data.description}
+  canonical={canonicalUrl}
+  ogType="article"
+  schema={[articleSchema, breadcrumbSchema]}
+>
+  <article class="article-page-container">
+    <div class="container article-container">
+      
+      <!-- Breadcrumb Navigation -->
+      <nav class="article-breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><span>/</span></li>
+          <li><a href="/blog">Insights</a></li>
+          <li><span>/</span></li>
+          <li aria-current="page"><span>{post.data.category}</span></li>
+        </ol>
+      </nav>
+
+      <!-- Article Header -->
+      <header class="article-header">
+        <div class="article-meta-strip">
+          <span class="badge">{post.data.category}</span>
+          <span class="mono-label">{formattedDate}</span>
+          <span class="mono-label">• {post.data.readingTime}</span>
+        </div>
+
+        <h1 class="article-headline">
+          {post.data.title}
+        </h1>
+
+        <p class="article-lead">
+          {post.data.description}
+        </p>
+
+        <div class="article-author-row">
+          <div class="author-avatar-badge">SP</div>
+          <div>
+            <div class="author-name">{post.data.author}</div>
+            <div class="author-title">Technical Strategy & Client Delivery</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Prose Content -->
+      <div class="article-content-body">
+        <Content />
+      </div>
+
+      <!-- Service Bridge Box (Hub & Spoke Internal Link) -->
+      {relatedService && (
+        <aside class="frame-box service-bridge-box" aria-label="Related Service Offering">
+          <div class="mono-label" style="color: var(--c-vermilion); margin-bottom: 0.35rem;">Related Growth Solution</div>
+          <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem;">
+            {relatedService.name}
+          </h3>
+          <p style="font-size: 0.92rem; color: var(--c-text-secondary); line-height: 1.55; margin-bottom: 1.25rem;">
+            {relatedService.headline}
+          </p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <a href={`/services/${relatedService.slug}`} class="btn btn-vermilion btn-sm">
+              <span>Explore {relatedService.shortName} Solution</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="/#contact" class="btn btn-secondary btn-sm">
+              <span>Book Strategic Consultation</span>
+            </a>
+          </div>
+        </aside>
+      )}
+
+      <!-- Tags & Share Footer -->
+      <footer class="article-footer">
+        <div class="article-tags-list">
+          <span class="mono-label" style="margin-right: 0.5rem;">TAGS:</span>
+          {post.data.tags.map((tag) => (
+            <span class="tag-pill">#{tag}</span>
+          ))}
+        </div>
+
+        <div class="article-back-link">
+          <a href="/blog" class="btn btn-secondary btn-sm">&larr; Back to All Insights</a>
+        </div>
+      </footer>
+
+    </div>
+  </article>
+</Base>
+
+<style>
+  .article-page-container {
+    padding: 7rem 0 5rem 0;
+  }
+
+  .article-container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  .article-breadcrumb {
+    margin-bottom: 2rem;
+    font-size: 0.8rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .article-breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-wrap: wrap;
+    color: var(--c-text-muted);
+  }
+
+  .article-breadcrumb a {
+    color: var(--c-text-secondary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .article-breadcrumb a:hover {
+    color: var(--c-vermilion);
+  }
+
+  .article-header {
+    margin-bottom: 3.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .article-meta-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .article-headline {
+    font-size: 2.65rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.25rem;
+    color: var(--c-text-primary);
+  }
+
+  @media (max-width: 768px) {
+    .article-headline {
+      font-size: 1.95rem;
+    }
+  }
+
+  .article-lead {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--c-text-secondary);
+    margin-bottom: 2rem;
+  }
+
+  .article-author-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .author-avatar-badge {
+    width: 42px;
+    height: 42px;
+    background: var(--c-vermilion);
+    color: #FFFFFF;
+    font-weight: 900;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--c-border);
+  }
+
+  .author-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--c-text-primary);
+  }
+
+  .author-title {
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  /* Editorial Markdown Body Styles */
+  .article-content-body {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--c-text-primary);
+  }
+
+  .article-content-body :global(h2) {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 3rem 0 1.25rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .article-content-body :global(h3) {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 2.25rem 0 1rem 0;
+  }
+
+  .article-content-body :global(p) {
+    margin-bottom: 1.5rem;
+    color: var(--c-text-secondary);
+  }
+
+  .article-content-body :global(ul),
+  .article-content-body :global(ol) {
+    margin-bottom: 1.75rem;
+    padding-left: 1.5rem;
+    color: var(--c-text-secondary);
+  }
+
+  .article-content-body :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .article-content-body :global(strong) {
+    color: var(--c-text-primary);
+  }
+
+  .article-content-body :global(blockquote) {
+    margin: 2rem 0;
+    padding: 1rem 1.5rem;
+    background: var(--c-surface-subdued);
+    border-left: 3px solid var(--c-vermilion);
+    font-style: italic;
+    color: var(--c-text-primary);
+  }
+
+  .article-content-body :global(pre) {
+    margin: 2rem 0;
+    padding: 1.25rem;
+    background: #0D1117;
+    color: #E6EDF3;
+    border: 1px solid var(--c-border);
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .article-content-body :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--c-surface-subdued);
+    padding: 0.15rem 0.35rem;
+    border: 1px solid var(--c-border);
+  }
+
+  .article-content-body :global(pre code) {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.85rem;
+  }
+
+  .service-bridge-box {
+    margin: 4rem 0 2rem 0;
+    padding: 2rem;
+    background: var(--c-surface-subdued);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--c-vermilion);
+  }
+
+  .article-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--c-border);
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .article-tags-list {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .tag-pill {
+    font-size: 0.72rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--c-text-muted);
+    background: var(--c-surface-subdued);
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--c-border);
+  }
+</style>
