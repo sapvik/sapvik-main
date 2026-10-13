@@ -326,5 +326,56 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     expect(rssText).toContain('SAPVIK Insights | Digital Growth &amp; Web Engineering');
   });
 
+  test('Navbar: Shows clean labels without serial numbers, and provides interactive services dropdown', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+
+    // Verify nav links exist without serial numbers (e.g. no "01.", "02.")
+    const servicesLink = page.locator('#servicesMenuBtn');
+    await expect(servicesLink).toBeVisible();
+    await expect(servicesLink).toHaveText(/Services/);
+    await expect(page.locator('.nav-index')).toBeHidden();
+
+    // Verify services dropdown reveals all 7 services
+    const dropdownMenu = page.locator('#servicesDropdownMenu');
+    const dropdownTrigger = page.locator('#servicesDropdown');
+    await dropdownTrigger.hover();
+    await expect(dropdownMenu).toBeVisible();
+
+    const serviceItems = dropdownMenu.locator('.dropdown-item');
+    const count = await serviceItems.count();
+    expect(count).toBe(7);
+
+    // Click on a service link in dropdown
+    const firstService = serviceItems.first();
+    const serviceHref = await firstService.getAttribute('href');
+    await firstService.click();
+
+    // Verify routed to service page
+    await page.waitForURL(`**${serviceHref}`);
+    expect(page.url()).toContain('/services/');
+
+    // Verify mobile drawer accordion on mobile viewport
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/');
+
+    const hamburger = page.locator('#hamburgerBtn');
+    await hamburger.click();
+
+    const mobileServicesToggle = page.locator('#mobileServicesToggle');
+    await expect(mobileServicesToggle).toBeVisible();
+    await expect(mobileServicesToggle).toHaveText(/Services/);
+
+    const mobileList = page.locator('#mobileServicesList');
+    await expect(mobileList).toBeHidden();
+
+    // Tap to expand
+    await mobileServicesToggle.click();
+    await expect(mobileList).toBeVisible();
+    const mobileSublinks = mobileList.locator('.mobile-sublink');
+    const sublinkCount = await mobileSublinks.count();
+    expect(sublinkCount).toBe(8); // 1 overview + 7 services
+  });
+
 });
 

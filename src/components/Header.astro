@@ -1,5 +1,6 @@
 ---
 import { SITE } from '../config/site';
+import { SERVICES } from '../config/services';
 ---
 
 
@@ -13,14 +14,58 @@ import { SITE } from '../config/site';
     <!-- Desktop Nav -->
     <nav aria-label="Main Navigation">
       <ul class="nav-links">
-        <li><a href="/#services" class="nav-link"><span class="nav-index">01.</span>Services</a></li>
-        <li><a href="/#heatmap" class="nav-link"><span class="nav-index">02.</span>Local Heatmap</a></li>
-        <li><a href="/#calculator" class="nav-link"><span class="nav-index">03.</span>Simulator</a></li>
-        <li><a href="/#process" class="nav-link"><span class="nav-index">04.</span>Process</a></li>
-        <li><a href="/#proof" class="nav-link"><span class="nav-index">05.</span>Proof</a></li>
-        <li><a href="/#faq" class="nav-link"><span class="nav-index">06.</span>FAQ</a></li>
-        <li><a href="/blog" class="nav-link"><span class="nav-index">07.</span>Insights</a></li>
-        <li><a href="/#contact" class="nav-link"><span class="nav-index">08.</span>Contact</a></li>
+        <li class="nav-item-dropdown" id="servicesDropdown">
+          <a
+            href="/#services"
+            class="nav-link nav-dropdown-trigger"
+            id="servicesMenuBtn"
+            aria-expanded="false"
+            aria-haspopup="true"
+            aria-controls="servicesDropdownMenu"
+          >
+            <span>Services</span>
+            <svg class="dropdown-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+
+          <div class="nav-dropdown-menu" id="servicesDropdownMenu" role="region" aria-label="Growth Services Menu">
+            <div class="dropdown-header-strip">
+              <span class="mono-label">Growth Capabilities</span>
+              <a href="/#services" class="dropdown-all-services-link">
+                <span>All Services Overview</span>
+                <span aria-hidden="true">&rarr;</span>
+              </a>
+            </div>
+
+            <div class="dropdown-grid">
+              {SERVICES.map((s) => (
+                <a href={`/services/${s.slug}`} class="dropdown-item">
+                  <div class="dropdown-item-top">
+                    <span class="dropdown-item-title">{s.name}</span>
+                    <span class="dropdown-item-code">{s.code}</span>
+                  </div>
+                  <span class="dropdown-item-desc">{s.headline}</span>
+                </a>
+              ))}
+            </div>
+
+            <div class="dropdown-footer-strip">
+              <span class="dropdown-footer-text">Engineered for commercial conversion & local authority</span>
+              <a href="/#contact" class="dropdown-footer-cta">
+                <span>Request Growth Audit &rarr;</span>
+              </a>
+            </div>
+          </div>
+        </li>
+
+        <li><a href="/#heatmap" class="nav-link">Local Heatmap</a></li>
+        <li><a href="/#calculator" class="nav-link">Simulator</a></li>
+        <li><a href="/#process" class="nav-link">Process</a></li>
+        <li><a href="/#proof" class="nav-link">Proof</a></li>
+        <li><a href="/#faq" class="nav-link">FAQ</a></li>
+        <li><a href="/blog" class="nav-link">Insights</a></li>
+        <li><a href="/#contact" class="nav-link">Contact</a></li>
       </ul>
     </nav>
 
@@ -40,14 +85,44 @@ import { SITE } from '../config/site';
 <!-- Mobile Navigation Sheet -->
 <aside class="mobile-nav-drawer" id="mobileDrawer" aria-label="Mobile Navigation Menu" aria-hidden="true">
   <ul class="mobile-nav-links">
-    <li><a href="/#services" class="mobile-nav-link">01. Services</a></li>
-    <li><a href="/#heatmap" class="mobile-nav-link">02. Local Heatmap</a></li>
-    <li><a href="/#calculator" class="mobile-nav-link">03. Growth Simulator</a></li>
-    <li><a href="/#process" class="mobile-nav-link">04. Process</a></li>
-    <li><a href="/#proof" class="mobile-nav-link">05. Proof</a></li>
-    <li><a href="/#faq" class="mobile-nav-link">06. FAQ</a></li>
-    <li><a href="/blog" class="mobile-nav-link">07. Insights</a></li>
-    <li><a href="/#contact" class="mobile-nav-link">08. Contact</a></li>
+    <li class="mobile-nav-item-dropdown" id="mobileServicesGroup">
+      <button 
+        type="button" 
+        class="mobile-dropdown-toggle" 
+        id="mobileServicesToggle" 
+        aria-expanded="false"
+        aria-controls="mobileServicesList"
+      >
+        <span>Services</span>
+        <svg class="mobile-dropdown-chevron" width="12" height="8" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <ul class="mobile-dropdown-sublist" id="mobileServicesList">
+        <li>
+          <a href="/#services" class="mobile-sublink mobile-sublink-all">
+            <span>All Services Overview</span>
+            <span>&rarr;</span>
+          </a>
+        </li>
+        {SERVICES.map((s) => (
+          <li>
+            <a href={`/services/${s.slug}`} class="mobile-sublink">
+              <span>{s.name}</span>
+              <span class="mobile-sublink-code">{s.code}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </li>
+
+    <li><a href="/#heatmap" class="mobile-nav-link">Local Heatmap</a></li>
+    <li><a href="/#calculator" class="mobile-nav-link">Growth Simulator</a></li>
+    <li><a href="/#process" class="mobile-nav-link">Process</a></li>
+    <li><a href="/#proof" class="mobile-nav-link">Proof</a></li>
+    <li><a href="/#faq" class="mobile-nav-link">FAQ</a></li>
+    <li><a href="/blog" class="mobile-nav-link">Insights</a></li>
+    <li><a href="/#contact" class="mobile-nav-link">Contact</a></li>
   </ul>
   <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem;">
     <a href="/#contact" class="btn btn-vermilion btn-lg btn-full">Request Growth Audit</a>
@@ -61,7 +136,7 @@ import { SITE } from '../config/site';
     const toggleBtn = document.getElementById('hamburgerBtn') || document.getElementById('mobileMenuToggle');
     const drawer = document.getElementById('mobileDrawer') || document.getElementById('mobileNavDrawer');
     const mainContent = document.getElementById('mainContent') || document.getElementById('main-content');
-    const drawerLinks = document.querySelectorAll('.mobile-nav-link, .mobile-nav-drawer .btn');
+    const drawerLinks = document.querySelectorAll('.mobile-nav-link, .mobile-sublink, .mobile-nav-drawer .btn');
 
     // Sticky header background on scroll
     window.addEventListener('scroll', () => {
@@ -71,6 +146,47 @@ import { SITE } from '../config/site';
         header?.classList.remove('scrolled');
       }
     }, { passive: true });
+
+    // Desktop Services Dropdown toggling for touch & click
+    const servicesDropdown = document.getElementById('servicesDropdown');
+    const servicesMenuBtn = document.getElementById('servicesMenuBtn');
+    if (servicesDropdown && servicesMenuBtn) {
+      servicesMenuBtn.addEventListener('click', (e) => {
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+          if (!servicesDropdown.classList.contains('is-open')) {
+            e.preventDefault();
+            servicesDropdown.classList.add('is-open');
+            servicesMenuBtn.setAttribute('aria-expanded', 'true');
+          }
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!servicesDropdown.contains(e.target as Node)) {
+          servicesDropdown.classList.remove('is-open');
+          servicesMenuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && servicesDropdown.classList.contains('is-open')) {
+          servicesDropdown.classList.remove('is-open');
+          servicesMenuBtn.setAttribute('aria-expanded', 'false');
+          servicesMenuBtn.focus();
+        }
+      });
+    }
+
+    // Mobile Services Accordion Toggle
+    const mobileServicesToggle = document.getElementById('mobileServicesToggle');
+    const mobileServicesGroup = document.getElementById('mobileServicesGroup');
+    if (mobileServicesToggle && mobileServicesGroup) {
+      mobileServicesToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = mobileServicesGroup.classList.toggle('open');
+        mobileServicesToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
 
     if (!toggleBtn || !drawer) return;
 
