@@ -96,6 +96,7 @@ const jsonLd = {
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
+  <link rel="alternate" type="application/rss+xml" title="SAPVIK Insights" href="/rss.xml" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content={ogType} />
@@ -139,12 +140,31 @@ const jsonLd = {
     });
   </script>
 
+  <!-- Google Tag Manager Snippet (Controlled by Consent Mode v2) -->
+  {(() => {
+    const gtmId = import.meta.env.PUBLIC_GTM_ID || 'GTM-SAPVIK1';
+    return (
+      <script is:inline define:vars={{ gtmId }}>
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer',gtmId);
+      </script>
+    );
+  })()}
+
   <!-- Cloudflare Turnstile: only loaded on pages containing interactive forms/scanner -->
   {loadTurnstile && (
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   )}
 </head>
 <body>
+  <!-- Google Tag Manager (noscript fallback) -->
+  <noscript>
+    <iframe src={`https://www.googletagmanager.com/ns.html?id=${import.meta.env.PUBLIC_GTM_ID || 'GTM-SAPVIK1'}`} height="0" width="0" style="display:none;visibility:hidden"></iframe>
+  </noscript>
+
   <!-- Accessible Skip to Main Content Link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 

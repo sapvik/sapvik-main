@@ -57,7 +57,7 @@ export async function onRequestPost(context) {
   let isPreviewHost = false;
   try {
     const reqHost = new URL(request.url).hostname.toLowerCase();
-    isPreviewHost = reqHost.endsWith('.pages.dev') || reqHost === 'localhost' || reqHost === '127.0.0.1';
+    isPreviewHost = reqHost === 'localhost' || reqHost === '127.0.0.1';
   } catch {}
 
   if (!turnstileResult.success && !turnstileResult.bypassed && !isPreviewHost) {

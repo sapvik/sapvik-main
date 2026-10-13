@@ -5,7 +5,7 @@
 
 import { validateTargetUrl } from './ssrf.js';
 
-const MAX_STREAM_BYTES = 500000; // 500KB stream limit to protect Workers 10ms CPU
+const MAX_STREAM_BYTES = 200000; // 200KB stream limit to protect Workers 10ms CPU
 const MAX_REDIRECTS = 3;
 
 /**
@@ -245,6 +245,17 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
     });
   }
 
+  // robots noindex finding (critical)
+  if (hasNoindex) {
+    findings.push({
+      id: "noindex_detected",
+      severity: "critical",
+      title: "Search indexing blocked by robots noindex directive",
+      evidence: `Page contains a <meta name="robots" content="${robotsMatch ? robotsMatch[1] : 'noindex'}"> directive blocking search crawlers.`,
+      fix: "Remove the 'noindex' directive from production pages so search engines can crawl and index your site."
+    });
+  }
+
   // Meta Pixel finding
   if (!hasPixel) {
     findings.push({
@@ -255,6 +266,10 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
       fix: "Add Meta Conversions API or Pixel if running paid direct-response campaigns on Instagram/Facebook."
     });
   }
+
+  // Sort findings by severity first (critical -> warning -> info -> good) so critical issues are never truncated
+  const severityRank = { critical: 0, warning: 1, info: 2, good: 3 };
+  findings.sort((a, b) => (severityRank[a.severity] ?? 99) - (severityRank[b.severity] ?? 99));
 
   return {
     success: true,
@@ -290,7 +305,7 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
 /**
  * Executes a network fetch through a manual redirect loop with SSRF checks on every hop.
  */
-export async function fetchWithValidatedRedirects(initialUrl, { timeoutMs = 3500 } = {}) {
+export async function fetchWithValidatedRedirects(initialUrl, { timeoutMs = 8000 } = {}) {
   let currentUrl = initialUrl;
   let hops = 0;
 
@@ -427,7 +442,7 @@ export async function fetchWithValidatedRedirects(initialUrl, { timeoutMs = 3500
 /**
  * Executes a live site inspection using fetchWithValidatedRedirects.
  */
-export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
+export async function executeLiveScan(targetUrl, timeoutSeconds = 8.0) {
   const startTime = Date.now();
   const isHttps = targetUrl.toLowerCase().startsWith('https://');
 
@@ -450,12 +465,13 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
         };
       }
 
-      // Detect parked / ghost domains with no recognizable web content
-      const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(html);
-      const hasH1 = /<h1\b[^>]*>/i.test(html);
-      const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
-      const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(html);
-      const textWithoutTags = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      // Detect parked / ghost domains on first 20KB only to protect 10ms CPU limit
+      const first20Kb = html.slice(0, 20480);
+      const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(first20Kb);
+      const hasH1 = /<h1\b[^>]*>/i.test(first20Kb);
+      const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(first20Kb);
+      const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(first20Kb);
+      const textWithoutTags = first20Kb.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       const hasSubstantialText = textWithoutTags.length >= 80;
 
       if (!hasTitle && !hasH1 && !hasViewport && !hasDescription && !hasSubstantialText) {
@@ -482,7 +498,7 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
 
     // Attempt plain HTTP fallback via the same fetchWithValidatedRedirects function
     const httpUrl = targetUrl.replace(/^https:\/\//i, 'http://');
-    const httpResult = await fetchWithValidatedRedirects(httpUrl, { timeoutMs: 2000 });
+    const httpResult = await fetchWithValidatedRedirects(httpUrl, { timeoutMs: 4000 });
 
     if (httpResult.ok) {
       const elapsedMs = Date.now() - startTime;
@@ -529,11 +545,13 @@ export async function executeLiveScan(targetUrl, timeoutSeconds = 3.5) {
       };
     }
 
-    const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(html);
-    const hasH1 = /<h1\b[^>]*>/i.test(html);
-    const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(html);
-    const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(html);
-    const textWithoutTags = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    // Detect parked / ghost domains on first 20KB only to protect 10ms CPU limit
+    const first20Kb = html.slice(0, 20480);
+    const hasTitle = /<title[^>]*>([\s\S]*?)<\/title>/i.test(first20Kb);
+    const hasH1 = /<h1\b[^>]*>/i.test(first20Kb);
+    const hasViewport = /<meta\s+[^>]*name=["']viewport["']/i.test(first20Kb);
+    const hasDescription = /<meta\s+[^>]*name=["']description["']/i.test(first20Kb);
+    const textWithoutTags = first20Kb.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     const hasSubstantialText = textWithoutTags.length >= 80;
 
     if (!hasTitle && !hasH1 && !hasViewport && !hasDescription && !hasSubstantialText) {

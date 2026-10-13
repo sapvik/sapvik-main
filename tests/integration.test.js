@@ -105,7 +105,7 @@ test('Integration: _headers enforces strict HTTP security and caching directives
   assert.ok(headersContent.includes('X-Frame-Options: DENY'), '_headers must include X-Frame-Options: DENY');
   assert.ok(headersContent.includes('X-Content-Type-Options: nosniff'), '_headers must include X-Content-Type-Options: nosniff');
   assert.ok(headersContent.includes('Strict-Transport-Security: max-age=31536000'), '_headers must include HSTS');
-  assert.ok(headersContent.includes('Content-Security-Policy-Report-Only:'), '_headers must include CSP');
+  assert.ok(headersContent.includes('Content-Security-Policy:'), '_headers must include CSP');
   assert.ok(headersContent.includes('/_astro/*'), '_headers must cache /_astro/*');
   assert.ok(headersContent.includes('/assets/*'), '_headers must cache /assets/*');
 });

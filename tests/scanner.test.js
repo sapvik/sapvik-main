@@ -185,4 +185,13 @@ test('Scanner: executeLiveScan returns parked_or_empty_domain when server return
   }
 });
 
+test('Scanner: noindex directive produces a critical severity finding and sorts first', () => {
+  const htmlWithNoindex = '<html><head><title>Staging Site Title</title><meta name="robots" content="noindex, nofollow"></head><body><h1>Under Construction</h1><p>Private content</p></body></html>';
+  const result = analyzeHtmlSnippet(htmlWithNoindex, 'https://example.com', 200, true, true);
+  const noindexFinding = result.findings.find(f => f.id === 'noindex_detected');
+  assert.ok(noindexFinding, 'Expected noindex_detected finding to fire');
+  assert.equal(noindexFinding.severity, 'critical');
+  assert.equal(result.findings[0].severity, 'critical');
+});
+
 

@@ -177,7 +177,7 @@ export async function onRequestPost(context) {
           contactPayload.listIds = [parseInt(env.BREVO_MARKETING_LIST_ID, 10)];
         }
 
-        await fetch('https://api.brevo.com/v3/contacts', {
+        const contactResp = await fetch('https://api.brevo.com/v3/contacts', {
           method: 'POST',
           headers: {
             'api-key': brevoKey,
@@ -186,6 +186,11 @@ export async function onRequestPost(context) {
           },
           body: JSON.stringify(contactPayload)
         });
+
+        if (!contactResp.ok) {
+          const errBody = await contactResp.text();
+          console.warn(`Brevo contact sync returned HTTP ${contactResp.status}:`, errBody);
+        }
       } catch (crmErr) {
         console.error('Non-critical CRM contact sync error:', crmErr);
       }

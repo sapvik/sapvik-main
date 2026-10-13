@@ -81,7 +81,7 @@ export const SERVICES: ServiceItem[] = [
     faqs: [
       {
         question: "How long does a custom website development project typically take?",
-        answer: "Most production websites are planned, built, tested, and deployed within 2 to 4 weeks, depending on catalog complexity and custom integration requirements. We provide weekly visual progress previews and adhere to strict milestone turnaround commitments."
+        answer: "Typical production website engagements range from 2 to 6 weeks depending on architectural requirements, catalog size, and custom integrations. We provide structured progress reviews and adhere to clearly scoped milestone commitments."
       },
       {
         question: "Do you include brand identity and design guidelines with web development?",
@@ -93,7 +93,7 @@ export const SERVICES: ServiceItem[] = [
       },
       {
         question: "Who owns the domain name, hosting accounts, and code repository?",
-        answer: "You retain 100% administrative ownership of your domain DNS, hosting accounts, analytics, and codebase. We deploy directly to your Cloudflare or preferred cloud infrastructure. Zero vendor lock-in, ever."
+        answer: "You retain 100% administrative ownership of your domain DNS, hosting accounts, analytics, and codebase. We deploy directly to your Cloudflare or preferred cloud infrastructure. No proprietary vendor lock-in."
       },
       {
         question: "Will our website be optimized for mobile phone visitors across India?",
@@ -113,11 +113,11 @@ export const SERVICES: ServiceItem[] = [
     slug: "google-business-profile-management",
     legacySlugs: ["gmb-management"],
     headline: "Google Business Profile optimization, local 3-Pack rankings, and geo-targeted discovery",
-    metaDescription: "Professional Google Business Profile management in India. Dominate local Maps 3-Pack rankings, boost incoming phone calls, and manage customer reviews.",
-    description: "Hands-on management for Google Business Profiles, structured local citations, category alignment, spam fighting, geo-grid rankings, and review response workflows. We systematically position your storefront or practice into the top Google Maps 3-Pack for high-intent nearby searches.",
+    metaDescription: "Professional Google Business Profile management in India. Optimize local Maps 3-Pack rankings, boost incoming phone calls, and manage customer reviews.",
+    description: "Hands-on management for Google Business Profiles, structured local citations, category alignment, spam fighting, geo-grid rankings, and review response workflows. We systematically position your storefront or practice into high-visibility Google Maps 3-Pack placements for high-intent nearby searches.",
     whoItsFor: [
       "Medical clinics, specialty hospitals, dental centers, and diagnostic labs where proximity directly dictates patient visits.",
-      "Professional service firms (lawyers, chartered accountants, consultants) seeking dominant local authority.",
+      "Professional service firms (lawyers, chartered accountants, consultants) seeking strong local authority.",
       "Retail showrooms, boutique stores, and service workshops looking to maximize direct driving directions and telephone calls.",
       "Multi-location regional businesses that need synchronized citation accuracy and active profile management across branches."
     ],
@@ -223,7 +223,7 @@ export const SERVICES: ServiceItem[] = [
       },
       {
         question: "Do you guarantee #1 rankings on Google?",
-        answer: "No ethical SEO specialist guarantees #1 rankings, as Google's algorithms change constantly and competitors also optimize. What we commit to is meticulous technical standards, white-hat execution, transparent tracking, and driving measurable organic inquiry growth."
+        answer: "No ethical SEO specialist guarantees #1 rankings, as Google's algorithms change constantly and competitors also optimize. What we deliver is meticulous technical standards, white-hat execution, transparent tracking, and disciplined optimization targeted at growing qualified organic inquiries."
       },
       {
         question: "How do you choose which keywords to target?",
@@ -289,7 +289,7 @@ export const SERVICES: ServiceItem[] = [
       },
       {
         question: "What minimum monthly advertising budget do you recommend?",
-        answer: "For local city campaigns, we generally recommend starting with an ad spend of ₹25,000 to ₹50,000 per month to gather sufficient conversion data and achieve statistical significance. For multi-city or national campaigns, budgets scale accordingly."
+        answer: "Ad spend budgets vary depending on category competition, geographic market, and business goals. For single-city local campaigns, businesses often allocate ₹25,000 to ₹50,000 per month in media spend to establish initial signal density and data significance, with budgets scaling flexibly as conversion efficiency is verified."
       },
       {
         question: "How do you prevent junk leads and spam submissions?",
