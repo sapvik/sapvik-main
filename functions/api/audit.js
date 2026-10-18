@@ -6,6 +6,7 @@
 
 import { validateTargetUrl } from '../lib/ssrf.js';
 import { executeLiveScan } from '../lib/scanner.js';
+import { runPageSpeedAudit, mergeScanWithPageSpeed } from '../lib/pagespeed.js';
 import { verifyTurnstileToken, readBoundedJson, validateOrigin } from '../lib/security.js';
 
 export async function onRequestPost(context) {
@@ -88,7 +89,7 @@ export async function onRequestPost(context) {
   const normalizedTarget = validation.url;
 
   // 3. Edge Cache API Lookup (Keyed by Normalized Target URL, 5 min TTL)
-  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit/v2?url=${encodeURIComponent(normalizedTarget)}`);
+  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit/v3?url=${encodeURIComponent(normalizedTarget)}`);
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   let cache;
   try {
@@ -103,8 +104,31 @@ export async function onRequestPost(context) {
     // Cache API unavailable in some local runtime mocks
   }
 
-  // 4. Execute Live Bounded Scan (8s origin timeout)
-  const scanResult = await executeLiveScan(normalizedTarget);
+  // 4. Resolve PageSpeed API Key
+  const psiKey = (env && env.PAGESPEED_API_KEY) || (typeof process !== 'undefined' && process.env?.PAGESPEED_API_KEY) || '';
+
+  // 5. Execute Scans
+  let scanResult;
+  if (psiKey) {
+    const [localSettled, psiSettled] = await Promise.allSettled([
+      executeLiveScan(normalizedTarget),
+      runPageSpeedAudit(normalizedTarget, psiKey, { timeoutMs: 12000 })
+    ]);
+
+    const localResult = localSettled.status === 'fulfilled' ? localSettled.value : { success: false, error: 'local_failed' };
+    const psiResult = psiSettled.status === 'fulfilled' ? psiSettled.value : { success: false, error: 'psi_failed' };
+
+    if (!localResult.success && psiResult.success !== true) {
+      scanResult = localResult;
+    } else if (psiResult.success) {
+      scanResult = mergeScanWithPageSpeed(localResult, psiResult, normalizedTarget);
+    } else {
+      // Graceful fallback to local scan if PSI timed out or failed
+      scanResult = { ...localResult, google_verified: false, psi_fallback_reason: psiResult.error };
+    }
+  } else {
+    scanResult = await executeLiveScan(normalizedTarget);
+  }
 
   const responseHeaders = {
     'Content-Type': 'application/json'

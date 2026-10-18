@@ -957,6 +957,112 @@ button, input, select, textarea {
   border-left-color: var(--c-success);
 }
 
+/* Google PageSpeed & Core Web Vitals Panel */
+.scanner-cwv-container {
+  margin-bottom: 1.25rem;
+  background: var(--c-surface-subdued);
+  border: 1px solid var(--c-border);
+  padding: 0.85rem 1rem;
+}
+
+.scanner-cwv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.google-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1a73e8;
+  background: rgba(26, 115, 232, 0.08);
+  border: 1px solid rgba(26, 115, 232, 0.25);
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+}
+
+.google-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34a853;
+  display: inline-block;
+}
+
+.cwv-perf-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+}
+
+.scanner-cwv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.cwv-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  padding: 0.6rem 0.65rem;
+  border-top: 2px solid var(--c-border-strong);
+}
+
+.cwv-card.good {
+  border-top-color: var(--c-success);
+}
+
+.cwv-card.needs-improvement {
+  border-top-color: var(--c-warning);
+}
+
+.cwv-card.poor {
+  border-top-color: var(--c-vermilion);
+}
+
+.cwv-label {
+  font-size: 0.68rem;
+  color: var(--c-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.cwv-value {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--c-text-primary);
+  margin: 0.2rem 0;
+}
+
+.cwv-status-tag {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.google-audit-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #1a73e8;
+  background: rgba(26, 115, 232, 0.08);
+  border: 1px solid rgba(26, 115, 232, 0.2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
 /* ==========================================================================
    SERVICES SECTION (6 CANONICAL PILLARS)
    ========================================================================== */
@@ -2253,6 +2359,23 @@ button, input, select, textarea {
 
   .scanner-metric-cell {
     padding: 0.5rem 0.35rem;
+  }
+
+  .scanner-cwv-container {
+    padding: 0.75rem 0.65rem;
+  }
+
+  .scanner-cwv-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.4rem !important;
+  }
+
+  .cwv-card {
+    padding: 0.5rem 0.45rem;
+  }
+
+  .cwv-value {
+    font-size: 1rem;
   }
 
   .scanner-finding-item {

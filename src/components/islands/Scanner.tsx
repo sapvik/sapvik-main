@@ -2,12 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { trackEvent, getScoreBucket, getLatencyBucket } from '../../lib/analytics';
 import { renderTurnstile, getTurnstileToken, resetTurnstile, isTurnstileConfigured } from '../../lib/turnstile';
 
+export interface CoreWebVitalMetric {
+  display: string | null;
+  value_ms?: number | null;
+  value?: number | null;
+  status?: 'good' | 'needs-improvement' | 'poor' | 'unknown';
+}
+
+export interface CoreWebVitals {
+  lcp?: CoreWebVitalMetric;
+  cls?: CoreWebVitalMetric;
+  fcp?: CoreWebVitalMetric;
+  tbt?: CoreWebVitalMetric;
+  speed_index?: CoreWebVitalMetric;
+}
+
 interface Finding {
   id: string;
   severity: 'good' | 'warning' | 'info' | 'critical';
   title: string;
   evidence: string;
   fix: string;
+  source?: string;
 }
 
 export interface ScoreCategory {
@@ -34,6 +50,9 @@ interface ScanResponse {
   success: boolean;
   url?: string;
   score?: number;
+  performance_score?: number | null;
+  google_verified?: boolean;
+  core_web_vitals?: CoreWebVitals | null;
   measured_latency_ms?: number;
   response_time_ms?: number;
   has_ssl?: boolean | null;
@@ -70,9 +89,12 @@ export default function Scanner() {
   const [ttfbVal, setTtfbVal] = useState('—');
   const [sslVal, setSslVal] = useState('—');
   const [sslColor, setSslColor] = useState('var(--c-text-muted)');
+  const [googleVerified, setGoogleVerified] = useState(false);
+  const [performanceScore, setPerformanceScore] = useState<number | null>(null);
+  const [coreWebVitals, setCoreWebVitals] = useState<CoreWebVitals | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
-  const [findings, setFindings] = useState<Array<{ severity: string; title: string; fix?: string; evidence?: string }>>([
+  const [findings, setFindings] = useState<Array<{ severity: string; title: string; fix?: string; evidence?: string; source?: string }>>([
     {
       severity: 'info',
       title: 'SEO Diagnostic Standby',
@@ -107,22 +129,29 @@ export default function Scanner() {
     setIsLoading(true);
     setHasScanned(true);
     setScanError(null);
-    setProgress(25);
-    setStatusMsg('Dispatching real network probe & SSL handshake...');
+    setProgress(20);
+    setStatusMsg('Dispatching network probe & SSL security handshake...');
 
     trackEvent('scan_start');
 
-    try {
-      setProgress(55);
+    const progressTimer1 = setTimeout(() => {
+      setProgress(50);
       setStatusMsg('Inspecting HTML headers, Schema entity, & tracking pixels...');
+    }, 1200);
 
+    const progressTimer2 = setTimeout(() => {
+      setProgress(75);
+      setStatusMsg('Querying Google PageSpeed Insights & Lighthouse mobile engine...');
+    }, 3800);
+
+    try {
       let token = turnstileToken;
       if (!token && widgetIdRef.current) {
         token = getTurnstileToken(widgetIdRef.current);
       }
 
       const controller = new AbortController();
-      const clientTimeout = setTimeout(() => controller.abort(), 12000);
+      const clientTimeout = setTimeout(() => controller.abort(), 18000);
 
       const resp = await fetch('/api/audit', {
         method: 'POST',
@@ -132,12 +161,22 @@ export default function Scanner() {
       });
       clearTimeout(clientTimeout);
 
+      clearTimeout(progressTimer1);
+      clearTimeout(progressTimer2);
       setProgress(100);
 
       const data: ScanResponse = await resp.json();
 
       if (resp.ok && data.success) {
-        setStatusMsg(`Live Probe Complete for ${data.url || rawTarget}`);
+        setStatusMsg(data.google_verified
+          ? `Google Lighthouse & SEO Probe Complete for ${data.url || rawTarget}`
+          : `Live Probe Complete for ${data.url || rawTarget}`
+        );
+
+        setGoogleVerified(Boolean(data.google_verified));
+        setPerformanceScore(typeof data.performance_score === 'number' ? data.performance_score : null);
+        setCoreWebVitals(data.core_web_vitals || null);
+
         const computedScore = typeof data.score === 'number' ? data.score : null;
         if (computedScore !== null) {
           setScoreVal(`${computedScore}/100`);
@@ -194,7 +233,9 @@ export default function Scanner() {
           latency: latency ?? null,
           has_ssl: data.has_ssl,
           breakdown: data.breakdown || null,
-          local_signals: data.local_signals || null
+          local_signals: data.local_signals || null,
+          google_verified: Boolean(data.google_verified),
+          core_web_vitals: data.core_web_vitals || null
         };
         try {
           sessionStorage.setItem('sapvik_latest_audit', JSON.stringify(auditPayload));
@@ -203,6 +244,9 @@ export default function Scanner() {
           detail: auditPayload
         }));
       } else {
+        setGoogleVerified(false);
+        setPerformanceScore(null);
+        setCoreWebVitals(null);
         const errorMsg = data.message || "Couldn't complete the check. Please try again.";
         setScanError(errorMsg);
         setStatusMsg(`Probe halted: ${errorMsg}`);
@@ -223,6 +267,11 @@ export default function Scanner() {
         trackEvent('scan_error', { error_code: data.error || 'scan_failed' });
       }
     } catch (err: any) {
+      clearTimeout(progressTimer1);
+      clearTimeout(progressTimer2);
+      setGoogleVerified(false);
+      setPerformanceScore(null);
+      setCoreWebVitals(null);
       const errorMsg = "Couldn't complete the check. Please try again.";
       setScanError(errorMsg);
       setStatusMsg(errorMsg);
@@ -344,7 +393,7 @@ export default function Scanner() {
           <div className="scanner-metric-val readout-value" id="scanScoreVal" style={{ color: scoreColor }}>
             {scoreVal}
           </div>
-          <div className="scanner-metric-lbl">SEO SCORE</div>
+          <div className="scanner-metric-lbl">{googleVerified ? 'Google SEO Score' : 'SEO SCORE'}</div>
         </div>
         <div className="scanner-metric-cell readout-card">
           <div className="scanner-metric-val readout-value" id="scanTtfbVal">
@@ -360,6 +409,62 @@ export default function Scanner() {
         </div>
       </div>
 
+      {/* Google PageSpeed & Core Web Vitals Panel */}
+      {googleVerified && coreWebVitals && (
+        <div className="scanner-cwv-container" id="scannerCwvDeck">
+          <div className="scanner-cwv-header">
+            <div className="google-badge-pill">
+              <span className="google-dot" aria-hidden="true"></span>
+              Google PageSpeed &amp; Lighthouse Verified (Mobile)
+            </div>
+            {performanceScore !== null && (
+              <div className="cwv-perf-badge">
+                Lighthouse Speed:&nbsp;
+                <strong style={{
+                  color: performanceScore >= 90 ? 'var(--c-success)' : (performanceScore >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)')
+                }}>
+                  {performanceScore}/100
+                </strong>
+              </div>
+            )}
+          </div>
+
+          <div className="scanner-cwv-grid">
+            <div className={`cwv-card ${coreWebVitals.lcp?.status || 'unknown'}`}>
+              <div className="cwv-label">LCP (Largest Contentful)</div>
+              <div className="cwv-value">{coreWebVitals.lcp?.display || '—'}</div>
+              <div className="cwv-status-tag">
+                {coreWebVitals.lcp?.status === 'good' ? 'Good (<= 2.5s)' : (coreWebVitals.lcp?.status === 'needs-improvement' ? 'Needs Work' : 'Poor (> 4.0s)')}
+              </div>
+            </div>
+
+            <div className={`cwv-card ${coreWebVitals.cls?.status || 'unknown'}`}>
+              <div className="cwv-label">CLS (Layout Shift)</div>
+              <div className="cwv-value">{coreWebVitals.cls?.display || '—'}</div>
+              <div className="cwv-status-tag">
+                {coreWebVitals.cls?.status === 'good' ? 'Good (<= 0.1)' : (coreWebVitals.cls?.status === 'needs-improvement' ? 'Needs Work' : 'Poor (> 0.25)')}
+              </div>
+            </div>
+
+            <div className={`cwv-card ${coreWebVitals.fcp?.status || 'unknown'}`}>
+              <div className="cwv-label">FCP (First Paint)</div>
+              <div className="cwv-value">{coreWebVitals.fcp?.display || '—'}</div>
+              <div className="cwv-status-tag">
+                {coreWebVitals.fcp?.status === 'good' ? 'Good (<= 1.8s)' : (coreWebVitals.fcp?.status === 'needs-improvement' ? 'Needs Work' : 'Poor (> 3.0s)')}
+              </div>
+            </div>
+
+            <div className={`cwv-card ${coreWebVitals.tbt?.status || 'unknown'}`}>
+              <div className="cwv-label">TBT (Blocking Time)</div>
+              <div className="cwv-value">{coreWebVitals.tbt?.display || '—'}</div>
+              <div className="cwv-status-tag">
+                {coreWebVitals.tbt?.status === 'good' ? 'Good (<= 200ms)' : (coreWebVitals.tbt?.status === 'needs-improvement' ? 'Needs Work' : 'Poor (> 600ms)')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Defensible Category Breakdown */}
       {breakdown && (
         <div style={{ margin: '1rem 0', padding: '0.85rem 1rem', background: 'var(--c-surface-subdued)', border: '1px solid var(--c-border)' }}>
@@ -368,7 +473,9 @@ export default function Scanner() {
               How this score is calculated
             </span>
             <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>
-              A rule-based check of on-page signals found in the page&apos;s initial HTML. It is not a Google score.
+              {googleVerified
+                ? 'Official Google Lighthouse SEO audit & Core Web Vitals (Moto G4 mobile simulation), enriched with SAPVIK security and local schema signals.'
+                : 'A rule-based check of on-page signals found in the page\'s initial HTML. It is not a Google score.'}
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.6rem' }}>
@@ -413,7 +520,12 @@ export default function Scanner() {
         {findings.map((f, i) => (
           <li key={i} className={`scanner-finding-item ${f.severity || 'info'}`}>
             <div>
-              <div style={{ fontWeight: 700 }}>{f.title}</div>
+              <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <span>{f.title}</span>
+                {f.source === 'google_lighthouse' && (
+                  <span className="google-audit-tag">Google Lighthouse</span>
+                )}
+              </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--c-text-muted)', marginTop: '2px' }}>
                 {f.fix || f.evidence}
               </div>

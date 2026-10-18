@@ -291,6 +291,73 @@ test.describe('SAPVIK Production Smoke Tests', () => {
     await expect(manualCta).toBeVisible();
   });
 
+  test('Website Scanner: Successful audit renders Google PageSpeed & Core Web Vitals deck', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+
+    const scanner = page.locator('#scanner');
+    await scanner.scrollIntoViewIfNeeded();
+
+    // Mock /api/audit to return successful Google PageSpeed audit
+    await page.route('**/api/audit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          url: 'https://kailashclinic.in',
+          score: 92,
+          performance_score: 88,
+          google_verified: true,
+          measured_latency_ms: 240,
+          response_time_ms: 240,
+          has_ssl: true,
+          core_web_vitals: {
+            lcp: { display: '1.4 s', value_ms: 1400, status: 'good' },
+            cls: { display: '0.02', value: 0.02, status: 'good' },
+            fcp: { display: '0.9 s', value_ms: 900, status: 'good' },
+            tbt: { display: '40 ms', value_ms: 40, status: 'good' }
+          },
+          breakdown: {
+            meta: { score: 28, max: 30, label: 'Meta & Indexing' },
+            content: { score: 24, max: 25, label: 'Content' },
+            technical: { score: 22, max: 25, label: 'Speed' },
+            rich_data: { score: 18, max: 20, label: 'Schema' }
+          },
+          findings: [
+            {
+              id: 'google_tap_targets',
+              severity: 'warning',
+              title: 'Mobile tap targets sized appropriately',
+              evidence: '2 targets flagged by Google Lighthouse.',
+              fix: 'Increase spacing between mobile buttons.',
+              source: 'google_lighthouse'
+            }
+          ]
+        })
+      });
+    });
+
+    await page.fill('.scanner-input', 'https://kailashclinic.in');
+    await page.click('.scanner-btn');
+
+    // Verify Google SEO score rendered
+    const scoreVal = scanner.locator('#scanScoreVal');
+    await expect(scoreVal).toHaveText('92/100');
+
+    // Verify Core Web Vitals deck appears
+    const cwvDeck = scanner.locator('#scannerCwvDeck');
+    await expect(cwvDeck).toBeVisible();
+    await expect(cwvDeck).toContainText('Google PageSpeed & Lighthouse Verified');
+    await expect(cwvDeck).toContainText('1.4 s');
+    await expect(cwvDeck).toContainText('88/100');
+
+    // Verify Google Lighthouse tag on finding
+    const auditTag = scanner.locator('.google-audit-tag');
+    await expect(auditTag).toBeVisible();
+    await expect(auditTag).toHaveText('Google Lighthouse');
+  });
+
   test('Blog & Insights Engine: Renders articles, filters by category, loads post detail, and provides RSS feed', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/blog');
