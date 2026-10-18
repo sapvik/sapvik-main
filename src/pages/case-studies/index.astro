@@ -1,0 +1,69 @@
+---
+import Base from '../../layouts/Base.astro';
+
+// Phase 5 Draft Route: Awaiting verified client telemetry and signed testimonial permissions (docs/CONTENT_INPUTS_NEEDED.md)
+const draft = true;
+---
+
+<Base
+  title="Client Case Studies & Results | SAPVIK"
+  description="Explore verified case studies and technical performance teardowns of commercial web engineering and growth marketing campaigns in India."
+  noindex={draft}
+>
+  <div class="case-studies-section" style="padding-top: calc(var(--header-h) + 2.5rem); padding-bottom: 5rem;">
+    <div class="container" style="max-width: 960px;">
+      
+      <!-- Draft Notice Banner -->
+      <aside class="draft-indicator" aria-label="Draft Notice" style="margin-bottom: 2rem; background: #FFF9E6; border: 1px solid #FFE58F; padding: 0.85rem 1.25rem; font-size: 0.82rem; font-family: var(--font-mono); color: #874D00;">
+        <strong>[DRAFT ROUTE &bull; NOINDEX]</strong> This case studies page layout is prepared and excluded from the sitemap. We strictly enforce a zero-invented-claims policy: real case studies and testimonials will be published upon receiving signed client permissions per <code>docs/CONTENT_INPUTS_NEEDED.md</code>.
+      </aside>
+
+      <!-- Section Header -->
+      <header class="section-head" style="margin-bottom: 3rem;">
+        <span class="badge" style="margin-bottom: 0.75rem;">VERIFIED RESULTS</span>
+        <h1 style="font-family: var(--font-display); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.75rem;">
+          Client Performance &amp; Case Studies
+        </h1>
+        <p style="font-size: 1.05rem; color: var(--c-text-secondary); line-height: 1.6; max-width: 760px;">
+          Documented architectural transformations, local map 3-Pack expansions, and customer acquisition campaigns across commercial sectors in India.
+        </p>
+      </header>
+
+      <!-- Case Study Cards Placeholder Frame -->
+      <section class="frame-box" style="padding: 2.5rem 2rem; text-align: center; margin-bottom: 3rem;">
+        <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.5rem;">
+          CASE STUDY PIPELINE
+        </span>
+        <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--c-text-primary); margin-bottom: 0.75rem;">
+          Authentic Telemetry Under Client Review
+        </h2>
+        <p style="font-size: 0.95rem; color: var(--c-text-secondary); max-width: 600px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
+          In accordance with our strict data transparency standards, we only publish verified case studies with documented permission and authentic analytics logs.
+        </p>
+        <div style="background: var(--c-surface); border: 1px dashed var(--c-border); padding: 2rem; max-width: 640px; margin: 0 auto; font-family: var(--font-mono); font-size: 0.88rem; color: var(--c-text-muted);">
+          [Detailed client case studies and verified testimonials will be released here once client attribution release forms are finalized per <code>docs/CONTENT_INPUTS_NEEDED.md</code>]
+        </div>
+      </section>
+
+      <!-- Consultation CTA -->
+      <div class="frame-box" style="padding: 2rem; border-left: 4px solid var(--c-vermilion);">
+        <h3 style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.5rem;">
+          Ready to Build Your Growth Pipeline?
+        </h3>
+        <p style="font-size: 0.92rem; color: var(--c-text-secondary); margin-bottom: 1.25rem; line-height: 1.55;">
+          Request an initial diagnostic review of your website, local map listings, or advertising campaigns.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="/#contact" class="btn btn-vermilion btn-sm">
+            <span>Request Diagnostic Review</span>
+            <span>&rarr;</span>
+          </a>
+          <a href="/blog" class="btn btn-secondary btn-sm">
+            <span>Read Engineering Insights</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</Base>

@@ -61,9 +61,11 @@ interface ScanResponse {
   has_pixel?: boolean;
   has_analytics?: boolean;
   has_viewport?: boolean;
-  breakdown?: ScoreBreakdown;
-  local_signals?: LocalSignals;
+  breakdown?: ScoreBreakdown | null;
+  local_signals?: LocalSignals | null;
   findings?: Finding[];
+  psi_attempted?: boolean;
+  psi_fallback_reason?: string;
   error?: string;
   message?: string;
 }
@@ -93,6 +95,7 @@ export default function Scanner() {
   const [performanceScore, setPerformanceScore] = useState<number | null>(null);
   const [coreWebVitals, setCoreWebVitals] = useState<CoreWebVitals | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [psiUnavailable, setPsiUnavailable] = useState(false);
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
   const [findings, setFindings] = useState<Array<{ severity: string; title: string; fix?: string; evidence?: string; source?: string }>>([
     {
@@ -105,9 +108,11 @@ export default function Scanner() {
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const turnstileLoadedRef = useRef(false);
 
-  // Initialize Turnstile widget if present and configured
-  useEffect(() => {
+  const initTurnstile = () => {
+    if (turnstileLoadedRef.current) return;
+    turnstileLoadedRef.current = true;
     const id = renderTurnstile(
       turnstileContainerRef.current,
       (token: string) => setTurnstileToken(token),
@@ -116,7 +121,7 @@ export default function Scanner() {
     if (id) {
       widgetIdRef.current = id;
     }
-  }, []);
+  };
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +134,7 @@ export default function Scanner() {
     setIsLoading(true);
     setHasScanned(true);
     setScanError(null);
+    setPsiUnavailable(false);
     setProgress(20);
     setStatusMsg('Dispatching network probe & SSL security handshake...');
 
@@ -141,7 +147,7 @@ export default function Scanner() {
 
     const progressTimer2 = setTimeout(() => {
       setProgress(75);
-      setStatusMsg('Querying Google PageSpeed Insights & Lighthouse mobile engine...');
+      setStatusMsg('Analyzing page structure, latency & performance signals...');
     }, 3800);
 
     try {
@@ -176,6 +182,9 @@ export default function Scanner() {
         setGoogleVerified(Boolean(data.google_verified));
         setPerformanceScore(typeof data.performance_score === 'number' ? data.performance_score : null);
         setCoreWebVitals(data.core_web_vitals || null);
+
+        const psiFailed = Boolean(data.psi_fallback_reason || (data.psi_attempted && !data.google_verified));
+        setPsiUnavailable(psiFailed);
 
         const computedScore = typeof data.score === 'number' ? data.score : null;
         if (computedScore !== null) {
@@ -221,9 +230,7 @@ export default function Scanner() {
           latency_bucket: getLatencyBucket(latency)
         });
 
-        if (data.breakdown) {
-          setBreakdown(data.breakdown);
-        }
+        setBreakdown(data.breakdown || null);
 
         // Broadcast audit result so Heatmap immediately reflects this specific domain
         const domainClean = (data.url || rawTarget).replace(/^https?:\/\//, '').split('/')[0];
@@ -305,14 +312,14 @@ export default function Scanner() {
         <div className="mono-label" style={{ color: 'var(--c-vermilion)', marginBottom: '0.35rem' }}>
           Quick SEO Diagnostic
         </div>
-        <h3 className="audit-deck-title">Quick SEO Score Check</h3>
+        <h2 className="audit-deck-title">Quick SEO Score Check</h2>
         <p className="audit-deck-subtitle">
           Enter your domain to inspect on-page SEO readiness: Title tags, meta descriptions, SSL security, schema markup, and response latency.
         </p>
       </div>
 
       {/* Input Area */}
-      <form onSubmit={handleScan} className="scanner-input-group">
+      <form onSubmit={handleScan} className="scanner-input-group" onPointerDown={initTurnstile}>
         <label
           htmlFor="scannerUrlInput"
           className="visually-hidden"
@@ -327,7 +334,12 @@ export default function Scanner() {
           placeholder="e.g. kailashclinic.in"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
+          onFocus={initTurnstile}
           disabled={isLoading}
+          inputMode="url"
+          autoComplete="url"
+          autoCapitalize="off"
+          spellCheck={false}
         />
         <button
           type="submit"
@@ -345,7 +357,7 @@ export default function Scanner() {
           ref={turnstileContainerRef}
           id="scannerTurnstile"
           className="cf-turnstile"
-          style={{ marginTop: '0.75rem' }}
+          style={{ minHeight: '65px', marginTop: '0.75rem' }}
         ></div>
       )}
 
@@ -372,6 +384,24 @@ export default function Scanner() {
         {statusMsg}
       </div>
 
+      {/* PSI Fallback Notice if Google PageSpeed failed or timed out */}
+      {psiUnavailable && (
+        <div className="psi-fallback-alert" style={{
+          margin: '0.75rem 0',
+          padding: '0.65rem 0.85rem',
+          background: 'var(--c-surface-subdued)',
+          borderLeft: '3px solid var(--c-warning)',
+          fontSize: '0.82rem',
+          color: 'var(--c-text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{ color: 'var(--c-warning)', fontWeight: 700 }}>Notice:</span>
+          <span>Google PageSpeed data unavailable for this check.</span>
+        </div>
+      )}
+
       {/* Error Panel if Probe Failed */}
       {scanError && (
         <div className="scanner-error-panel" style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(230, 57, 70, 0.08)', border: '1px solid var(--c-vermilion)' }}>
@@ -393,8 +423,22 @@ export default function Scanner() {
           <div className="scanner-metric-val readout-value" id="scanScoreVal" style={{ color: scoreColor }}>
             {scoreVal}
           </div>
-          <div className="scanner-metric-lbl">{googleVerified ? 'Google SEO Score' : 'SEO SCORE'}</div>
+          <div className="scanner-metric-lbl">
+            {googleVerified ? 'Google SEO' : 'On-page checks (not a Google score)'}
+          </div>
         </div>
+        {googleVerified && (
+          <div className="scanner-metric-cell readout-card">
+            <div className="scanner-metric-val readout-value" id="scanPerfVal" style={{
+              color: performanceScore !== null
+                ? (performanceScore >= 90 ? 'var(--c-success)' : (performanceScore >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)'))
+                : 'var(--c-text-muted)'
+            }}>
+              {performanceScore !== null ? `${performanceScore}/100` : '—'}
+            </div>
+            <div className="scanner-metric-lbl">Google Lighthouse Speed</div>
+          </div>
+        )}
         <div className="scanner-metric-cell readout-card">
           <div className="scanner-metric-val readout-value" id="scanTtfbVal">
             {ttfbVal}
@@ -417,16 +461,6 @@ export default function Scanner() {
               <span className="google-dot" aria-hidden="true"></span>
               Google PageSpeed &amp; Lighthouse Verified (Mobile)
             </div>
-            {performanceScore !== null && (
-              <div className="cwv-perf-badge">
-                Lighthouse Speed:&nbsp;
-                <strong style={{
-                  color: performanceScore >= 90 ? 'var(--c-success)' : (performanceScore >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)')
-                }}>
-                  {performanceScore}/100
-                </strong>
-              </div>
-            )}
           </div>
 
           <div className="scanner-cwv-grid">
@@ -470,11 +504,11 @@ export default function Scanner() {
         <div style={{ margin: '1rem 0', padding: '0.85rem 1rem', background: 'var(--c-surface-subdued)', border: '1px solid var(--c-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.35rem' }}>
             <span className="mono-label" style={{ color: 'var(--c-vermilion)', fontSize: '0.72rem' }}>
-              How this score is calculated
+              SAPVIK on-page checks
             </span>
             <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>
               {googleVerified
-                ? 'Official Google Lighthouse SEO audit & Core Web Vitals (Moto G4 mobile simulation), enriched with SAPVIK security and local schema signals.'
+                ? 'Rule-based on-page signals verified by SAPVIK. Independent of Google Lighthouse audits.'
                 : 'A rule-based check of on-page signals found in the page\'s initial HTML. It is not a Google score.'}
             </span>
           </div>
@@ -483,7 +517,10 @@ export default function Scanner() {
               <div style={{ padding: '0.5rem 0.65rem', background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--c-text-muted)', fontWeight: 600 }}>META &amp; INDEXING</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--c-text-primary)', marginTop: '2px' }}>
-                  {breakdown.meta.score}<span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.meta.max}</span>
+                  {typeof breakdown.meta.score === 'number' ? breakdown.meta.score : '—'}
+                  {typeof breakdown.meta.max === 'number' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.meta.max}</span>
+                  )}
                 </div>
               </div>
             )}
@@ -491,7 +528,10 @@ export default function Scanner() {
               <div style={{ padding: '0.5rem 0.65rem', background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--c-text-muted)', fontWeight: 600 }}>CONTENT STRUCTURE</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--c-text-primary)', marginTop: '2px' }}>
-                  {breakdown.content.score}<span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.content.max}</span>
+                  {typeof breakdown.content.score === 'number' ? breakdown.content.score : '—'}
+                  {typeof breakdown.content.max === 'number' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.content.max}</span>
+                  )}
                 </div>
               </div>
             )}
@@ -499,7 +539,10 @@ export default function Scanner() {
               <div style={{ padding: '0.5rem 0.65rem', background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--c-text-muted)', fontWeight: 600 }}>SPEED &amp; SECURITY</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--c-text-primary)', marginTop: '2px' }}>
-                  {breakdown.technical.score}<span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.technical.max}</span>
+                  {typeof breakdown.technical.score === 'number' ? breakdown.technical.score : '—'}
+                  {typeof breakdown.technical.max === 'number' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.technical.max}</span>
+                  )}
                 </div>
               </div>
             )}
@@ -507,7 +550,10 @@ export default function Scanner() {
               <div style={{ padding: '0.5rem 0.65rem', background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--c-text-muted)', fontWeight: 600 }}>SCHEMA &amp; SOCIAL</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--c-text-primary)', marginTop: '2px' }}>
-                  {breakdown.rich_data.score}<span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.rich_data.max}</span>
+                  {typeof breakdown.rich_data.score === 'number' ? breakdown.rich_data.score : '—'}
+                  {typeof breakdown.rich_data.max === 'number' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-muted)' }}>/{breakdown.rich_data.max}</span>
+                  )}
                 </div>
               </div>
             )}

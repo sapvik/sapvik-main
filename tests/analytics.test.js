@@ -4,7 +4,7 @@ import { sanitizePayload, trackEvent, getScoreBucket, getLatencyBucket } from '.
 
 test('Analytics: sanitizePayload strips banned PII keys', () => {
   const dirty = {
-    service: 'websites-development',
+    service: 'website-development',
     name: 'Rahul Sharma',
     email: 'rahul@example.com',
     phone: '+91 98200 12345',
@@ -14,7 +14,7 @@ test('Analytics: sanitizePayload strips banned PII keys', () => {
 
   const clean = sanitizePayload(dirty);
 
-  assert.equal(clean.service, 'websites-development');
+  assert.equal(clean.service, 'website-development');
   assert.equal(clean.budget_tier, '50k-100k');
   assert.equal(clean.name, undefined, 'Field "name" must be stripped');
   assert.equal(clean.email, undefined, 'Field "email" must be stripped');
@@ -84,7 +84,7 @@ test('Analytics: trackEvent pushes sanitized event to window.dataLayer', () => {
 
   trackEvent('generate_lead', {
     lead_id: 'UUID-TEST-1234',
-    service: 'digital-promotions',
+    service: 'google-ads-meta-ads',
     source: 'calculator',
     email: 'secret@domain.com'
   });
@@ -94,7 +94,7 @@ test('Analytics: trackEvent pushes sanitized event to window.dataLayer', () => {
 
   assert.equal(pushed.event, 'generate_lead');
   assert.equal(pushed.lead_id, 'UUID-TEST-1234');
-  assert.equal(pushed.service, 'digital-promotions');
+  assert.equal(pushed.service, 'google-ads-meta-ads');
   assert.equal(pushed.source, 'calculator');
   assert.equal(pushed.email, undefined, 'PII email must never reach dataLayer');
   assert.ok(typeof pushed.event_timestamp === 'number');

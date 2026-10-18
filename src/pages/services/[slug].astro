@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { SERVICES, type ServiceItem } from '../../config/services';
 import { SITE } from '../../config/site';
+import { getCollection } from 'astro:content';
 
 export function getStaticPaths() {
   return SERVICES.map(service => ({
@@ -16,6 +17,10 @@ interface Props {
 
 const { service } = Astro.props;
 const otherServices = SERVICES.filter(s => s.id !== service.id);
+
+const allBlogPosts = await getCollection('blog');
+const directPosts = allBlogPosts.filter(p => p.data.relatedServiceSlug === service.slug);
+const relatedPosts = directPosts.length > 0 ? directPosts : allBlogPosts.slice(0, 2);
 
 const outcomeMap: Record<string, string> = {
   'websites': 'Higher Conversion Rate & Core Web Vitals',
@@ -64,17 +69,6 @@ const serviceSchema = {
   "areaServed": {
     "@type": "Country",
     "name": "India"
-  },
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": `${service.name} Deliverables`,
-    "itemListElement": service.deliverables.map((item, index) => ({
-      "@type": "Offer",
-      "itemOffered": {
-        "@type": "Service",
-        "name": item
-      }
-    }))
   }
 };
 
@@ -170,7 +164,7 @@ const pageSchemas = [breadcrumbSchema, serviceSchema, faqSchema];
                   <div style="background: var(--c-bg-subtle, #F8F9FA); border: 1px solid var(--c-border); padding: 1.15rem 1.25rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
                       <span style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--c-vermilion);">{m.step}.</span>
-                      <h4 style="font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--c-text-primary); margin: 0;">{m.title}</h4>
+                      <h3 style="font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--c-text-primary); margin: 0;">{m.title}</h3>
                     </div>
                     <p style="font-size: 0.9rem; color: var(--c-text-secondary); line-height: 1.55; margin: 0;">
                       {m.description}
@@ -286,7 +280,34 @@ const pageSchemas = [breadcrumbSchema, serviceSchema, faqSchema];
             </ul>
           </div>
 
-          <!-- Card 3: Other Capabilities -->
+          <!-- Card 3: Related Engineering Insights & Case Studies -->
+          {relatedPosts.length > 0 && (
+            <div class="frame-box" style="padding: 1.75rem; margin-bottom: 1.75rem;">
+              <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.5rem;">
+                RELATED TECHNICAL INSIGHTS
+              </span>
+              <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--c-text-primary); margin-bottom: 1rem;">
+                Engineering &amp; Strategy Guides
+              </h3>
+              <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.85rem; padding: 0; margin: 0 0 1rem 0;">
+                {relatedPosts.map((p) => (
+                  <li style="border-bottom: 1px dashed var(--c-border); padding-bottom: 0.75rem;">
+                    <a href={`/blog/${p.id}`} style="text-decoration: none; color: var(--c-text-primary); font-size: 0.88rem; font-weight: 600; line-height: 1.4; display: block; margin-bottom: 0.25rem;">
+                      {p.data.title}
+                    </a>
+                    <span class="mono-label" style="font-size: 0.72rem; color: var(--c-text-muted);">
+                      {p.data.category} &bull; {p.data.readingTime}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <a href="/blog" style="font-size: 0.8rem; font-family: var(--font-mono); font-weight: 700; color: var(--c-vermilion); text-decoration: none;">
+                Explore All Growth Insights &rarr;
+              </a>
+            </div>
+          )}
+
+          <!-- Card 4: Other Capabilities -->
           <div class="frame-box" style="padding: 1.75rem;">
             <span class="mono-label" style="display: block; margin-bottom: 0.75rem;">
               OTHER GROWTH CAPABILITIES

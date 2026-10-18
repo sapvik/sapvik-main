@@ -80,3 +80,36 @@ test('Contact Defaults: functions/api/contact.js does not fall back to leads@sap
   assert.equal(contactJs.includes("|| 'leads@sapvik.com'"), false);
   assert.equal(contactJs.includes("|| 'growth@sapvik.com'"), false);
 });
+
+test('Public IDs Build Verification: dist/index.html contains GTM container and client bundle contains Turnstile site key', () => {
+  const indexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
+  assert.ok(indexHtml.includes('googletagmanager.com/gtm.js'), 'dist/index.html must load GTM script');
+  assert.ok(indexHtml.includes('GTM-KWPN6JRN'), 'dist/index.html must contain GTM-KWPN6JRN');
+
+  // Search all client JS files in dist/_astro/ for the Turnstile site key
+  const astroAssetsDir = path.join(distDir, '_astro');
+  assert.ok(fs.existsSync(astroAssetsDir), 'dist/_astro directory must exist');
+  const jsFiles = fs.readdirSync(astroAssetsDir).filter(f => f.endsWith('.js'));
+  assert.ok(jsFiles.length > 0, 'dist/_astro must contain client JS bundles');
+
+  let turnstileKeyFound = false;
+  for (const jsFile of jsFiles) {
+    const content = fs.readFileSync(path.join(astroAssetsDir, jsFile), 'utf8');
+    if (content.includes('0x4AAAAAAAFTY0v25vZJ_wPCQ')) {
+      turnstileKeyFound = true;
+      break;
+    }
+  }
+  assert.ok(turnstileKeyFound, 'Client bundle in dist/_astro must contain Turnstile site key 0x4AAAAAAAFTY0v25vZJ_wPCQ');
+});
+
+test('404 Page: dist/404.html exists with links to home, services, and robots noindex', () => {
+  const notFoundPath = path.join(distDir, '404.html');
+  assert.ok(fs.existsSync(notFoundPath), 'dist/404.html must exist for Cloudflare Pages SPA/soft-404 prevention');
+  const html = fs.readFileSync(notFoundPath, 'utf8');
+  assert.ok(html.includes('Page Not Found'), '404 page must have Page Not Found heading');
+  assert.ok(html.includes('href="/"'), '404 page must link to home');
+  assert.ok(html.includes('href="/#services"') || html.includes('href="/services/'), '404 page must link to services');
+  assert.ok(html.includes('href="/#contact"'), '404 page must link to contact');
+  assert.ok(html.includes('name="robots"') && html.includes('noindex'), '404 page must have robots noindex directive');
+});

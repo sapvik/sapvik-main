@@ -13,7 +13,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
 
 <Base
   title="SAPVIK | Precision Digital Growth & Web Dev in India"
-  description="SAPVIK engineers high-speed websites, Google Business Profile local 3-Pack visibility, targeted Google Ads & Meta Ads campaigns, and organic SEO across India."
+  description="SAPVIK engineers high-speed websites, Google Business Profile local 3-Pack visibility, Google Ads, Meta Ads campaigns, and organic SEO across India."
   loadTurnstile={true}
 >
   <!-- HERO SECTION: VALUE PROPOSITION + LIVE DIAGNOSTIC CONSOLE -->
@@ -65,7 +65,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
 
         <!-- Hero Right: Live Technical Diagnostic Console -->
         <div class="hero-visual">
-          <Scanner client:load />
+          <Scanner client:idle />
         </div>
 
       </div>
@@ -148,7 +148,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
         <span class="mono-label">Accountability</span>
         <h2 class="section-title">Built on Clarity and Measurable Standards</h2>
         <p class="section-desc">
-          Growth marketing without ambiguous jargon or unverifiable claims. Every operational commitment is documented, auditable, and backed by contractual SLA.
+          Growth marketing without ambiguous jargon or unverifiable claims. Every operational commitment is documented and auditable.
         </p>
       </div>
 
@@ -223,7 +223,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
                 </svg>
               </div>
               <div class="channel-meta">
-                <h4>Instant WhatsApp Connect</h4>
+                <h3>Instant WhatsApp Connect</h3>
                 <p>{SITE.brand.phoneDisplay}</p>
               </div>
             </a>
@@ -236,7 +236,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
                 </svg>
               </div>
               <div class="channel-meta">
-                <h4>Direct Email Inquiries</h4>
+                <h3>Direct Email Inquiries</h3>
                 <p>{SITE.brand.email}</p>
               </div>
             </a>
@@ -249,7 +249,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
                 </svg>
               </div>
               <div class="channel-meta">
-                <h4>Operational Delivery</h4>
+                <h3>Operational Delivery</h3>
                 <p>Pan-India & Global Delivery</p>
               </div>
             </div>
@@ -277,7 +277,7 @@ import ContactForm from '../components/islands/ContactForm.tsx';
         </div>
 
         <!-- Form Right -->
-        <ContactForm client:load />
+        <ContactForm client:visible />
 
       </div>
     </div>

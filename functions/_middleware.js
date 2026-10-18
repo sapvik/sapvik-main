@@ -16,7 +16,7 @@ function getCookie(request, name) {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
-function renderLockScreen(errorMessage = '', returnTo = '/') {
+function renderLockScreen(errorMessage = '', returnTo = '/', canLogin = true) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -180,6 +180,7 @@ function renderLockScreen(errorMessage = '', returnTo = '/') {
 
     ${errorMessage ? `<div class="error-banner">${errorMessage}</div>` : ''}
 
+    ${canLogin ? `
     <form method="POST" action="/_auth_login">
       <input type="hidden" name="return_to" value="${escapeHtml(returnTo)}">
       <div class="form-group">
@@ -191,7 +192,10 @@ function renderLockScreen(errorMessage = '', returnTo = '/') {
         <span>Unlock Access</span>
         <span>&rarr;</span>
       </button>
-    </form>
+    </form>` : `
+    <div style="padding: 0.85rem 0; color: #718096; font-size: 0.85rem; line-height: 1.5;">
+      Preview is locked and no password is configured.
+    </div>`}
 
     <div class="security-note">
       Protected by Cloudflare Edge Gateway. Automated crawlers, search indexers, and public probes are strictly blocked.
@@ -300,9 +304,8 @@ export async function onRequest(context) {
 
   // Edge Password Gate:
   // The gate is LOCKED by default to protect the site.
-  // Falls back to default password 'sapvik2026' if SITE_PASSWORD is unset.
   // ONLY if SITE_PASSWORD is set to 'DISABLE' (or 'disabled'), allow open public access.
-  let sitePassword = 'sapvik2026';
+  let sitePassword = null;
   if (env && env.SITE_PASSWORD !== undefined && env.SITE_PASSWORD !== null) {
     const rawStr = String(env.SITE_PASSWORD).trim();
     if (rawStr.toLowerCase() === 'disable' || rawStr.toLowerCase() === 'disabled') {
@@ -311,6 +314,19 @@ export async function onRequest(context) {
     if (rawStr.length > 0) {
       sitePassword = rawStr;
     }
+  }
+
+  // If SITE_PASSWORD is unset, fail closed: accept no logins and display locked screen
+  if (!sitePassword) {
+    const safeCurrentPath = sanitizeReturnTo(url.pathname + url.search);
+    return new Response(renderLockScreen('Preview is locked and no password is configured', safeCurrentPath, false), {
+      status: 401,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Robots-Tag': 'noindex, nofollow, noarchive'
+      }
+    });
   }
 
   const expectedToken = await getAuthToken(sitePassword);

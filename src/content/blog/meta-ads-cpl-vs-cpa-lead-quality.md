@@ -1,5 +1,6 @@
 ---
 title: "Cost Per Lead vs. Cost Per Acquisition: Why Cheap Meta Ads Drain Indian SME Budgets"
+metaTitle: "Meta Ads CPL vs CPA: Lead Quality in India | SAPVIK"
 description: "A commercial analysis of instant lead forms, junk contact inquiries, server-side Conversion API (CAPI), and engineering high-intent lead pipelines in India."
 pubDate: 2026-10-13
 updatedDate: 2026-10-14

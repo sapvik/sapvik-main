@@ -29,17 +29,17 @@
   --border-bracket: 2px solid var(--c-text-primary);
 
   /* Focal Accent (5% Maximum - Kept Small & Intentional) */
-  --c-vermilion: #C93A22;      /* WCAG AA Compliant Vermilion (4.65:1 on white) */
-  --c-vermilion-soft: rgba(201, 58, 34, 0.08);
-  --c-vermilion-glow: rgba(201, 58, 34, 0.18);
-  --c-vermilion-hover: #B2301A;
+  --c-vermilion: #B8301B;      /* WCAG AA Compliant Vermilion (5.08:1 on paper, 4.68:1 on subdued) */
+  --c-vermilion-soft: rgba(184, 48, 27, 0.08);
+  --c-vermilion-glow: rgba(184, 48, 27, 0.18);
+  --c-vermilion-hover: #9E2614;
   --c-success: #15803D;
   --c-success-soft: rgba(21, 128, 61, 0.08);
   --c-warning: #B45309;
 
   /* Typography */
-  --font-display: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo', 'Archivo-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', 'IBM-Plex-Sans-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
 
   /* Geometry & Metrics */
@@ -900,6 +900,14 @@ button, input, select, textarea {
   transition: width 0.25s ease;
 }
 
+/* Reserved Container Heights to Prevent CLS During Hydration & Bot Challenges */
+.cf-turnstile,
+#scannerTurnstile,
+#contactTurnstile {
+  min-height: 65px;
+  contain: layout;
+}
+
 .scanner-results-deck {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1209,7 +1217,9 @@ button, input, select, textarea {
 .snap-dot {
   background: transparent;
   border: none;
-  padding: 8px 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1808,6 +1818,7 @@ button, input, select, textarea {
   background: var(--c-surface-subdued);
 }
 
+.channel-meta h3,
 .channel-meta h4 {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
@@ -2182,9 +2193,9 @@ button, input, select, textarea {
   }
 
   .dock-btn-whatsapp {
-    background: #128C7E;
+    background: #0E7465;
     color: #FFFFFF;
-    border: 1px solid #128C7E;
+    border: 1px solid #0E7465;
   }
 
   .dock-btn-audit {

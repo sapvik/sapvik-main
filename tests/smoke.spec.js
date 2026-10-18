@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Computed SHA-256 token for default password "sapvik2026"
-const DEFAULT_AUTH_TOKEN = '14b3462340e0b0e3f6b99b0600d4f018ca8409acac51fddc1c17bc8120ad13b9';
+// Computed SHA-256 token for password "CHANGE_ME_LONG_RANDOM"
+const DEFAULT_AUTH_TOKEN = 'e3ea22849fcf77e2d72f4a609142ed9046317647a58f3c27a40a67ef8f0d839a';
 
 test.describe('Edge Password Gate & Access Control', () => {
 
@@ -25,7 +25,7 @@ test.describe('Edge Password Gate & Access Control', () => {
     await expect(errBanner).toContainText('Incorrect access passcode');
 
     // 4. Submit correct passcode
-    await page.fill('#password', 'sapvik2026');
+    await page.fill('#password', 'CHANGE_ME_LONG_RANDOM');
     await page.click('button[type="submit"]');
 
     // 5. Successful authentication unlocks the website

@@ -1,6 +1,7 @@
 ---
 title: "Google Business Profile in India: Fixing Suspensions, Video Verification, and Local 3-Pack Dominance"
-description: "A definitive guide for Indian clinics, retailers, and service providers navigating Google Maps verification, video audits, suspensions, and local citation rank grids."
+metaTitle: "Google Business Profile India Verification Guide | SAPVIK"
+description: "A definitive guide for Indian businesses navigating Google Maps verification, video audits, suspensions, and local citation rank grids."
 pubDate: 2026-10-13
 updatedDate: 2026-10-14
 category: "Local SEO"

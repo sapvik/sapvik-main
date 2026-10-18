@@ -63,3 +63,22 @@
   font-display: swap;
   src: url('/assets/fonts/ibm-plex-sans-600-normal.woff2') format('woff2');
 }
+
+/* Metric-matched fallback fonts to eliminate layout shift during font swap (CLS: 0.000) */
+@font-face {
+  font-family: 'Archivo-Fallback';
+  src: local('Arial');
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+
+@font-face {
+  font-family: 'IBM-Plex-Sans-Fallback';
+  src: local('Arial');
+  ascent-override: 102%;
+  descent-override: 28%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}

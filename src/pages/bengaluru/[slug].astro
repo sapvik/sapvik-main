@@ -1,0 +1,134 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SERVICES } from '../../config/services';
+
+export function getStaticPaths() {
+  const allowedSlugs = [
+    'website-development',
+    'google-business-profile-management',
+    'search-engine-optimization'
+  ];
+
+  return allowedSlugs.map((slug) => {
+    const service = SERVICES.find((s) => s.slug === slug);
+    return {
+      params: { slug },
+      props: { service }
+    };
+  });
+}
+
+const { service } = Astro.props;
+// Phase 5 Draft Route: Awaiting unique Bengaluru facts from leadership (docs/CONTENT_INPUTS_NEEDED.md)
+const draft = true;
+
+const titleMap: Record<string, string> = {
+  'website-development': 'Website Development in Bengaluru | SAPVIK',
+  'google-business-profile-management': 'Google Business Profile Management Bengaluru | SAPVIK',
+  'search-engine-optimization': 'Search Engine Optimization (SEO) Bengaluru | SAPVIK'
+};
+
+const descMap: Record<string, string> = {
+  'website-development': 'Custom high-speed website development engineered for Bengaluru startups, healthcare clinics, and commercial B2B enterprises across tech corridors.',
+  'google-business-profile-management': 'Local Google Business Profile optimization for Bengaluru medical practices, showrooms, and commercial clinics targeting Google Maps 3-Pack discovery.',
+  'search-engine-optimization': 'Commercial search engine optimization engineered for Bengaluru B2B firms, healthcare providers, and regional enterprises targeting organic growth.'
+};
+
+const pageTitle = service ? (titleMap[service.slug] || `${service.name} in Bengaluru | SAPVIK`) : 'Growth Service Bengaluru | SAPVIK';
+const pageDesc = service ? (descMap[service.slug] || service.metaDescription) : 'Precision digital growth advisory and engineering in Bengaluru.';
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  noindex={draft}
+>
+  <div class="local-service-page" style="padding-top: calc(var(--header-h) + 2.5rem); padding-bottom: 5rem;">
+    <div class="container" style="max-width: 960px;">
+      
+      <!-- Draft Notice Banner -->
+      <aside class="draft-indicator" aria-label="Draft Notice" style="margin-bottom: 2rem; background: #FFF9E6; border: 1px solid #FFE58F; padding: 0.85rem 1.25rem; font-size: 0.82rem; font-family: var(--font-mono); color: #874D00;">
+        <strong>[DRAFT ROUTE &bull; NOINDEX]</strong> This localized Bengaluru service page layout is prepared and excluded from the sitemap. Awaiting unique local market inputs from company leadership per <code>docs/CONTENT_INPUTS_NEEDED.md</code>.
+      </aside>
+
+      <!-- Section Header -->
+      <header class="section-head" style="margin-bottom: 2.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span class="badge">BENGALURU LOCAL HUB</span>
+          <span class="mono-label">Karnataka &bull; Tech Corridor Focus</span>
+        </div>
+        <h1 style="font-family: var(--font-display); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.75rem;">
+          {service?.name} in Bengaluru
+        </h1>
+        <p style="font-size: 1.05rem; color: var(--c-text-secondary); line-height: 1.6; max-width: 760px;">
+          Tailored engineering and digital growth campaigns engineered for technology enterprises, multi-specialty healthcare practices, and commercial brands across Bengaluru.
+        </p>
+      </header>
+
+      <!-- Structured Local Corridor Hubs -->
+      <section class="frame-box" style="padding: 2rem; margin-bottom: 2.5rem;">
+        <span class="mono-label" style="color: var(--c-vermilion); display: block; margin-bottom: 0.5rem;">
+          COMMERCIAL CORRIDORS &amp; HUBS
+        </span>
+        <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--c-text-primary); margin-bottom: 1rem;">
+          Primary Service Areas Across Bengaluru
+        </h2>
+        <p style="font-size: 0.92rem; color: var(--c-text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+          We support organizations with physical practices, regional headquarters, and commercial centers across key Bengaluru sub-markets:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.88rem; font-family: var(--font-mono);">
+          <div style="background: var(--c-surface); border: 1px solid var(--c-border); padding: 0.75rem 1rem;">
+            &bull; Indiranagar &amp; Koramangala
+          </div>
+          <div style="background: var(--c-surface); border: 1px solid var(--c-border); padding: 0.75rem 1rem;">
+            &bull; HSR Layout &amp; Bellandur
+          </div>
+          <div style="background: var(--c-surface); border: 1px solid var(--c-border); padding: 0.75rem 1rem;">
+            &bull; Whitefield &amp; Outer Ring Road
+          </div>
+          <div style="background: var(--c-surface); border: 1px solid var(--c-border); padding: 0.75rem 1rem;">
+            &bull; Jayanagar &amp; JP Nagar
+          </div>
+        </div>
+      </section>
+
+      <!-- Deliverables Blueprint -->
+      <section class="frame-box" style="padding: 2rem; margin-bottom: 2.5rem;">
+        <span class="mono-label" style="display: block; margin-bottom: 0.5rem;">
+          EXECUTION BLUEPRINT
+        </span>
+        <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--c-text-primary); margin-bottom: 1rem;">
+          Core Execution Standards for Bengaluru Clients
+        </h2>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+          {service?.deliverables.slice(0, 4).map((d) => (
+            <li style="display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.92rem; color: var(--c-text-secondary); line-height: 1.55;">
+              <span style="color: var(--c-vermilion); font-weight: 800;">&bull;</span>
+              <span>{d}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <!-- Strategic Consultation CTA -->
+      <div class="frame-box" style="padding: 2rem; border-left: 4px solid var(--c-vermilion);">
+        <h3 style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--c-text-primary); margin-bottom: 0.5rem;">
+          Discuss Your Bengaluru Growth Objective
+        </h3>
+        <p style="font-size: 0.92rem; color: var(--c-text-secondary); margin-bottom: 1.25rem; line-height: 1.55;">
+          Connect directly with our engineering and growth specialists to review your local market footprint.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="/#contact" class="btn btn-vermilion btn-sm">
+            <span>Request Diagnostic Review</span>
+            <span>&rarr;</span>
+          </a>
+          <a href={`/services/${service?.slug}`} class="btn btn-secondary btn-sm">
+            <span>View Full Service Scope</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</Base>

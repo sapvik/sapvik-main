@@ -1,0 +1,2 @@
+# Sitemap 301 redirect for legacy crawler requests
+/sitemap.xml /sitemap-index.xml 301

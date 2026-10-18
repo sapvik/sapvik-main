@@ -5,7 +5,7 @@
  */
 
 export const PSI_ENDPOINT = 'https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed';
-export const DEFAULT_TIMEOUT_MS = 12000; // 12-second bounded timeout
+export const DEFAULT_TIMEOUT_MS = 16000; // 16-second bounded timeout
 
 /**
  * Normalizes an API key by stripping wrapping quotes and whitespace.
@@ -313,30 +313,16 @@ export function mergeScanWithPageSpeed(localResult, psiResult, targetUrl) {
     return {
       success: true,
       url: targetUrl,
-      score: psiResult.seo_score ?? 70,
+      score: psiResult.seo_score ?? null,
       performance_score: psiResult.performance_score ?? null,
       measured_latency_ms: null,
       response_time_ms: null,
-      has_ssl: targetUrl.toLowerCase().startsWith('https://'),
-      has_hsts: false,
+      has_ssl: null,
+      has_hsts: null,
       google_verified: true,
       core_web_vitals: psiResult.core_web_vitals || null,
-      breakdown: {
-        meta: { score: Math.round(((psiResult.seo_score ?? 70) / 100) * 30), max: 30, label: "Meta & Indexability" },
-        content: { score: 20, max: 25, label: "Content Structure" },
-        technical: {
-          score: psiResult.performance_score !== null ? Math.round((psiResult.performance_score / 100) * 25) : 20,
-          max: 25,
-          label: "Speed & Performance"
-        },
-        rich_data: { score: 15, max: 20, label: "Rich Snippets & Social" }
-      },
-      local_signals: {
-        has_local_schema: false,
-        has_phone: false,
-        has_maps_link: false,
-        local_readiness: 0
-      },
+      breakdown: null,
+      local_signals: null,
       findings: psiResult.findings ? psiResult.findings.slice(0, 8) : []
     };
   }

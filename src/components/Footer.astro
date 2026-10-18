@@ -24,7 +24,7 @@ import { SERVICES } from '../config/services';
 
       <!-- Services -->
       <div>
-        <h4 class="footer-nav-title">Growth Services</h4>
+        <h3 class="footer-nav-title">Growth Services</h3>
         <ul class="footer-nav-list">
           {SERVICES.map((s) => (
             <li><a href={`/services/${s.slug}`}>{s.name}</a></li>
@@ -34,7 +34,7 @@ import { SERVICES } from '../config/services';
 
       <!-- Explore -->
       <div>
-        <h4 class="footer-nav-title">Explore</h4>
+        <h3 class="footer-nav-title">Explore</h3>
         <ul class="footer-nav-list">
           <li><a href="/#services">All Services</a></li>
           <li><a href="/blog">Growth Insights & Blog</a></li>
@@ -49,7 +49,7 @@ import { SERVICES } from '../config/services';
 
       <!-- Connect & Compliance -->
       <div>
-        <h4 class="footer-nav-title">Connect</h4>
+        <h3 class="footer-nav-title">Connect</h3>
         <ul class="footer-nav-list">
           <li><a href={`https://wa.me/${SITE.brand.whatsappNumber}?text=${encodeURIComponent(SITE.brand.whatsappText)}`} target="_blank" rel="noopener">WhatsApp Direct</a></li>
           <li><a href={`mailto:${SITE.brand.email}`}>{SITE.brand.email}</a></li>

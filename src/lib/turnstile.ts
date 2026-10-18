@@ -18,6 +18,36 @@ export function isTurnstileConfigured(): boolean {
   return getTurnstileSiteKey() !== null;
 }
 
+let scriptPromise: Promise<void> | null = null;
+
+export function loadTurnstileScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.turnstile) return Promise.resolve();
+  if (scriptPromise) return scriptPromise;
+
+  scriptPromise = new Promise((resolve) => {
+    const existing = document.querySelector('script[src*="turnstile/v0/api.js"]');
+    if (existing) {
+      if (window.turnstile) {
+        resolve();
+      } else {
+        existing.addEventListener('load', () => resolve());
+        existing.addEventListener('error', () => resolve());
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.head.appendChild(script);
+  });
+
+  return scriptPromise;
+}
+
 export function renderTurnstile(
   container: HTMLElement | null,
   callback: (token: string) => void,
@@ -53,17 +83,19 @@ export function renderTurnstile(
     return doRender();
   }
 
-  // If Turnstile script tag is still downloading/executing (async/defer)
-  let attempts = 0;
-  const poll = setInterval(() => {
-    attempts++;
-    if (window.turnstile) {
-      clearInterval(poll);
-      doRender();
-    } else if (attempts >= 40) {
-      clearInterval(poll);
-    }
-  }, 100);
+  // Inject/await Turnstile script tag on demand, then render
+  loadTurnstileScript().then(() => {
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (window.turnstile) {
+        clearInterval(poll);
+        doRender();
+      } else if (attempts >= 40) {
+        clearInterval(poll);
+      }
+    }, 100);
+  });
 
   return null;
 }

@@ -191,3 +191,37 @@ test('PageSpeed: mergeScanWithPageSpeed handles failed PSI with graceful fallbac
   assert.equal(merged.score, 82);
   assert.equal(merged.psi_fallback_reason, 'psi_timeout');
 });
+
+test('PageSpeed: local failure + PSI success returns no invented values and null breakdown', () => {
+  const failedLocalScan = {
+    success: false,
+    error: 'unreachable',
+    message: 'Target host is unreachable'
+  };
+
+  const successfulPsi = {
+    success: true,
+    seo_score: 88,
+    performance_score: 72,
+    core_web_vitals: {
+      lcp: { display: '2.1 s', value_ms: 2100, status: 'good' }
+    },
+    findings: [
+      { id: 'google_document_title', severity: 'warning', title: 'Title issue', evidence: '', fix: '', source: 'google_lighthouse' }
+    ]
+  };
+
+  const merged = mergeScanWithPageSpeed(failedLocalScan, successfulPsi, 'https://example.com');
+  assert.equal(merged.success, true);
+  assert.equal(merged.score, 88);
+  assert.equal(merged.performance_score, 72);
+  assert.equal(merged.google_verified, true);
+
+  // Assert no invented values
+  assert.equal(merged.has_ssl, null, 'has_ssl must be null when local probe fails');
+  assert.equal(merged.has_hsts, null, 'has_hsts must be null');
+  assert.equal(merged.measured_latency_ms, null, 'measured_latency_ms must be null');
+  assert.equal(merged.response_time_ms, null, 'response_time_ms must be null');
+  assert.equal(merged.breakdown, null, 'breakdown must be null when local scan fails');
+  assert.equal(merged.local_signals, null, 'local_signals must be null when local scan fails');
+});

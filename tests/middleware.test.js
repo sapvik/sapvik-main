@@ -89,8 +89,8 @@ test('Middleware Gate: sanitizeReturnTo strictly prevents open redirects and all
   assert.equal(sanitizeReturnTo(null), '/');
   assert.equal(sanitizeReturnTo('/'), '/');
 
-  assert.equal(sanitizeReturnTo('/services/websites-development.html'), '/services/websites-development.html');
-  assert.equal(sanitizeReturnTo('/terms.html?tab=privacy'), '/terms.html?tab=privacy');
+  assert.equal(sanitizeReturnTo('/services/website-development'), '/services/website-development');
+  assert.equal(sanitizeReturnTo('/terms?tab=privacy'), '/terms?tab=privacy');
 });
 
 test('Middleware Gate: Prevents open redirect attacks via return_to in login submission', async () => {
@@ -126,7 +126,7 @@ test('Middleware Gate: constantTimeCompare correctly compares strings in constan
   assert.equal(constantTimeCompare('', 'a'), false);
 });
 
-test('Middleware Gate: Unset SITE_PASSWORD locks with default password sapvik2026', async () => {
+test('Middleware Gate: Unset SITE_PASSWORD locks with message and accepts no logins (fail closed)', async () => {
   const request1 = new Request('http://localhost:8082/');
   let nextCalled = false;
   const res1 = await onRequest({
@@ -141,6 +141,24 @@ test('Middleware Gate: Unset SITE_PASSWORD locks with default password sapvik202
   assert.equal(res1.status, 401);
   const body = await res1.text();
   assert.ok(body.includes('Preview Authorization'));
+  assert.ok(body.includes('Preview is locked and no password is configured'));
+  assert.equal(body.includes('action="/_auth_login"'), false, 'Login form should not be rendered when no password configured');
+
+  // Attempt to POST login anyway: must reject with 401 and fail closed
+  const formData = new FormData();
+  formData.append('password', 'any-attempt');
+  const postReq = new Request('http://localhost:8082/_auth_login', {
+    method: 'POST',
+    body: formData
+  });
+  const postRes = await onRequest({
+    request: postReq,
+    env: {},
+    next: async () => new Response('should not reach')
+  });
+  assert.equal(postRes.status, 401);
+  const postBody = await postRes.text();
+  assert.ok(postBody.includes('Preview is locked and no password is configured'));
 });
 
 test('Middleware Gate: Allows authenticated requests with valid cookie', async () => {

@@ -112,7 +112,7 @@ export async function onRequestPost(context) {
   if (psiKey) {
     const [localSettled, psiSettled] = await Promise.allSettled([
       executeLiveScan(normalizedTarget),
-      runPageSpeedAudit(normalizedTarget, psiKey, { timeoutMs: 12000 })
+      runPageSpeedAudit(normalizedTarget, psiKey, { timeoutMs: 16000 })
     ]);
 
     const localResult = localSettled.status === 'fulfilled' ? localSettled.value : { success: false, error: 'local_failed' };
@@ -126,8 +126,10 @@ export async function onRequestPost(context) {
       // Graceful fallback to local scan if PSI timed out or failed
       scanResult = { ...localResult, google_verified: false, psi_fallback_reason: psiResult.error };
     }
+    scanResult.psi_attempted = true;
   } else {
     scanResult = await executeLiveScan(normalizedTarget);
+    scanResult.psi_attempted = false;
   }
 
   const responseHeaders = {

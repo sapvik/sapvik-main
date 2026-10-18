@@ -21,7 +21,6 @@ export interface ServiceItem {
   code: string;
   name: string;
   slug: string;
-  legacySlugs?: string[];
   shortName: string;
   headline: string;
   metaDescription: string;
@@ -41,7 +40,6 @@ export const SERVICES: ServiceItem[] = [
     name: "Website Development",
     shortName: "Websites",
     slug: "website-development",
-    legacySlugs: ["websites-development", "branding"],
     headline: "High-speed platforms & brand design systems engineered for customer conversion",
     metaDescription: "Custom website development in India engineered for speed, visual brand distinction, Core Web Vitals compliance, and clean commercial lead generation.",
     description: "Custom web development built for speed, bespoke visual brand standards, clean mobile navigation, structured SEO metadata, and clear conversion paths. We integrate cohesive typography pairing, WCAG contrast-compliant color tokens, and vector identity assets into maintainable, semantic code that loads rapidly on all mobile networks.",
@@ -111,7 +109,6 @@ export const SERVICES: ServiceItem[] = [
     name: "Google Business Profile Management",
     shortName: "Google Business Profile",
     slug: "google-business-profile-management",
-    legacySlugs: ["gmb-management"],
     headline: "Google Business Profile optimization, local 3-Pack rankings, and geo-targeted discovery",
     metaDescription: "Professional Google Business Profile management in India. Optimize local Maps 3-Pack rankings, boost incoming phone calls, and manage customer reviews.",
     description: "Hands-on management for Google Business Profiles, structured local citations, category alignment, spam fighting, geo-grid rankings, and review response workflows. We systematically position your storefront or practice into high-visibility Google Maps 3-Pack placements for high-intent nearby searches.",
@@ -176,9 +173,8 @@ export const SERVICES: ServiceItem[] = [
     name: "Search Engine Optimization (SEO)",
     shortName: "SEO",
     slug: "search-engine-optimization",
-    legacySlugs: ["seo"],
     headline: "High-intent organic search engine optimization engineered for sustainable customer acquisition",
-    metaDescription: "Data-driven SEO services in India. Technical SEO audits, commercial keyword ranking, entity optimization, and high-authority backlinks for lasting organic growth.",
+    metaDescription: "Data-driven SEO services in India. Technical audits, commercial keyword ranking, entity optimization, and authority backlinks for lasting organic growth.",
     description: "Systematic technical, on-page, and semantic entity SEO designed to capture commercial search volume across India and global markets. We focus on search intent that drives paying clients and qualified business inquiries, not vanity rankings for low-intent keywords.",
     whoItsFor: [
       "B2B service providers, industrial manufacturers, and consultants targeting high-value corporate inquiries.",
@@ -241,7 +237,6 @@ export const SERVICES: ServiceItem[] = [
     name: "Google Ads & Meta Ads",
     shortName: "Google & Meta Ads",
     slug: "google-ads-meta-ads",
-    legacySlugs: ["digital-promotions"],
     headline: "High-intent paid search and targeted social ad campaigns with verified attribution",
     metaDescription: "Performance-focused Google Ads and Meta Ads management in India. Direct platform billing, verified cost-per-lead tracking, and client-owned ad accounts.",
     description: "Paid acquisition campaigns structured around cost-per-lead, explicit conversion tracking, client-held ad accounts, and direct platform billing. We build search intent campaigns on Google and targeted creative funnels across Instagram and Facebook with rigorous attribution.",
@@ -307,7 +302,6 @@ export const SERVICES: ServiceItem[] = [
     name: "Social Media Management",
     shortName: "Social Media",
     slug: "social-media-management",
-    legacySlugs: ["media-management"],
     headline: "Structured commercial content production, brand visual standards & organic distribution",
     metaDescription: "Professional social media management in India. Short-form video production, educational visual explainers, content scheduling, and commercial brand trust.",
     description: "End-to-end social media management designed to build authority, explain complex services clearly, and turn social attention into commercial trust. We focus on structured short-form video, case explainers, and consistent channel scheduling without low-effort fluff.",
@@ -434,5 +428,5 @@ export const SERVICES: ServiceItem[] = [
 ];
 
 export function getServiceBySlug(slug: string): ServiceItem | undefined {
-  return SERVICES.find(s => s.slug === slug || s.id === slug || (s.legacySlugs && s.legacySlugs.includes(slug)));
+  return SERVICES.find(s => s.slug === slug || s.id === slug);
 }

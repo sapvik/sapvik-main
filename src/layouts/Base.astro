@@ -12,19 +12,40 @@ interface Props {
   ogType?: string;
   loadTurnstile?: boolean;
   schema?: Record<string, any> | Array<Record<string, any>>;
+  noindex?: boolean;
 }
 
 const {
-  title = "SAPVIK | Website Development, Google Business Profile & Digital Marketing in India",
+  title = "SAPVIK | Precision Digital Growth & Web Dev in India",
   description = "Custom high-speed web platforms, local Google Business Profile visibility, and commercial ad campaigns engineered for verified business growth.",
-  canonical = Astro.url.href,
+  canonical: passedCanonical,
   ogType = "website",
   loadTurnstile = false,
+  noindex = false,
   schema
 } = Astro.props;
 
 const siteUrl = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://sapvik.com';
 const ogImageUrl = `${siteUrl}/assets/og-image.png`;
+
+// Normalize canonical URL to always be absolute, without .html, and with no trailing slash (except domain root)
+let canonical: string;
+if (passedCanonical) {
+  let cleaned = passedCanonical.replace(/\.html$/, '');
+  if (cleaned.endsWith('/index')) {
+    cleaned = cleaned.slice(0, -6) || '/';
+  }
+  canonical = cleaned;
+} else {
+  let pathname = Astro.url.pathname.replace(/\.html$/, '');
+  if (pathname === '/index' || pathname === '') {
+    pathname = '/';
+  }
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    pathname = pathname.slice(0, -1);
+  }
+  canonical = `${siteUrl}${pathname}`;
+}
 
 const socialProfiles = [
   SITE.brand.social?.linkedin,
@@ -99,6 +120,7 @@ const jsonLd = {
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
   <link rel="alternate" type="application/rss+xml" title="SAPVIK Insights" href="/rss.xml" />
 
   <!-- Open Graph / Facebook -->
@@ -121,9 +143,13 @@ const jsonLd = {
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImageUrl} />
 
+  <!-- Preload Critical Above-the-Fold Self-Hosted Fonts -->
+  <link rel="preload" href="/assets/fonts/archivo-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/assets/fonts/ibm-plex-sans-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+
   <!-- Favicons & App Icons -->
   <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -143,20 +169,38 @@ const jsonLd = {
     });
   </script>
 
-  <!-- Google Tag Manager Snippet (Rendered strictly when valid PUBLIC_GTM_ID is configured) -->
+  <!-- Google Tag Manager Snippet: Defer until user interaction or load + idle fallback -->
   {gtmId && (
     <script is:inline define:vars={{ gtmId }}>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      (function(w,d,s,l,i){
+        w[l]=w[l]||[];
+        w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+        var loaded = false;
+        function loadGtm() {
+          if (loaded) return;
+          loaded = true;
+          events.forEach(function(e) { w.removeEventListener(e, onInteract, { passive: true }); });
+          var f = d.getElementsByTagName(s)[0];
+          var j = d.createElement(s);
+          var dl = l !== 'dataLayer' ? '&l=' + l : '';
+          j.async = true;
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+          f.parentNode.insertBefore(j, f);
+        }
+        var events = ['scroll', 'click', 'keydown', 'touchstart'];
+        function onInteract() {
+          loadGtm();
+        }
+        events.forEach(function(e) { w.addEventListener(e, onInteract, { once: true, passive: true }); });
+        w.addEventListener('load', function() {
+          if ('requestIdleCallback' in w) {
+            w.requestIdleCallback(function() { setTimeout(loadGtm, 1500); }, { timeout: 3500 });
+          } else {
+            setTimeout(loadGtm, 3500);
+          }
+        }, { once: true });
       })(window,document,'script','dataLayer',gtmId);
     </script>
-  )}
-
-  <!-- Cloudflare Turnstile: only loaded on pages containing interactive forms/scanner -->
-  {loadTurnstile && (
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   )}
 </head>
 <body>

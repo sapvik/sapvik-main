@@ -16,7 +16,8 @@ test('Integration: Static files and critical assets exist in dist/ directory wit
     'privacy.html',
     'terms.html',
     'cookies.html',
-    'sitemap.xml',
+    'sitemap-index.xml',
+    'sitemap-0.xml',
     'robots.txt',
     '_headers',
     '_routes.json',
@@ -95,7 +96,7 @@ test('Integration: robots.txt disallows /api/ and /config/ and specifies sitemap
   const robotsContent = fs.readFileSync(robotsPath, 'utf8');
   assert.ok(robotsContent.includes('Disallow: /api/'), 'robots.txt must disallow /api/');
   assert.ok(robotsContent.includes('Disallow: /config/'), 'robots.txt must disallow /config/');
-  assert.ok(robotsContent.includes('Sitemap: https://sapvik.com/sitemap.xml'), 'robots.txt must specify sitemap');
+  assert.ok(robotsContent.includes('Sitemap: https://sapvik.com/sitemap-index.xml'), 'robots.txt must specify sitemap');
 });
 
 test('Integration: _headers enforces strict HTTP security and caching directives', () => {

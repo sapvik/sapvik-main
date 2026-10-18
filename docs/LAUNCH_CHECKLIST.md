@@ -20,7 +20,7 @@ Configure these in **Cloudflare Dashboard > Pages > Settings > Environment varia
 
 | Variable Name | Scope | Description | Status |
 | :--- | :--- | :--- | :--- |
-| `SITE_PASSWORD` | Preview | Password for edge preview gate (default: `sapvik2026`). Set to `DISABLE` for public production. | Configured |
+| `SITE_PASSWORD` | Preview | Password for edge preview gate (e.g. `CHANGE_ME_LONG_RANDOM`). Set to `DISABLE` for public production. If unset, site fails closed. | Configured |
 | `BREVO_API_KEY` | Encrypted Secret | API key for Brevo transactional email (`POST /v3/smtp/email`). | Configured |
 | `BREVO_SENDER_EMAIL`| Production / Preview | Verified sender in Brevo (`growth@sapvik.com`). | Configured |
 | `NOTIFICATION_EMAIL`| Production / Preview | Destination inbox for team lead alerts (`leads@sapvik.com`). | Configured |
@@ -110,7 +110,8 @@ Items that require live Cloudflare, Brevo, or Turnstile credentials and cannot b
 - [ ] **Turnstile Challenge Enforcement**: With `TURNSTILE_SECRET_KEY` set, verify a request with no token to `/api/audit` or `/api/contact` returns `403`, and a valid token passes.
 - [ ] **Brevo Email Dispatch**: With `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, and `NOTIFICATION_EMAIL` set, verify contact form submissions deliver email to the recipient inbox.
 - [ ] **Brevo Contact Attributes**: Ensure custom contact attributes `COMPANY` (text), `WEBSITE` (text), `SERVICE` (text), and `MARKETING_CONSENT` (boolean) are created in Brevo contacts schema before activating `BREVO_MARKETING_LIST_ID` contact sync.
-- [ ] **Edge Password Gate Custom Passcode**: With `SITE_PASSWORD` configured in Pages environment variables, confirm the custom passcode unlocks the site and default fallback `sapvik2026` is rejected.
+- [ ] **Edge Password Gate Custom Passcode**: With `SITE_PASSWORD` configured in Pages environment variables, confirm the custom passcode unlocks the site and missing `SITE_PASSWORD` fails closed with "Preview is locked and no password is configured".
 - [ ] **Cloudflare WAF Rules**: Confirm priority rate-limiting on `/api/contact` and managed challenge rules from `docs/waf-rules-checklist.md` are active in Cloudflare dashboard.
 - [ ] **Analytics Consent Mode Update**: Verify that accepting the consent banner dynamically updates GTM / GA4 consent signals from `denied` to `granted`.
 - [ ] **Content Security Policy Enforcement**: Verify browser console displays zero CSP violations in `Report-Only` mode before switching `_headers` to enforced CSP.
+- [ ] **Post-Deploy Public IDs Verification**: View-source on the live production page (`sapvik.com`) and confirm that the Google Tag Manager container script (`GTM-KWPN6JRN`) is present in the initial HTML markup, and the Cloudflare Turnstile site key (`0x4AAAAAAAFTY0v25vZJ_wPCQ`) is loaded in the interactive widget client bundle.

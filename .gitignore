@@ -16,6 +16,7 @@ skills-lock.json
 # Local Environment & Secrets
 .env*
 !.env.example
+!.env.production
 .dev.vars
 *.log
 leads.jsonl

@@ -68,7 +68,7 @@ const breadcrumbSchema = {
     {
       "@type": "ListItem",
       "position": 2,
-      "name": "Blog & Insights",
+      "name": "Insights",
       "item": "https://sapvik.com/blog"
     },
     {
@@ -82,7 +82,7 @@ const breadcrumbSchema = {
 ---
 
 <Base
-  title={`${post.data.title} | SAPVIK Insights`}
+  title={post.data.metaTitle || `${post.data.title} | SAPVIK`}
   description={post.data.description}
   canonical={canonicalUrl}
   ogType="article"

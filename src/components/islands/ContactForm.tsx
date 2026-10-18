@@ -261,9 +261,12 @@ export default function ContactForm() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(fieldErrors.name)}
+                aria-describedby={fieldErrors.name ? "formNameError" : undefined}
               />
               {fieldErrors.name && (
-                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.name}</span>
+                <span id="formNameError" role="alert" style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.name}</span>
               )}
             </div>
 
@@ -279,9 +282,12 @@ export default function ContactForm() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(fieldErrors.phone)}
+                aria-describedby={fieldErrors.phone ? "formPhoneError" : undefined}
               />
               {fieldErrors.phone && (
-                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.phone}</span>
+                <span id="formPhoneError" role="alert" style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.phone}</span>
               )}
             </div>
           </div>
@@ -299,9 +305,12 @@ export default function ContactForm() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? "formEmailError" : undefined}
               />
               {fieldErrors.email && (
-                <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.email}</span>
+                <span id="formEmailError" role="alert" style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{fieldErrors.email}</span>
               )}
             </div>
 
@@ -369,13 +378,16 @@ export default function ContactForm() {
               checked={formData.consent}
               onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
               required
+              aria-required="true"
+              aria-invalid={Boolean(fieldErrors.consent)}
+              aria-describedby={fieldErrors.consent ? "formConsentError" : undefined}
             />
             <label htmlFor="formConsent" className="form-consent-label">
               I agree to receive a digital growth diagnostic and consultation. Handled under our <a href="/privacy" target="_blank" style={{ color: 'var(--c-vermilion)', textDecoration: 'underline' }}>Privacy Policy</a>. *
             </label>
           </div>
           {fieldErrors.consent && (
-            <span style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '-0.25rem', marginBottom: '0.75rem', display: 'block' }}>{fieldErrors.consent}</span>
+            <span id="formConsentError" role="alert" style={{ color: 'var(--c-vermilion)', fontSize: '0.75rem', marginTop: '-0.25rem', marginBottom: '0.75rem', display: 'block' }}>{fieldErrors.consent}</span>
           )}
 
           <div className="form-consent-row form-consent-row-opt">
@@ -393,7 +405,7 @@ export default function ContactForm() {
 
           {/* Turnstile Bot Challenge Container (only if configured) */}
           {isTurnstileConfigured() && (
-            <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ marginBottom: '1rem' }}></div>
+            <div ref={turnstileContainerRef} className="cf-turnstile" id="contactTurnstile" style={{ minHeight: '65px', marginBottom: '1rem' }}></div>
           )}
 
           <button type="submit" className="btn btn-vermilion btn-lg btn-full form-submit-btn" disabled={isSubmitting}>
