@@ -8,11 +8,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, '..', 'dist');
 
-test('GTM Security: No fallback GTM container in built dist files', () => {
+test('GTM Security: Verified container injection and no dummy fallback', () => {
   const indexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
-  assert.equal(indexHtml.includes('GTM-SAPVIK1'), false, 'dist/index.html must not contain GTM-SAPVIK1');
-  assert.equal(indexHtml.includes('googletagmanager.com/gtm.js'), false, 'dist/index.html must not load GTM script when PUBLIC_GTM_ID is unset');
-  assert.equal(indexHtml.includes('googletagmanager.com/ns.html'), false, 'dist/index.html must not load GTM noscript iframe when PUBLIC_GTM_ID is unset');
+  assert.equal(indexHtml.includes('GTM-SAPVIK1'), false, 'dist/index.html must not contain dummy GTM-SAPVIK1');
+  const configuredGtmId = process.env.PUBLIC_GTM_ID || 'GTM-KWPN6JRN';
+  assert.ok(indexHtml.includes('googletagmanager.com/gtm.js'), 'dist/index.html must load GTM script when PUBLIC_GTM_ID is set');
+  assert.ok(indexHtml.includes(configuredGtmId), 'dist/index.html must contain configured GTM ID');
+  assert.ok(indexHtml.includes(`googletagmanager.com/ns.html?id=${configuredGtmId}`), 'dist/index.html must load GTM noscript iframe');
 });
 
 test('Blog Content: "280ms" is removed from blog titles', () => {
