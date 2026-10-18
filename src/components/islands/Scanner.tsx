@@ -123,6 +123,10 @@ export default function Scanner() {
     }
   };
 
+  useEffect(() => {
+    initTurnstile();
+  }, []);
+
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     const rawTarget = url.trim();
@@ -154,6 +158,15 @@ export default function Scanner() {
       let token = turnstileToken;
       if (!token && widgetIdRef.current) {
         token = getTurnstileToken(widgetIdRef.current);
+      }
+
+      if (!token && isTurnstileConfigured()) {
+        setStatusMsg('Completing security verification...');
+        for (let i = 0; i < 25; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          token = turnstileToken || (widgetIdRef.current ? getTurnstileToken(widgetIdRef.current) : '');
+          if (token) break;
+        }
       }
 
       const controller = new AbortController();

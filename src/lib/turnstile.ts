@@ -4,7 +4,7 @@
  * Bakes in DEFAULT_SITE_KEY and supports async script loading.
  */
 
-const DEFAULT_SITE_KEY = '0x4AAAAAAFTY0v25vZJ_wPCQ';
+const DEFAULT_SITE_KEY = '0x4AAAAAAAFTY0v25vZJ_wPCQ';
 
 export function getTurnstileSiteKey(): string | null {
   const envKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
