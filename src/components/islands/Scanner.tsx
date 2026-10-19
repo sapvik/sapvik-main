@@ -110,10 +110,21 @@ export default function Scanner() {
   const widgetIdRef = useRef<string | null>(null);
   const turnstileLoadedRef = useRef(false);
   const tokenRef = useRef<string>('');
+  const turnstileErrorRef = useRef<string | null>(null);
+
+  // Google Deep Scan State & Telemetry
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleProgress, setGoogleProgress] = useState(0);
+  const [googleStatusMsg, setGoogleStatusMsg] = useState('');
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const onTurnstileToken = (token: string) => {
     tokenRef.current = token;
     setTurnstileToken(token);
+  };
+
+  const onTurnstileError = (err?: string) => {
+    turnstileErrorRef.current = err || 'turnstile_error';
   };
 
   const initTurnstile = () => {
@@ -122,7 +133,8 @@ export default function Scanner() {
     const id = renderTurnstile(
       turnstileContainerRef.current,
       onTurnstileToken,
-      (id: string) => { widgetIdRef.current = id; }
+      (id: string) => { widgetIdRef.current = id; },
+      onTurnstileError
     );
     if (id) {
       widgetIdRef.current = id;
@@ -145,6 +157,7 @@ export default function Scanner() {
     setHasScanned(true);
     setScanError(null);
     setPsiUnavailable(false);
+    setGoogleError(null);
     setProgress(20);
     setStatusMsg('Dispatching network probe & SSL security handshake...');
 
@@ -153,14 +166,20 @@ export default function Scanner() {
     const progressTimer1 = setTimeout(() => {
       setProgress(50);
       setStatusMsg('Inspecting HTML headers, Schema entity, & tracking pixels...');
-    }, 1200);
+    }, 600);
 
     const progressTimer2 = setTimeout(() => {
-      setProgress(75);
+      setProgress(80);
       setStatusMsg('Analyzing page structure, latency & performance signals...');
-    }, 3800);
+    }, 1200);
 
     try {
+      const isPreview = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.pages.dev')
+      );
+
       // Read token from ref (always up-to-date, no stale closure)
       let token = tokenRef.current;
       if (!token && widgetIdRef.current) {
@@ -168,19 +187,28 @@ export default function Scanner() {
         if (token) tokenRef.current = token;
       }
 
-      // Wait for Turnstile to solve if token isn't ready yet (up to 6s)
+      // Wait for Turnstile to solve if token isn't ready yet (up to 3.5s)
       if (!token && isTurnstileConfigured()) {
-        setStatusMsg('Completing security verification...');
-        token = await waitForTurnstileToken(() => widgetIdRef.current, () => tokenRef.current, 6000);
-        if (token) tokenRef.current = token;
+        if (!turnstileErrorRef.current) {
+          setStatusMsg('Completing security verification...');
+          token = await waitForTurnstileToken(
+            () => widgetIdRef.current,
+            () => tokenRef.current,
+            3500,
+            () => turnstileErrorRef.current
+          );
+          if (token) tokenRef.current = token;
+        }
       }
 
-      // If token is still missing when Turnstile is configured, halt gracefully before sending doomed request
-      if (!token && isTurnstileConfigured()) {
+      // Only block if on production (not preview / pages.dev) and token is missing
+      if (!token && isTurnstileConfigured() && !isPreview) {
         clearTimeout(progressTimer1);
         clearTimeout(progressTimer2);
         setProgress(0);
-        const verificationMsg = 'Security verification could not be completed in time. Please complete the captcha verification above.';
+        const verificationMsg = turnstileErrorRef.current
+          ? 'Security challenge failed to load (ad-blocker or domain restriction). Please check your browser settings.'
+          : 'Security verification could not be completed in time. Please complete the captcha verification above.';
         setScanError(verificationMsg);
         setStatusMsg(`Probe halted: ${verificationMsg}`);
         setScoreVal('N/A');
@@ -203,10 +231,11 @@ export default function Scanner() {
       const controller = new AbortController();
       const clientTimeout = setTimeout(() => controller.abort(), 18000);
 
+      // Fast initial scan (includePsi: false) runs in <1s
       const resp = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: rawTarget, turnstileToken: token }),
+        body: JSON.stringify({ url: rawTarget, turnstileToken: token, includePsi: false }),
         signal: controller.signal
       });
       clearTimeout(clientTimeout);
@@ -214,6 +243,7 @@ export default function Scanner() {
       clearTimeout(progressTimer1);
       clearTimeout(progressTimer2);
       setProgress(100);
+
 
       const data: ScanResponse = await resp.json();
 
@@ -351,6 +381,91 @@ export default function Scanner() {
       setTimeout(() => {
         setProgress(0);
       }, 1200);
+    }
+  };
+
+  const handleGoogleDeepScan = async () => {
+    const rawTarget = url.trim();
+    if (!rawTarget || isGoogleLoading) return;
+
+    setIsGoogleLoading(true);
+    setGoogleError(null);
+    setGoogleProgress(15);
+    setGoogleStatusMsg('Connecting to Google PageSpeed Insights in Google Cloud...');
+
+    const t1 = setTimeout(() => {
+      setGoogleProgress(35);
+      setGoogleStatusMsg('Spinning up headless Chrome container in Google datacenter...');
+    }, 2500);
+
+    const t2 = setTimeout(() => {
+      setGoogleProgress(60);
+      setGoogleStatusMsg('Simulating mobile 4G network & measuring Core Web Vitals (LCP, CLS, TBT)...');
+    }, 6500);
+
+    const t3 = setTimeout(() => {
+      setGoogleProgress(85);
+      setGoogleStatusMsg('Auditing 70+ Lighthouse SEO, Performance & Accessibility rules...');
+    }, 13000);
+
+    try {
+      const controller = new AbortController();
+      const clientTimeout = setTimeout(() => controller.abort(), 35000);
+
+      const resp = await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: rawTarget,
+          turnstileToken: tokenRef.current,
+          includePsi: true
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(clientTimeout);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      setGoogleProgress(100);
+
+      const data: ScanResponse = await resp.json();
+
+      if (resp.ok && data.success && data.google_verified) {
+        setGoogleVerified(true);
+        setPerformanceScore(typeof data.performance_score === 'number' ? data.performance_score : null);
+        setCoreWebVitals(data.core_web_vitals || null);
+
+        if (typeof data.score === 'number') {
+          setScoreVal(`${data.score}/100`);
+          setScoreColor(data.score >= 80 ? 'var(--c-success)' : (data.score >= 50 ? 'var(--c-warning)' : 'var(--c-vermilion)'));
+        }
+
+        if (data.findings && data.findings.length > 0) {
+          setFindings(data.findings);
+        }
+
+        setGoogleStatusMsg(`Google Lighthouse & Core Web Vitals Verified for ${data.url || rawTarget}`);
+        trackEvent('scan_complete', {
+          score_bucket: getScoreBucket(data.score),
+          google_verified: true
+        });
+      } else {
+        const errMsg = data.psi_fallback_reason || data.message || 'Google Lighthouse could not verify this host.';
+        setGoogleError(errMsg === 'timeout'
+          ? 'Google cloud simulation timed out on this host (>30s). Target site may be throttled.'
+          : `Google PageSpeed notice: ${errMsg}`
+        );
+      }
+    } catch (err: any) {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      setGoogleError(err?.name === 'AbortError'
+        ? 'Google Lighthouse cloud simulation timed out (>35s). Site response is exceptionally slow.'
+        : 'Network error connecting to Google PageSpeed API.'
+      );
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -500,6 +615,81 @@ export default function Scanner() {
           <div className="scanner-metric-lbl">TLS / SSL Status</div>
         </div>
       </div>
+
+      {/* Google PageSpeed On-Demand Deep Scan Button & Telemetry */}
+      {!googleVerified && hasScanned && !isLoading && !scanError && (
+        <div className="google-deep-scan-box" style={{
+          margin: '1.25rem 0',
+          padding: '1.25rem',
+          background: 'var(--c-surface-subdued)',
+          border: '1px solid var(--c-border)',
+          borderRadius: '4px'
+        }}>
+          <div style={{ marginBottom: '0.85rem' }}>
+            <span className="mono-label" style={{ color: 'var(--c-vermilion)', fontSize: '0.72rem', display: 'block', marginBottom: '0.25rem' }}>
+              DEEP PERFORMANCE ANALYSIS
+            </span>
+            <strong style={{ display: 'block', fontSize: '0.95rem', color: 'var(--c-text-primary)', marginBottom: '0.25rem' }}>
+              Want Official Google Lighthouse Performance &amp; Core Web Vitals?
+            </strong>
+            <p style={{ fontSize: '0.82rem', color: 'var(--c-text-secondary)', margin: 0, lineHeight: 1.45 }}>
+              Spins up a headless Chrome runner in Google Cloud to simulate mobile 4G network performance, measure LCP, CLS, TBT, and audit 70+ Lighthouse metrics.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            id="runGoogleAuditBtn"
+            className="btn btn-secondary btn-full"
+            onClick={handleGoogleDeepScan}
+            disabled={isGoogleLoading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.6rem',
+              padding: '0.75rem 1rem',
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              letterSpacing: '0.04em'
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+            <span>{isGoogleLoading ? 'AUDITING IN GOOGLE CLOUD (LIGHTHOUSE)...' : 'RUN DEEPER GOOGLE LIGHTHOUSE & CORE WEB VITALS ANALYSIS →'}</span>
+          </button>
+
+          {/* Google Deep Scan Progress Bar & Live Telemetry */}
+          {isGoogleLoading && (
+            <div style={{ marginTop: '0.85rem' }}>
+              <div className="scanner-progress-track" style={{ display: 'block', height: '4px', marginBottom: '0.5rem' }}>
+                <div className="scanner-progress-bar" style={{ width: `${googleProgress}%` }}></div>
+              </div>
+              <div className="mono-label" style={{ fontSize: '0.78rem', color: 'var(--c-text-primary)' }} aria-live="polite">
+                {googleStatusMsg}
+              </div>
+            </div>
+          )}
+
+          {googleError && (
+            <div style={{
+              marginTop: '0.85rem',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(230, 57, 70, 0.08)',
+              borderLeft: '3px solid var(--c-vermilion)',
+              fontSize: '0.8rem',
+              color: 'var(--c-vermilion)'
+            }}>
+              {googleError}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Google PageSpeed & Core Web Vitals Panel */}
       {googleVerified && coreWebVitals && (

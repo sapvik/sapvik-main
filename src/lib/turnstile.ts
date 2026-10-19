@@ -51,7 +51,8 @@ export function loadTurnstileScript(): Promise<void> {
 export function renderTurnstile(
   container: HTMLElement | null,
   callback: (token: string) => void,
-  onWidgetId?: (widgetId: string) => void
+  onWidgetId?: (widgetId: string) => void,
+  onError?: (errorCode?: string) => void
 ): string | null {
   if (typeof window === 'undefined' || !container) {
     return null;
@@ -68,13 +69,17 @@ export function renderTurnstile(
       const id = window.turnstile.render(container, {
         sitekey,
         callback,
-        'refresh-expired': 'auto'
+        'refresh-expired': 'auto',
+        'error-callback': (code?: string) => {
+          if (onError) onError(code);
+        }
       });
       if (id && onWidgetId) {
         onWidgetId(id);
       }
       return id;
-    } catch {
+    } catch (err: any) {
+      if (onError) onError(err?.message || 'render_error');
       return null;
     }
   };
@@ -122,13 +127,15 @@ export function resetTurnstile(widgetId: string | null): void {
 
 /**
  * Waits for the Turnstile script to load and the widget to produce a token.
- * Supports passing a widget ID, a widgetId getter function, and an optional token getter function (e.g. from React ref).
- * Returns the token string, or '' if it times out after maxMs.
+ * Supports passing a widget ID, a widgetId getter function, an optional token getter function,
+ * and an optional error getter function.
+ * Returns the token string, or '' if it times out or errors.
  */
 export async function waitForTurnstileToken(
   widgetIdOrGetter?: string | null | (() => string | null),
   tokenGetter?: () => string,
-  maxMs = 6000
+  maxMs = 6000,
+  errorGetter?: () => string | null
 ): Promise<string> {
   if (typeof window === 'undefined') return '';
 
@@ -138,6 +145,10 @@ export async function waitForTurnstileToken(
   // Then poll for the token
   const start = Date.now();
   while (Date.now() - start < maxMs) {
+    if (errorGetter && errorGetter()) {
+      // Widget reported an explicit error (e.g. domain not allowed)
+      break;
+    }
     if (tokenGetter) {
       const liveToken = tokenGetter();
       if (liveToken) return liveToken;
@@ -153,3 +164,4 @@ export async function waitForTurnstileToken(
   }
   return tokenGetter ? tokenGetter() : '';
 }
+

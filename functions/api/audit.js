@@ -58,7 +58,7 @@ export async function onRequestPost(context) {
   let isPreviewHost = false;
   try {
     const reqHost = new URL(request.url).hostname.toLowerCase();
-    isPreviewHost = reqHost === 'localhost' || reqHost === '127.0.0.1';
+    isPreviewHost = reqHost === 'localhost' || reqHost === '127.0.0.1' || reqHost.endsWith('.pages.dev');
   } catch {}
 
   if (!turnstileResult.success && !turnstileResult.bypassed && !isPreviewHost) {
@@ -87,9 +87,11 @@ export async function onRequestPost(context) {
   }
 
   const normalizedTarget = validation.url;
+  const includePsi = Boolean(body.includePsi);
 
-  // 3. Edge Cache API Lookup (Keyed by Normalized Target URL, 5 min TTL)
-  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit/v3?url=${encodeURIComponent(normalizedTarget)}`);
+  // 3. Edge Cache API Lookup (Keyed by Target URL and Mode, 5 min TTL)
+  const modeKey = includePsi ? 'psi' : 'quick';
+  const cacheUrl = new URL(`https://cache.sapvik.internal/api/audit/v3?url=${encodeURIComponent(normalizedTarget)}&mode=${modeKey}`);
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   let cache;
   try {
@@ -109,10 +111,10 @@ export async function onRequestPost(context) {
 
   // 5. Execute Scans
   let scanResult;
-  if (psiKey) {
+  if (includePsi && psiKey) {
     const [localSettled, psiSettled] = await Promise.allSettled([
       executeLiveScan(normalizedTarget),
-      runPageSpeedAudit(normalizedTarget, psiKey, { timeoutMs: 16000 })
+      runPageSpeedAudit(normalizedTarget, psiKey, { timeoutMs: 30000 })
     ]);
 
     const localResult = localSettled.status === 'fulfilled' ? localSettled.value : { success: false, error: 'local_failed' };
