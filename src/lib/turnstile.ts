@@ -120,3 +120,36 @@ export function resetTurnstile(widgetId: string | null): void {
   } catch {}
 }
 
+/**
+ * Waits for the Turnstile script to load and the widget to produce a token.
+ * Supports passing a widget ID, a widgetId getter function, and an optional token getter function (e.g. from React ref).
+ * Returns the token string, or '' if it times out after maxMs.
+ */
+export async function waitForTurnstileToken(
+  widgetIdOrGetter?: string | null | (() => string | null),
+  tokenGetter?: () => string,
+  maxMs = 6000
+): Promise<string> {
+  if (typeof window === 'undefined') return '';
+
+  // First ensure the script is loaded
+  await loadTurnstileScript();
+
+  // Then poll for the token
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    if (tokenGetter) {
+      const liveToken = tokenGetter();
+      if (liveToken) return liveToken;
+    }
+    if (window.turnstile) {
+      try {
+        const id = typeof widgetIdOrGetter === 'function' ? widgetIdOrGetter() : widgetIdOrGetter;
+        const token = id ? window.turnstile.getResponse(id) : window.turnstile.getResponse();
+        if (token) return token;
+      } catch {}
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return tokenGetter ? tokenGetter() : '';
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { trackEvent, getScoreBucket, getLatencyBucket } from '../../lib/analytics';
-import { renderTurnstile, getTurnstileToken, resetTurnstile, isTurnstileConfigured } from '../../lib/turnstile';
+import { renderTurnstile, getTurnstileToken, resetTurnstile, isTurnstileConfigured, waitForTurnstileToken } from '../../lib/turnstile';
 
 export interface CoreWebVitalMetric {
   display: string | null;
@@ -109,13 +109,19 @@ export default function Scanner() {
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const turnstileLoadedRef = useRef(false);
+  const tokenRef = useRef<string>('');
+
+  const onTurnstileToken = (token: string) => {
+    tokenRef.current = token;
+    setTurnstileToken(token);
+  };
 
   const initTurnstile = () => {
     if (turnstileLoadedRef.current) return;
     turnstileLoadedRef.current = true;
     const id = renderTurnstile(
       turnstileContainerRef.current,
-      (token: string) => setTurnstileToken(token),
+      onTurnstileToken,
       (id: string) => { widgetIdRef.current = id; }
     );
     if (id) {
@@ -155,18 +161,43 @@ export default function Scanner() {
     }, 3800);
 
     try {
-      let token = turnstileToken;
+      // Read token from ref (always up-to-date, no stale closure)
+      let token = tokenRef.current;
       if (!token && widgetIdRef.current) {
         token = getTurnstileToken(widgetIdRef.current);
+        if (token) tokenRef.current = token;
       }
 
+      // Wait for Turnstile to solve if token isn't ready yet (up to 6s)
       if (!token && isTurnstileConfigured()) {
         setStatusMsg('Completing security verification...');
-        for (let i = 0; i < 25; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          token = turnstileToken || (widgetIdRef.current ? getTurnstileToken(widgetIdRef.current) : '');
-          if (token) break;
-        }
+        token = await waitForTurnstileToken(() => widgetIdRef.current, () => tokenRef.current, 6000);
+        if (token) tokenRef.current = token;
+      }
+
+      // If token is still missing when Turnstile is configured, halt gracefully before sending doomed request
+      if (!token && isTurnstileConfigured()) {
+        clearTimeout(progressTimer1);
+        clearTimeout(progressTimer2);
+        setProgress(0);
+        const verificationMsg = 'Security verification could not be completed in time. Please complete the captcha verification above.';
+        setScanError(verificationMsg);
+        setStatusMsg(`Probe halted: ${verificationMsg}`);
+        setScoreVal('N/A');
+        setScoreColor('var(--c-text-muted)');
+        setTtfbVal('—');
+        setSslVal('—');
+        setSslColor('var(--c-text-muted)');
+        setBreakdown(null);
+        setFindings([
+          {
+            severity: 'critical',
+            title: 'Security Verification Required',
+            fix: 'Please complete the Cloudflare security verification checkbox above or check your connection/ad-blocker, then re-check.'
+          }
+        ]);
+        trackEvent('scan_error', { error_code: 'turnstile_timeout' });
+        return;
       }
 
       const controller = new AbortController();
@@ -280,7 +311,9 @@ export default function Scanner() {
           {
             severity: 'critical',
             title: errorMsg,
-            fix: 'Target may block external crawlers, is experiencing downtime, or firewall restricted. Request a manual audit below.'
+            fix: data.error === 'turnstile_failed'
+              ? 'Cloudflare security challenge verification failed. Please complete the captcha checkbox above or refresh the page.'
+              : 'Target may block external crawlers, is experiencing downtime, or firewall restricted. Request a manual audit below.'
           }
         ]);
 
@@ -312,6 +345,8 @@ export default function Scanner() {
       trackEvent('scan_error', { error_code: err?.name === 'AbortError' ? 'timeout' : 'client_fetch_error' });
     } finally {
       setIsLoading(false);
+      tokenRef.current = '';
+      setTurnstileToken('');
       resetTurnstile(widgetIdRef.current);
       setTimeout(() => {
         setProgress(0);
