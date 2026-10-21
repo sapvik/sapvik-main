@@ -587,7 +587,7 @@ export default function Scanner() {
             {scoreVal}
           </div>
           <div className="scanner-metric-lbl">
-            {googleVerified ? 'Google SEO' : 'On-page checks (not a Google score)'}
+            {googleVerified ? 'Google Verified Score' : 'On-page checks (not a Google score)'}
           </div>
         </div>
         {googleVerified && (

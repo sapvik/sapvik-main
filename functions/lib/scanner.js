@@ -78,12 +78,35 @@ export function analyzeHtmlSnippet(html, finalUrl, elapsedMs, hasSsl, hasHsts) {
   const h1Matches = html.match(/<h1\b[^>]*>/gi) || [];
   const h1Count = h1Matches.length;
   const hasH2 = /<h2\b[^>]*>/i.test(html);
+  const hasH3 = /<h3\b[^>]*>/i.test(html);
+  const hasSemanticLayout = /<(?:main|header|article|section|nav|footer)\b/i.test(html);
+
+  // Measure initial body copy volume
+  const pMatches = html.match(/<p\b[^>]*>([\s\S]*?)<\/p>/gi) || [];
+  const pTextLength = pMatches.reduce((acc, p) => acc + p.replace(/<[^>]+>/g, '').trim().length, 0);
 
   let contentScore = 0;
-  if (hasViewport) contentScore += 10;
-  if (h1Count === 1) contentScore += 10;
-  else if (h1Count > 1) contentScore += 5;
-  if (hasH2) contentScore += 5;
+  // A. Mobile responsive viewport (5 pts)
+  if (hasViewport) contentScore += 5;
+
+  // B. Heading hierarchy (10 pts max)
+  if (h1Count === 1) {
+    contentScore += hasH2 ? 10 : 7;
+  } else if (h1Count > 1) {
+    contentScore += hasH2 ? 6 : 5;
+  } else if (hasH2 || hasH3) {
+    contentScore += 4;
+  }
+
+  // C. HTML5 semantic landmarks (5 pts)
+  if (hasSemanticLayout) contentScore += 5;
+
+  // D. Initial readable body copy (5 pts max)
+  if (pTextLength >= 200) {
+    contentScore += 5;
+  } else if (pTextLength >= 50) {
+    contentScore += 3;
+  }
 
   // 3. Technical Performance & Security (Max 25)
   let techScore = 0;

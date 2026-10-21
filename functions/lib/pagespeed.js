@@ -310,10 +310,15 @@ export function mergeScanWithPageSpeed(localResult, psiResult, targetUrl) {
 
   // If local scan failed completely but PSI succeeded:
   if (!localResult || !localResult.success) {
+    const fallbackScore = (typeof psiResult.performance_score === 'number' && typeof psiResult.seo_score === 'number')
+      ? Math.round(psiResult.performance_score * 0.60 + psiResult.seo_score * 0.40)
+      : (psiResult.seo_score ?? psiResult.performance_score ?? null);
+
     return {
       success: true,
       url: targetUrl,
-      score: psiResult.seo_score ?? null,
+      score: fallbackScore,
+      seo_score: psiResult.seo_score ?? null,
       performance_score: psiResult.performance_score ?? null,
       measured_latency_ms: null,
       response_time_ms: null,
@@ -365,8 +370,23 @@ export function mergeScanWithPageSpeed(localResult, psiResult, targetUrl) {
   const severityRank = { critical: 0, warning: 1, info: 2, good: 3 };
   combinedFindings.sort((a, b) => (severityRank[a.severity] ?? 99) - (severityRank[b.severity] ?? 99));
 
-  // Determine official score: Google Lighthouse SEO score takes precedence as official Google rating
-  const finalScore = typeof psiResult.seo_score === 'number' ? psiResult.seo_score : localResult.score;
+  // Determine composite score: Google Lighthouse SEO checklist is typically 90-100 for almost all sites,
+  // so we combine 60% Mobile Performance (Core Web Vitals & real speed), 25% Google SEO checklist,
+  // and 15% On-Page & Schema Architecture to provide a realistic, commercially honest rating.
+  let finalScore = localResult.score;
+  if (typeof psiResult.performance_score === 'number' && typeof psiResult.seo_score === 'number') {
+    const baseLocal = typeof localResult.score === 'number' ? localResult.score : 70;
+    finalScore = Math.round(
+      psiResult.performance_score * 0.60 +
+      psiResult.seo_score * 0.25 +
+      baseLocal * 0.15
+    );
+  } else if (typeof psiResult.performance_score === 'number') {
+    const baseLocal = typeof localResult.score === 'number' ? localResult.score : 70;
+    finalScore = Math.round(psiResult.performance_score * 0.70 + baseLocal * 0.30);
+  } else if (typeof psiResult.seo_score === 'number') {
+    finalScore = psiResult.seo_score;
+  }
 
   // Technical breakdown category reflects official Google performance if available
   const techScore = typeof psiResult.performance_score === 'number'
@@ -376,6 +396,7 @@ export function mergeScanWithPageSpeed(localResult, psiResult, targetUrl) {
   return {
     ...localResult,
     score: finalScore,
+    seo_score: psiResult.seo_score ?? null,
     performance_score: psiResult.performance_score ?? null,
     google_verified: true,
     core_web_vitals: psiResult.core_web_vitals || null,

@@ -159,8 +159,10 @@ test('PageSpeed: mergeScanWithPageSpeed merges local and Google findings without
 
   const merged = mergeScanWithPageSpeed(localScan, psiScan, 'https://example.com');
   assert.equal(merged.google_verified, true);
-  assert.equal(merged.score, 90, 'Google Lighthouse SEO score should be used as official score');
+  // Math.round(95 * 0.60 + 90 * 0.25 + 75 * 0.15) = Math.round(57 + 22.5 + 11.25) = 91
+  assert.equal(merged.score, 91, 'Google score should reflect weighted composite: 60% mobile perf, 25% Google SEO, 15% local');
   assert.equal(merged.performance_score, 95);
+  assert.equal(merged.seo_score, 90);
   assert.equal(merged.measured_latency_ms, 220);
 
   // Findings should deduplicate title issue
@@ -169,6 +171,33 @@ test('PageSpeed: mergeScanWithPageSpeed merges local and Google findings without
 
   // Critical SSL finding must be retained and sorted first
   assert.equal(merged.findings[0].severity, 'critical');
+});
+
+test('PageSpeed: harsh composite score penalizes slow sites even if Google SEO checklist is 100', () => {
+  const localScan = {
+    success: true,
+    url: 'https://example.com',
+    score: 70,
+    has_ssl: true,
+    findings: []
+  };
+
+  const slowPsi = {
+    success: true,
+    seo_score: 100, // Common 100 on Google checklist
+    performance_score: 35, // Sluggish mobile CWV
+    core_web_vitals: {
+      lcp: { display: '5.2 s', value_ms: 5200, status: 'poor' }
+    },
+    findings: []
+  };
+
+  const merged = mergeScanWithPageSpeed(localScan, slowPsi, 'https://example.com');
+  // Math.round(35 * 0.60 + 100 * 0.25 + 70 * 0.15) = Math.round(21 + 25 + 10.5) = 57
+  assert.equal(merged.score, 57, 'Harsh weighting must prevent 100 score on slow mobile site');
+  assert.equal(merged.google_verified, true);
+  assert.equal(merged.seo_score, 100);
+  assert.equal(merged.performance_score, 35);
 });
 
 test('PageSpeed: mergeScanWithPageSpeed handles failed PSI with graceful fallback', () => {
@@ -213,8 +242,10 @@ test('PageSpeed: local failure + PSI success returns no invented values and null
 
   const merged = mergeScanWithPageSpeed(failedLocalScan, successfulPsi, 'https://example.com');
   assert.equal(merged.success, true);
-  assert.equal(merged.score, 88);
+  // Math.round(72 * 0.60 + 88 * 0.40) = Math.round(43.2 + 35.2) = 78
+  assert.equal(merged.score, 78, 'Composite score combines PSI performance and SEO when local probe fails');
   assert.equal(merged.performance_score, 72);
+  assert.equal(merged.seo_score, 88);
   assert.equal(merged.google_verified, true);
 
   // Assert no invented values

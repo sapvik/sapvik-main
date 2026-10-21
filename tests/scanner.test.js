@@ -194,4 +194,49 @@ test('Scanner: noindex directive produces a critical severity finding and sorts 
   assert.equal(result.findings[0].severity, 'critical');
 });
 
+test('Scanner: Content structure breakdown evaluates hierarchy, semantic landmarks, and copy length', () => {
+  const richHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Full Service Digital Agency with Excellent Copy</title>
+    </head>
+    <body>
+      <header><nav><a href="/">Home</a></nav></header>
+      <main>
+        <h1>Performance Engineering & Growth Marketing</h1>
+        <h2>Scalable Architecture for Growing Brands</h2>
+        <p>
+          We build verified high-performance websites and organic search engines that transform traffic into revenue.
+          Our battle-tested engineers and technical SEO consultants ensure every asset loads in milliseconds,
+          maintains perfect search hygiene, and captures high-intent local customers across any market.
+        </p>
+      </main>
+      <footer><p>&copy; 2026 Sapvik Digital</p></footer>
+    </body>
+    </html>
+  `;
+  const result = analyzeHtmlSnippet(richHtml, 'https://example.com', 200, true, true);
+  // Viewport (5) + H1 & H2 (10) + semantic layout (5) + body copy >200 chars (5) = 25
+  assert.equal(result.breakdown.content.score, 25, 'Expected full 25/25 for complete semantic content structure');
+
+  // Test site without H1 but with H2, semantic tag, and >50 chars text
+  const partialHtml = `
+    <html>
+    <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body>
+      <main>
+        <h2>Catalog Overview</h2>
+        <p>Short snippet of text describing items in our local store catalog today.</p>
+      </main>
+    </body>
+    </html>
+  `;
+  const partialResult = analyzeHtmlSnippet(partialHtml, 'https://example.com', 200, true, true);
+  // Viewport (5) + H2 fallback (4) + semantic main (5) + body copy >50 chars (3) = 17
+  assert.equal(partialResult.breakdown.content.score, 17, 'Expected 17 instead of collapsing to 10');
+});
+
+
 
