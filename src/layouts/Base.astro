@@ -50,6 +50,7 @@ if (passedCanonical) {
 const socialProfiles = [
   SITE.brand.social?.linkedin,
   SITE.brand.social?.instagram,
+  SITE.brand.social?.facebook,
   SITE.brand.social?.twitter
 ].filter((url): url is string => Boolean(url && url.trim().length > 0));
 
